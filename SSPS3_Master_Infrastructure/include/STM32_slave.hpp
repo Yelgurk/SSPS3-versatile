@@ -5,6 +5,8 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+extern TwoWire * itcw;
+
 using namespace std;
 
 enum class I2C_COMM : uint8_t
@@ -40,7 +42,6 @@ enum class COMM_GET : uint8_t
 class STM32_slave
 {
 private:
-    TwoWire * i2c;
     uint8_t addr;
     uint8_t buf[4];
     uint16_t response;
@@ -49,7 +50,7 @@ private:
     uint16_t    _get(I2C_COMM cmd, uint8_t pin);
 
 public:
-    STM32_slave(TwoWire * i2c, uint8_t addr, uint8_t sda, uint8_t scl);
+    STM32_slave(uint8_t addr) : addr(addr) {}
 
     void        set(COMM_SET cmd, uint8_t pin, uint16_t val);
     uint16_t    get(COMM_GET cmd, uint8_t pin);

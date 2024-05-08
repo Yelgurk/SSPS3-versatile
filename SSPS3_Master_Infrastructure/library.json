@@ -1,0 +1,9 @@
+{
+    "name": "DDD infrastructure layer",
+    "description": "solution contains i2c data transmittion logic to STM32 slave",
+    "build": {
+        "unflags": "-std=gnu++11",
+        "flags": "-std=gnu++17"
+    },
+    "version": "1.0.0"
+}

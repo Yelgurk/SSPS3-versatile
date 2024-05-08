@@ -1,0 +1,9 @@
+{
+    "name": "DDD domain layer",
+    "description": "solution contains logic of working with FRAM like storage and another base models and enums with it",
+    "build": {
+        "unflags": "-std=gnu++11",
+        "flags": "-std=gnu++17"
+    },
+    "version": "1.0.0"
+}

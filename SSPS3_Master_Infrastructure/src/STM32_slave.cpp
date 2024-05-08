@@ -1,12 +1,5 @@
 #include "../include/STM32_slave.hpp"
 
-STM32_slave::STM32_slave(TwoWire * i2c, uint8_t addr, uint8_t sda, uint8_t scl)
-{
-    this->addr = addr;
-    this->i2c = i2c;
-    this->i2c->begin(sda, scl, 400000);
-}
-
 void STM32_slave::_set(I2C_COMM cmd, uint8_t pin, uint16_t val)
 {
     buf[0] = static_cast<uint8_t>(cmd);
@@ -14,9 +7,9 @@ void STM32_slave::_set(I2C_COMM cmd, uint8_t pin, uint16_t val)
     buf[2] = highByte(val);
     buf[3] = lowByte(val);
 
-    i2c->beginTransmission(addr);
-    i2c->write((uint8_t *) buf, 4);
-    i2c->endTransmission();
+    itcw->beginTransmission(addr);
+    itcw->write((uint8_t *) buf, 4);
+    itcw->endTransmission();
 
     delayMicroseconds(160);
 }
@@ -25,11 +18,11 @@ uint16_t STM32_slave::_get(I2C_COMM cmd, uint8_t pin)
 {
     _set(cmd, pin, 0);
 
-    i2c->requestFrom(addr, (uint8_t)2);
+    itcw->requestFrom(addr, (uint8_t)2);
     delayMicroseconds(40);
 
-    if (i2c->available())
-        response = ((uint16_t)i2c->read() << 8) | i2c->read();
+    if (itcw->available())
+        response = ((uint16_t)itcw->read() << 8) | itcw->read();
 
     return response;
 }
