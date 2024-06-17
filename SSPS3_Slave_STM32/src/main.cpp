@@ -68,9 +68,37 @@ void loop()
         OptIn_state[pin] = state;
     }
 
-    uint8_t btn_container = KeyPressed;
-    KeyPressed = (uint8_t)kpd.getKey();
-    
-    if (btn_container != KeyPressed)
+    if (kpd.getKeys())
+        for (int i = 0; i < LIST_MAX; i++)
+            if (kpd.key[i].stateChanged)
+                switch (kpd.key[i].kstate)
+                {
+                    case PRESSED: {
+                        KeyPressed = getposition(keysInline, KB_Col * KB_Row, kpd.key[i].kchar);
+                        KeyHoldNext = millis() + (KeyHoldDelay = HOLD_begin_ms);
+                        INTERRUPT_MASTER(1);
+                    }; break;
+                    
+                    case HOLD: {
+
+                    }; break;
+
+                    case RELEASED: {
+                        KeyPressed = KeyPressed == getposition(keysInline, KB_Col * KB_Row, kpd.key[i].kchar) ? KB_Await : KeyPressed; 
+                        INTERRUPT_MASTER(1);
+                    }; break;
+
+                    case IDLE: {
+
+                    }; break;
+                }
+
+    if ((KeyPressed < KB_Col * KB_Row) && millis() >= KeyHoldNext)
+    {
+        KeyHoldDelay /= HOLD_x;
+        KeyHoldDelay = KeyHoldDelay < HOLD_min_ms ? HOLD_min_ms : KeyHoldDelay;
+        
+        KeyHoldNext = millis() + KeyHoldDelay;
         INTERRUPT_MASTER(1);
+    }
 }

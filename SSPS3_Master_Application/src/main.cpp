@@ -7,6 +7,7 @@ STM32_slave * STM32;
 void setup()
 {
     Serial.begin(115200);
+    Serial.println("init");
 
     pinMode(INT, INPUT);
     attachInterrupt(INT, [](){ interrupted_by_slave = true; }, RISING);
@@ -17,8 +18,7 @@ void setup()
     STM32 = new STM32_slave(STM_I2C_ADDR);
 }
 
-
 void loop()
 {
-    
+    Serial.println("main");
 }

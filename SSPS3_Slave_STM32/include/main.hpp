@@ -1,33 +1,48 @@
 #include <Arduino.h>
-#include "Keypad.h"
+#include <Keypad.h>
+#include <algorithm>
 #include "./I2C_Service.hpp"
 
+TwoWire * itcw;
+I2C_Service * I2C;
+
+/* I2C var's */
 #define SDA             PB7
 #define SCL             PB6
 #define INT             PB8
 #define STM_I2C_ADR     0x30
 
+/* STM32 slave calc func for i2c data transmittion */
 #define ARR_SIZE(arr, type)         (sizeof(arr) / sizeof(type))
 #define PIN_EXISTS(pin, arr, type)  InRange(pin, ARR_SIZE(arr, type))
 #define INTERRUPT_MASTER(val)       digitalWrite(INT, val)       
 
+/* Keypad 4x4 var's */
 #define KB_Row                      4
 #define KB_Col                      4
 #define KB_Await                    (KB_Row * KB_Col)
+#define HOLD_begin_ms               1000
+#define HOLD_x                      1.2
+#define HOLD_min_ms                 50
 
-uint8_t keys[KB_Row][KB_Col] =
-{
-    {0, 1, 2, 3},
-    {4, 5, 6, 7},
-    {8, 9, 10, 11},
-    {12, 13, 14, 15}
+char keys[KB_Row][KB_Col] = {
+    {'A', 'B', 'C', 'D'},
+    {'E', 'F', 'G', 'H'},
+    {'I', 'J', 'K', 'L'},
+    {'M', 'N', 'O', 'P'}
 };
+const char keysInline[KB_Row * KB_Col] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'}; 
+uint8_t KeyPressed = KB_Await;
+uint16_t KeyHoldDelay = HOLD_begin_ms;
+uint64_t KeyHoldNext = 0;
 
 uint8_t KB_row_pin[KB_Row] = {PB11, PB13, PA9, PA11};
 uint8_t KB_col_pin[KB_Col] = {PC7, PC9, PB14, PC6};
 
 Keypad kpd = Keypad(makeKeymap(keys), KB_row_pin, KB_col_pin, KB_Row, KB_Col);
+String kbMsg = "";
 
+/* I/O defines and arr var's based on defines */
 #define STM_RELAY_1     PB1
 #define STM_RELAY_2     PB10
 #define STM_RELAY_3     PB12
@@ -91,11 +106,15 @@ uint8_t Adc[4]
 };
 
 uint8_t OptIn_state[ARR_SIZE(OptIn, uint8_t)] = { 0 };
-uint8_t KeyPressed = KB_Await;
 
-TwoWire * itcw;
-I2C_Service * I2C;
-
+/* small extension for calc */
 uint8_t InRange(uint8_t value, uint8_t max) {
     return value >= max ? max - 1 : (value < 0 ? 0 : value);
+}
+
+int getposition(const char *array, size_t size, char c)
+{
+     const char* end = array + size;
+     const char* match = std::find(array, end, c);
+     return end == match ? KB_Await : match-array;
 }
