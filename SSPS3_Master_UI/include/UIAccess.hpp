@@ -5,6 +5,7 @@
 
 enum class UIAccess : uint8_t
 {
+    All,
     Pasteurizer,
     DairyTaxi,
     DairyTaxiFlowgun,

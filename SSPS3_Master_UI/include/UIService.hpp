@@ -13,6 +13,10 @@
 #define SCREEN_HEIGHT           320U
 #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 32 / 2    
 
+static uint8_t lv_buff_1[SCREEN_BUFFER];
+static uint8_t lv_buff_2[SCREEN_BUFFER];
+static LGFX lcd;
+
 static uint32_t arduino_tick_get_cb(void);
 
 static void lcd_flush_cb(lv_display_t* display, const lv_area_t* area, unsigned char* data)
@@ -23,10 +27,6 @@ static void lcd_flush_cb(lv_display_t* display, const lv_area_t* area, unsigned 
     lcd.pushImage(area->x1, area->y1, w, h, (uint16_t*)data);
     lv_display_flush_ready(display);
 }
-
-static uint8_t lv_buff_1[SCREEN_BUFFER];
-static uint8_t lv_buff_2[SCREEN_BUFFER];
-static LGFX lcd;
 
 class UIService
 {

@@ -1,6 +1,7 @@
 #include "../include/main.hpp"
 
 #ifndef SSPS3_APPLICATION_SOLUTION
+#ifndef SSPS3_UI_DEV_SOLUTION
 
 TwoWire * itcw;
 STM32_slave * STM32;
@@ -78,4 +79,5 @@ void print(bool only_digital)
         Serial.println();
 }
 
+#endif
 #endif

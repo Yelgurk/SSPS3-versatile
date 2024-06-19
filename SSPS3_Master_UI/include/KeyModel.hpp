@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef KeyModel_hpp
 #define KeyModel_hpp
 

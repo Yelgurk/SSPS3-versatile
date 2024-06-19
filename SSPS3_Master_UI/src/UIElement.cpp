@@ -1,4 +1,5 @@
 #include "../include/UIElement.hpp"
+#include "../include/UIScreen.hpp"
 
 UIElement::UIElement(UIScreen * parent, bool is_focusable, vector<UIAccess> ui_access, vector<KeyModel> keys_action)
 {
@@ -49,13 +50,13 @@ bool UIElement::key_press(KeyMap key)
 void UIElement::update_base_info()
 {
     for (auto action : UpdateBaseInfo)
-        action(container);
+        action();
 }
 
 void UIElement::update_context()
 {
     for (auto action : UpdateContext)
-        action(container);
+        action();
 }
 
 void UIElement::ui_obj_remove_states()
@@ -100,4 +101,8 @@ UIScreen * UIElement::get_parent() {
 
 vector<KeyModel> * UIElement::get_keys_action() {
     return &this->KeysAction;
+}
+
+std::map<string, lv_obj_t*> * UIElement::get_childs() {
+    return &this->childs;
 }

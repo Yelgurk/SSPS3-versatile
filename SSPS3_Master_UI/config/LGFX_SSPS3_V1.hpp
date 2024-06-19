@@ -23,8 +23,8 @@ class LGFX : public lgfx::LGFX_Device
 {
 //lgfx::Panel_ILI9481     _panel_instance;
 //lgfx::Panel_ILI9486     _panel_instance;
-lgfx::Panel_ILI9488     _panel_instance;
-//lgfx::Panel_ST7796      _panel_instance;
+//lgfx::Panel_ILI9488     _panel_instance;
+lgfx::Panel_ST7796      _panel_instance;
 //lgfx::Panel_ST7789      _panel_instance;
 
 lgfx::Bus_Parallel8 _bus_instance;
@@ -66,11 +66,11 @@ public:
       cfg.pin_rst         = -1;
       cfg.pin_busy        = -1;
       cfg.offset_rotation = 3;
-      cfg.readable        = true;
-      cfg.invert          = false;
+      cfg.readable        = false;
+      cfg.invert          = true;
       cfg.rgb_order       = false;
       cfg.dlen_16bit      = false;
-      cfg.bus_shared      = false;
+      cfg.bus_shared      = true;
 
       _panel_instance.config(cfg);
     }

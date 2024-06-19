@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef UIElement_hpp
 #define UIElement_hpp
 
@@ -9,12 +7,12 @@
 #include <map>
 #include <lvgl.h>
 #include "UIAccess.hpp"
-#include "UIScreen.hpp"
 #include "KeyModel.hpp"
 
 using namespace std;
 
-typedef function<void(lv_obj_t*)> UIRefreshAction;
+class UIScreen;
+typedef function<void()> UIRefreshAction;
 
 class UIElement
 {
@@ -49,6 +47,7 @@ public:
     lv_obj_t * get_lv_obj();
     UIScreen * get_parent();
     vector<KeyModel> * get_keys_action();
+    std::map<string, lv_obj_t*> * get_childs();
 };
 
 #endif
