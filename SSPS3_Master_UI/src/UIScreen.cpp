@@ -21,3 +21,7 @@ bool UIScreen::key_press(KeyMap key)
 
     return false;
 }
+
+lv_obj_t * UIScreen::get_lv_obj() {
+    return this->window;
+}

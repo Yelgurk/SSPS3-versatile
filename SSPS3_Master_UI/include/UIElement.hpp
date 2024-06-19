@@ -5,6 +5,8 @@
 
 #include <Arduino.h>
 #include <vector>
+#include <iostream>
+#include <map>
 #include <lvgl.h>
 #include "UIAccess.hpp"
 #include "UIScreen.hpp"
@@ -12,58 +14,41 @@
 
 using namespace std;
 
-#define LV_OBJ_SHOW(lv_obj)     lv_obj_show(lv_obj)  
-#define LV_OBJ_FOCUS(lv_obj)    lv_obj_focus(lv_obj)
-#define LV_OBJ_TRANSP(lv_obj)   lv_obj_transparent(lv_obj)
-#define LV_OBJ_HIDE(lv_obj)     lv_obj_hide(lv_obj)     
-
-static void lv_obj_remove_states(lv_obj_t* lv_obj);
-static void lv_obj_show(lv_obj_t* lv_obj);
-static void lv_obj_focus(lv_obj_t* lv_obj);
-static void lv_obj_transparent(lv_obj_t* lv_obj);
-static void lv_obj_hide(lv_obj_t* lv_obj);
-
-typedef function<void()> UIRefreshAction;
-typedef function<void(lv_obj_t*)> UIRefreshActionArg;
+typedef function<void(lv_obj_t*)> UIRefreshAction;
 
 class UIElement
 {
-protected:
+private:
     vector<UIAccess> UI_access;
     vector<KeyModel> KeysAction;
     vector<UIRefreshAction> UpdateBaseInfo;
     vector<UIRefreshAction> UpdateContext;
 
     UIScreen * parent = nullptr;
+    bool _is_focusable = false;
+    
+    void ui_obj_remove_states();
+
+protected:
     lv_obj_t * container = nullptr;
+    std::map<string, lv_obj_t*> childs;
 
 public:
+    UIElement(UIScreen * parent, bool is_focusable, vector<UIAccess> ui_access, vector<KeyModel> keys_action);
+    void add_update_base_info_action(UIRefreshAction action);
+    void add_update_context_action(UIRefreshAction action);
     bool is_focusable();
     bool key_press(uint8_t key);
     bool key_press(KeyMap key);
     void update_base_info();
     void update_context();
+    void ui_show();
+    void ui_focus();
+    void ui_transparent();
+    void ui_hide();
     lv_obj_t * get_lv_obj();
+    UIScreen * get_parent();
     vector<KeyModel> * get_keys_action();
-
-    
-    /*
-    добавить конструктор:
-    - принимающий своего parent
-    - инициализирующий container
-    - добавляющий container в parent
-    и что бы все базовые от него классы сперва вызывали базовый конструктор
-    */
 };
 
 #endif
-
-/*
-Базовый класс для элементов экрана.
-Содержит:\
-- делегат отвечающий за обновление инфы в контроле
-- все методы по установке вышеперечисленного
-
-Предполагается создавать ui-элементы наследуясь от этого класса,
-а затем все классы ui-элементов сделать наследуемыми для их общего ui-screen контейнера
-*/

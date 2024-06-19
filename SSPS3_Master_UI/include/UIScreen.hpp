@@ -22,6 +22,7 @@ protected:
 public:
     bool key_press(uint8_t key);
     bool key_press(KeyMap key);
+    lv_obj_t * get_lv_obj();
 
     /*
     добавить конструктор инициализирующий window и
