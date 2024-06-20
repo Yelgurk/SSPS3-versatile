@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-enum class UIAccess : uint8_t
+enum class EquipmentType : uint8_t
 {
     All,
     Pasteurizer,
@@ -13,6 +13,12 @@ enum class UIAccess : uint8_t
     DairyTaxiPasteurizerFlowgun,
     Cheesemaker,
     ColostrumDefroster
+};
+
+enum class PlaceControlIn : uint8_t
+{
+    Screen,
+    Control
 };
 
 #endif
