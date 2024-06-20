@@ -1,6 +1,5 @@
 #include "UIService.hpp"
 #include "./UIElements/global_ui_clock.hpp"
-#include "./UIScreen.hpp"
 #include "../../SSPS3_Master_Infrastructure/include/main.hpp"
 
 #ifndef SSPS3_APPLICATION_SOLUTION
@@ -21,4 +20,3 @@ uint8_t OptIn_state[8] = { 0 };
 
 UIService UI_service;
 UIClock * UI_clock;
-UIScreen * UI_demo_screen;

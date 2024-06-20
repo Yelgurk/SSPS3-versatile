@@ -27,7 +27,8 @@ enum class KeyMap
     LEFT        = 1,
     TOP         = 5,
     RIGHT       = 7,
-    BOTTOM      = 2
+    BOTTOM      = 2,
+    _END        = 16
 };
 #elif
 #endif

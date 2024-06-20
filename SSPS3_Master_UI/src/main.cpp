@@ -15,23 +15,22 @@ void setup()
     STM32 = new STM32_slave(STM_I2C_ADDR);
 
     UI_service.init();
-    UI_demo_screen = new UIScreen(UI_service.screen,
-    {
-        KeyModel(KeyMap::LEFT,      []() { Serial.println("Меню влево"); }),
-        KeyModel(KeyMap::TOP,       []() { Serial.println("Меню вверх"); }),
-        KeyModel(KeyMap::RIGHT,     []() { Serial.println("Меню вправо"); }),
-        KeyModel(KeyMap::BOTTOM,    []() { Serial.println("Меню вниз"); }),
-        KeyModel(KeyMap::LEFT_BOT,  []() { UI_demo_screen->focus("[ui_date_time]"); })
-    });
 
-    UI_clock = new UIClock(UI_demo_screen,
-    {
-        KeyModel(KeyMap::LEFT,      []() { Serial.println("Дата/время влево"); }),
-        KeyModel(KeyMap::TOP,       []() { Serial.println("Дата/время вверх"); }),
-        KeyModel(KeyMap::RIGHT,     []() { Serial.println("Дата/время вправо"); }),
-        KeyModel(KeyMap::BOTTOM,    []() { Serial.println("Дата/время вниз"); }),
-        KeyModel(KeyMap::LEFT_TOP,  []() { UI_clock->get_parent()->unfocus(); })
-    });
+    UI_clock = new UIClock
+    (
+        {UIAccess::All},
+        {
+            KeyModel(KeyMap::LEFT,      []() { Serial.println("Дата/время влево"); }),
+            KeyModel(KeyMap::TOP,       []() { Serial.println("Дата/время вверх"); }),
+            KeyModel(KeyMap::RIGHT,     []() { Serial.println("Дата/время вправо"); }),
+            KeyModel(KeyMap::BOTTOM,    []() { Serial.println("Дата/время вниз"); }),
+            KeyModel(KeyMap::LEFT_TOP,  []() { UI_clock->lv_set_default(); }),
+            KeyModel(KeyMap::LEFT_BOT,  []() { UI_clock->lv_set_focused(); })
+        },
+        true,
+
+    );
+
     UI_clock->add_update_context_action([]() {
         lv_label_set_text(UI_clock->get_childs()->find("[time]")->second, to_string(++ss_ss).c_str());
     });
