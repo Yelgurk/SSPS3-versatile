@@ -26,6 +26,8 @@ void UIService::init()
     screen = lv_obj_create(NULL);
     lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(screen, lv_color_hex(0xAAAAAA), LV_PART_MAIN | LV_STATE_DEFAULT);
-        
+    lv_obj_set_width(screen, SCREEN_WIDTH);
+    lv_obj_set_height(screen, SCREEN_HEIGHT);
+
     lv_disp_load_scr(screen);
 }

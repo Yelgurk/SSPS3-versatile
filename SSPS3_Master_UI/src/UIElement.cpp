@@ -21,18 +21,38 @@ UIElement::UIElement(
     {
         case PlaceControlIn::Control: {
             if (this->parent_navi != nullptr)
-            {
-                context = lv_obj_create(parent_navi->get_container());
-                parent_navi->navi_childs.push_back(this);
-            }
+                container = lv_obj_create(parent_navi->get_navi_childs_presenter());
             else
-                context = lv_obj_create(this->lv_screen);
+                container = lv_obj_create(this->lv_screen);
         }; break;
 
         default: {
-            context = lv_obj_create(this->lv_screen);
+            container = lv_obj_create(this->lv_screen);
         }; break;
     }
+    
+    if (this->parent_navi != nullptr)
+        parent_navi->navi_childs.push_back(this);
+
+    this->navi_childs_presenter = this->container;
+
+    lv_obj_set_style_pad_all(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_clear_flag(container, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_radius(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(container, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_set_style_border_color(container, lv_obj_get_style_bg_color(container, LV_PART_MAIN | LV_STATE_DEFAULT), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_border_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_opa(container, 120, LV_PART_MAIN | LV_STATE_USER_1);
+    lv_obj_set_style_opa(container, 0, LV_PART_MAIN | LV_STATE_USER_2);
+}
+
+void UIElement::clear_navi_styles()
+{
+    for (const auto& n_c : navi_childs)
+        n_c->lv_clear_states();
 }
 
 bool UIElement::is_focusable()
@@ -60,6 +80,87 @@ bool UIElement::key_press(KeyMap key)
     return false;
 }
 
+UIElement * UIElement::navi_next()
+{
+    if (navi_pointer == nullptr)
+    {
+        if (navi_childs.size() > 0)
+            navi_pointer = navi_childs.front();
+    }
+    else
+    {
+        navi_pointer->lv_clear_states();
+
+        auto it = std::find(navi_childs.begin(), navi_childs.end(), navi_pointer);
+        if(it != navi_childs.end())
+        {
+            if(std::next(it) != navi_childs.end())
+                navi_pointer = *(std::next(it));
+            else
+                navi_pointer = navi_childs.front();
+        }
+    }
+
+    if (navi_pointer != nullptr)
+        navi_pointer->lv_set_focused(true);
+
+    return this;
+}
+
+UIElement * UIElement::navi_prev()
+{
+    if (navi_pointer == nullptr)
+    {
+        if (navi_childs.size() > 0)
+            navi_pointer = navi_childs.front();
+    }
+    else
+    {
+        navi_pointer->lv_clear_states();
+
+        auto it = std::find(navi_childs.begin(), navi_childs.end(), navi_pointer);
+
+        if (it != navi_childs.begin())
+            navi_pointer = *(--it);
+        else
+            navi_pointer = navi_childs.back();
+    }
+
+    if (navi_pointer != nullptr)
+        navi_pointer->lv_set_focused(true);
+    
+    return this;
+}
+
+UIElement * UIElement::navi_ok()
+{
+    if (navi_pointer != nullptr)
+    {
+        selected = navi_pointer;
+        selected
+        ->lv_clear_states()
+        ->lv_set_selected(true);
+    }
+    return this;
+}
+
+UIElement * UIElement::navi_back()
+{
+    clear_navi_styles();
+    lv_clear_states();
+    navi_pointer = selected = nullptr;
+
+    if (parent_navi != nullptr)
+    {
+        parent_navi->selected = nullptr;
+        parent_navi->navi_pointer = this;
+    }
+
+    if (!_is_container)
+        lv_set_focused(true);
+    return this;
+}
+
 lv_obj_t * UIElement::get_screen()
 {
     return this->lv_screen;
@@ -67,19 +168,31 @@ lv_obj_t * UIElement::get_screen()
 
 lv_obj_t * UIElement::get_container()
 {
-    return this->context;
+    return this->container;
 }
 
-lv_obj_t * UIElement::get_context_child(string key)
+lv_obj_t * UIElement::get_container_content(string key)
 {
-    if (context_childs.find(key) != context_childs.end())
-        return context_childs.find(key)->second;
-    return this->context;
+    if (container_content.find(key) == container_content.end())
+        return this->container;
+    else
+        return container_content.find(key)->second;
 }
 
-UIElement * UIElement::add_context_child(string key, lv_obj_t * child)
+lv_obj_t * UIElement::get_navi_childs_presenter()
 {
-    context_childs.insert({key, child});
+    return this->navi_childs_presenter;
+}
+
+UIElement * UIElement::set_child_presenter(string key)
+{
+    this->navi_childs_presenter = this->get_container_content(key);
+    return this;
+}
+
+UIElement * UIElement::remember_container_child(string key, lv_obj_t * child)
+{
+    container_content.insert({key, child});
     return this;
 }
 
@@ -123,35 +236,35 @@ UIElement * UIElement::update_ui_context()
 
 UIElement * UIElement::lv_clear_states()
 {
-    lv_obj_set_state(context, LV_STATE_DEFAULT, true);
-    lv_obj_set_state(context, LV_STATE_FOCUSED, false);
-    lv_obj_set_state(context, LV_STATE_PRESSED, false);
-    lv_obj_set_state(context, LV_STATE_USER_1, false);
-    lv_obj_set_state(context, LV_STATE_USER_2, false);
+    lv_obj_set_state(container, LV_STATE_DEFAULT, true);
+    lv_obj_set_state(container, LV_STATE_FOCUSED, false);
+    lv_obj_set_state(container, LV_STATE_PRESSED, false);
+    lv_obj_set_state(container, LV_STATE_USER_1, false);
+    lv_obj_set_state(container, LV_STATE_USER_2, false);
     return this;
 }
 
 UIElement * UIElement::lv_set_focused(bool state)
 {
-    lv_obj_set_state(context, LV_STATE_FOCUSED, state);
+    lv_obj_set_state(container, LV_STATE_FOCUSED, state);
     return this;
 }
 
 UIElement * UIElement::lv_set_selected(bool state)
 {
-    lv_obj_set_state(context, LV_STATE_PRESSED, state);
+    lv_obj_set_state(container, LV_STATE_PRESSED, state);
     return this;
 }
 
 UIElement * UIElement::lv_set_transparent(bool state)
 {
-    lv_obj_set_state(context, LV_STATE_USER_1, state);
+    lv_obj_set_state(container, LV_STATE_USER_1, state);
     return this;
 }
 
 UIElement * UIElement::lv_set_hidden(bool state)
 {
-    lv_obj_set_state(context, LV_STATE_USER_2, state);
+    lv_obj_set_state(container, LV_STATE_USER_2, state);
     return this;
 }
 

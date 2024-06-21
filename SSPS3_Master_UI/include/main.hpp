@@ -6,6 +6,7 @@
 #include "./UIElements/demo_c2.hpp"
 #include "./UIElements/demo_c3.hpp"
 #include "./UIElements/demo_list.hpp"
+#include "./UIElements/ui_container.hpp"
 #include "../../SSPS3_Master_Infrastructure/include/main.hpp"
 
 #ifndef SSPS3_APPLICATION_SOLUTION
@@ -32,3 +33,4 @@ UIClock3 * _c2;
 UIClock4 * _c3;
 UIClock5 * _c1_1;
 UIClock6 * _c1_2;
+UIClockx * _cont;

@@ -16,14 +16,19 @@ public:
         UIElement * parent_navi = nullptr)
         : UIElement{relates_to, key_press_actions, _is_focusable, _is_container, bind_to, lv_screen, parent_navi}
     {
-        if (bind_to == PlaceControlIn::Control && parent_navi != nullptr)
-            context = lv_list_create(parent_navi->get_container());
-        else
-            context = lv_list_create(lv_screen);
+        lv_obj_align(get_container(), LV_ALIGN_TOP_LEFT, 100, 0);
+        lv_obj_set_width(get_container(), 300);
+        lv_obj_set_height(get_container(), 240);
 
-        lv_obj_align(context, LV_ALIGN_TOP_LEFT, 100, 0);
-        lv_obj_set_width(context, 300);
-        lv_obj_set_height(context, 240);
+        lv_obj_t * listik = lv_list_create(get_container());
+        lv_obj_set_style_radius(listik, 0, 0);
+        lv_obj_set_style_border_width(listik, 0, 0);
+        lv_obj_align(listik, LV_ALIGN_TOP_MID, 0, 0);
+        lv_obj_set_width(listik, 300);
+        lv_obj_set_height(listik, 240);
+
+        this->remember_container_child("[list]", listik);
+        this->set_child_presenter("[list]");
     }
 };
 

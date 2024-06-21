@@ -16,11 +16,9 @@ public:
         UIElement * parent_navi = nullptr)
         : UIElement{relates_to, key_press_actions, _is_focusable, _is_container, bind_to, lv_screen, parent_navi}
     {
-        lv_obj_align(context, LV_ALIGN_BOTTOM_MID, 0, 30);
-        lv_obj_set_width(context, 200);
-        lv_obj_set_height(context, 20);
-        
-        lv_obj_set_style_bg_color(context, lv_color_hex(0xFF9966), LV_STATE_FOCUSED);
+        lv_obj_align(get_container(), LV_ALIGN_TOP_RIGHT, 0, 30);
+        lv_obj_set_width(get_container(), 200);
+        lv_obj_set_height(get_container(), 20);
     }
 };
 

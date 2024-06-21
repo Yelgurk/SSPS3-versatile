@@ -23,20 +23,28 @@ private:
     vector<UIAction> ui_context_actions;
     vector<UIElement*> navi_childs;
 
-    std::map<string, lv_obj_t*> context_childs;
+    std::map<string, lv_obj_t*> container_content;
 
     lv_obj_t * lv_screen = nullptr;
+    lv_obj_t * container = nullptr;
+    lv_obj_t * navi_childs_presenter = nullptr;
 
     UIElement * parent_navi = nullptr;
-    UIElement * current_focus = nullptr;
+    UIElement * navi_pointer = nullptr;
     UIElement * selected = nullptr;
 
     bool _is_focusable = false;
     bool _is_container = false;
 
+    void clear_navi_styles();
+
 protected:
-    lv_obj_t * context = nullptr;
-    UIElement * add_context_child(string key, lv_obj_t * child);
+    lv_obj_t * get_screen();
+    lv_obj_t * get_container();
+    lv_obj_t * get_navi_childs_presenter();
+    
+    UIElement * set_child_presenter(string key);
+    UIElement * remember_container_child(string key, lv_obj_t * child);
 
 public:
     UIElement(
@@ -48,13 +56,15 @@ public:
         lv_obj_t * lv_screen,
         UIElement * parent_navi = nullptr
     );
+    lv_obj_t * get_container_content(string key);
     bool is_focusable();
     bool is_container();
     bool key_press(uint8_t key);
     bool key_press(KeyMap key);
-    lv_obj_t * get_screen();
-    lv_obj_t * get_container();
-    lv_obj_t * get_context_child(string key);
+    UIElement * navi_next();
+    UIElement * navi_prev();
+    UIElement * navi_ok();
+    UIElement * navi_back();
     UIElement * add_ui_base_action(UIAction action);
     UIElement * add_ui_context_action(UIAction action);
     UIElement * clear_ui_base_action();
