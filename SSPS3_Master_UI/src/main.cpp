@@ -43,7 +43,7 @@ void setup()
             KeyModel(KeyMap::LEFT_BOT,  []() { UI_clock->lv_set_focused(true); })
             */
         },
-        true,
+        false,
         false,
         PlaceControlIn::Control,
         UI_service.screen,
