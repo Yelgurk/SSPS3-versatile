@@ -81,7 +81,8 @@ void setup()
 }
 
 uint32_t ms_old = 0,
-         ms_curr = 0;
+         ms_curr = 0,
+         cnt = 0;
 
 void loop()
 {
@@ -106,8 +107,31 @@ void loop()
 
     if ((ms_curr = millis()) - ms_old >= 1000)
     {
-        Serial.println(millis()/1000);
+        //Serial.println(millis()/1000);
         ms_old = millis();
         UI_clock->update_ui_context();
+
+        cnt++;
+    }
+
+    if (cnt >= 10)
+    {
+        cnt = 0;
+        uint8_t arr_size = random(1, 20);
+
+        demo_task.clear();
+        for (uint8_t i = 0; i < arr_size; i++)
+            demo_task.push_back(TaskData(
+                to_string(i),
+                random(0, 30),
+                random(5, 90),
+                random(100, 5000)
+            ));
+
+        _list->load_list(&demo_task);
+
+        Serial.println();
+        Serial.printf("Total heap: %u \n", ESP.getHeapSize());
+        Serial.printf("Free heap: %u \n", ESP.getFreeHeap());
     }
 }

@@ -40,11 +40,12 @@ public:
     void clear_list()
     {
         lv_obj_clean(this->get_navi_childs_presenter());
+        clear_ui_childs();
 
-        for (auto item : _collection)
+        for (uint16_t i = 0; i < _collection.size(); i++)
         {
-            item->delete_ui_element(false);
-            delete item;   
+            _collection.at(i)->delete_ui_element(false);
+            delete _collection.at(i);   
         }
         _collection.clear();
     }

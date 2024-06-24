@@ -158,7 +158,10 @@ UIElement * UIElement::navi_next()
         navi_pointer = nullptr;
 
     if (navi_pointer != nullptr)
+    {
         navi_pointer->lv_set_focused(true);
+        lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
+    }
 
     return this;
 }
@@ -209,7 +212,10 @@ UIElement * UIElement::navi_prev()
         navi_pointer = nullptr;
 
     if (navi_pointer != nullptr)
+    {
         navi_pointer->lv_set_focused(true);
+        lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
+    }
     
     return this;
 }
@@ -390,11 +396,9 @@ void UIElement::clear_ui_childs()
 {
     for (auto child : navi_childs)
         child->clear_ui_childs();
+    
     navi_childs.clear();
-
-    if (container != navi_childs_presenter)
-        lv_obj_clean(navi_childs_presenter);
-    lv_obj_clean(container);
+    selected = navi_pointer = nullptr;
 }
 
 void UIElement::delete_ui_element(bool is_dynamic_alloc)
