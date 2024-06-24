@@ -3,8 +3,9 @@
 UIElement::UIElement(
     vector<EquipmentType> relates_to,
     vector<KeyModel> key_press_actions,
-    bool _is_focusable,
-    bool _is_container,
+    bool is_focusable,
+    bool is_selectable,
+    bool is_container,
     PlaceControlIn bind_to,
     lv_obj_t * lv_screen,
     UIElement * parent_navi
@@ -12,11 +13,14 @@ UIElement::UIElement(
 {
     this->relates_to = relates_to;
     this->key_press_actions = key_press_actions;
-    this->_is_focusable = _is_focusable;
-    this->_is_container = _is_container;
+    this->_is_focusable = is_focusable;
+    this->_is_selectable = is_selectable;
+    this->_is_container = is_container;
     this->lv_screen = lv_screen;
     this->parent_navi = parent_navi;
-    
+
+    _is_focusable = _is_container ? false : _is_focusable;
+
     switch (bind_to)
     {
         case PlaceControlIn::Control: {
@@ -36,33 +40,61 @@ UIElement::UIElement(
 
     this->navi_childs_presenter = this->container;
 
-    lv_obj_set_style_pad_all(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_clear_flag(container, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_radius(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    lv_obj_set_style_border_width(container, 2, LV_PART_MAIN | LV_STATE_FOCUSED);
-    lv_obj_set_style_border_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_FOCUSED);
-    lv_obj_set_style_border_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_opa(container, 120, LV_PART_MAIN | LV_STATE_USER_1);
-    lv_obj_set_style_opa(container, 0, LV_PART_MAIN | LV_STATE_USER_2);
+    this
+    ->gui_container_set_rect_design()
+    ->gui_container_set_unscrollable()
+    ->gui_container_set_focus_style()
+    ->gui_container_set_select_style()
+    ->gui_container_set_transp_and_hide_style();
 }
 
-void UIElement::clear_navi_styles()
+UIElement * UIElement::clear_navi_styles()
 {
     for (const auto& n_c : navi_childs)
         n_c->lv_clear_states();
+    return this;
 }
 
-bool UIElement::is_focusable()
+UIElement * UIElement::gui_container_set_rect_design()
 {
-    return this->_is_focusable;
+    lv_obj_set_style_pad_all(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    return this;
 }
 
-bool UIElement::is_container()
+UIElement * UIElement::gui_container_set_unscrollable()
 {
-    return this->_is_container;
+    lv_obj_clear_flag(container, LV_OBJ_FLAG_SCROLLABLE);
+    return this;
+}
+
+UIElement * UIElement::gui_container_set_focus_style()
+{
+    if (_is_focusable)
+    {
+        lv_obj_set_style_pad_all(container, -2, LV_PART_MAIN | LV_STATE_FOCUSED);
+        lv_obj_set_style_border_width(container, 2, LV_PART_MAIN | LV_STATE_FOCUSED);
+        lv_obj_set_style_border_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_FOCUSED);
+        lv_obj_set_style_border_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_PRESSED);
+    }
+    return this;
+}
+
+UIElement * UIElement::gui_container_set_select_style()
+{
+    if (_is_focusable)
+    {
+        lv_obj_set_style_bg_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_PRESSED);
+    }
+    return this;
+}
+
+UIElement * UIElement::gui_container_set_transp_and_hide_style()
+{
+    lv_obj_set_style_opa(container, 120, LV_PART_MAIN | LV_STATE_USER_1);
+    lv_obj_set_style_opa(container, 0, LV_PART_MAIN | LV_STATE_USER_2);
+    return this;
 }
 
 bool UIElement::key_press(uint8_t key)
@@ -100,7 +132,7 @@ UIElement * UIElement::navi_next()
             ++it;
             while (it != navi_childs.end())
             {
-                if ((*it)->is_focusable())
+                if ((*it)->_is_focusable)
                 {
                     navi_pointer = *it;
                     break;
@@ -114,7 +146,7 @@ UIElement * UIElement::navi_next()
             it = std::find_if(
                 navi_childs.begin(),
                 navi_childs.end(),
-                [](UIElement* elem) { return elem->is_focusable(); }
+                [](UIElement* elem) { return elem->_is_focusable; }
             );
             if (it != navi_childs.end())
                 navi_pointer = *it;
@@ -151,7 +183,7 @@ UIElement * UIElement::navi_prev()
             ++it;
             while (it != navi_childs.rend())
             {
-                if ((*it)->is_focusable())
+                if ((*it)->_is_focusable)
                 {
                     navi_pointer = *it;
                     break;
@@ -165,7 +197,7 @@ UIElement * UIElement::navi_prev()
             it = std::find_if(
                 navi_childs.rbegin(),
                 navi_childs.rend(),
-                [](UIElement* elem) { return elem->is_focusable(); }
+                [](UIElement* elem) { return elem->_is_focusable; }
             );
             if (it != navi_childs.rend())
                 navi_pointer = *it;
@@ -184,7 +216,7 @@ UIElement * UIElement::navi_prev()
 
 UIElement * UIElement::navi_ok()
 {
-    if (navi_pointer != nullptr)
+    if (navi_pointer != nullptr && navi_pointer->_is_selectable)
     {
         selected = navi_pointer;
         selected
@@ -235,13 +267,13 @@ lv_obj_t * UIElement::get_navi_childs_presenter()
     return this->navi_childs_presenter;
 }
 
-UIElement * UIElement::set_child_presenter(string key)
+UIElement * UIElement::set_childs_presenter(string key)
 {
     this->navi_childs_presenter = this->get_container_content(key);
     return this;
 }
 
-UIElement * UIElement::remember_container_child(string key, lv_obj_t * child)
+UIElement * UIElement::remember_child_element(string key, lv_obj_t * child)
 {
     container_content.insert({key, child});
     return this;
@@ -324,18 +356,55 @@ UIElement * UIElement::get_parent()
     return this->parent_navi;
 }
 
-UIElement * UIElement::get_selected()
+UIElement * UIElement::get_selected(bool get_focused)
 {
     if (this->selected != nullptr)
-        return this->selected->get_selected();
+        return this->selected->get_selected(get_focused);
+    else if (get_focused && this->navi_pointer != nullptr)
+        return this->navi_pointer;
     else
         return this;
 }
 
+int16_t UIElement::get_focused_index() 
+{ 
+    auto it = find(navi_childs.begin(), navi_childs.end(), navi_pointer); 
+  
+    if (it != navi_childs.end())  
+        return it - navi_childs.begin();
+    else
+        return -1;
+} 
+
 UIElement * UIElement::hide()
 {
+    return this;
 }
 
 UIElement * UIElement::show()
 {
+    return this;
+}
+
+void UIElement::clear_ui_childs()
+{
+    for (auto child : navi_childs)
+        child->clear_ui_childs();
+    navi_childs.clear();
+
+    if (container != navi_childs_presenter)
+        lv_obj_clean(navi_childs_presenter);
+    lv_obj_clean(container);
+}
+
+void UIElement::delete_ui_element(bool is_dynamic_alloc)
+{
+    clear_ui_childs();
+
+    if (container != navi_childs_presenter)
+        lv_obj_delete(navi_childs_presenter);
+    lv_obj_delete(container);
+
+    if (is_dynamic_alloc)
+        delete this;
 }

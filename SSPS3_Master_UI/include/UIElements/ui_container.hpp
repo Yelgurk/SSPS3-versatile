@@ -12,7 +12,7 @@ public:
         PlaceControlIn bind_to,
         lv_obj_t * lv_screen,
         UIElement * parent_navi = nullptr)
-        : UIElement{relates_to, key_press_actions, false, true, bind_to, lv_screen, parent_navi}
+        : UIElement{relates_to, key_press_actions, false, false, true, bind_to, lv_screen, parent_navi}
     {
         lv_obj_set_width(get_container(), 480);
         lv_obj_set_height(get_container(), 320);

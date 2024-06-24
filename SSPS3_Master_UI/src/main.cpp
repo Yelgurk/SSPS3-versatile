@@ -4,6 +4,13 @@ uint32_t ss_ss = 0;
 TwoWire * itcw;
 STM32_slave * STM32;
 
+vector<TaskData> demo_task
+    {
+        TaskData("zamesh", 10, 40, 600),
+        TaskData("vymesh", 5, 50, 1000),
+        TaskData("gooool", 15, 60, 2000)
+    };
+
 void setup()
 {
     Serial.begin(115200);
@@ -45,6 +52,7 @@ void setup()
         },
         false,
         false,
+        false,
         PlaceControlIn::Control,
         UI_service.screen,
         _cont
@@ -60,97 +68,12 @@ void setup()
             KeyModel(KeyMap::LEFT_BOT,  []() { _list->navi_ok(); }),
             KeyModel(KeyMap::R_STACK_4, []() { Serial.println("уровень 1"); })
         },
-        true,
-        false,
+        true, true, false,
         PlaceControlIn::Control,
         UI_service.screen,
         _cont
     );
-
-    _c1 = new UIClock2
-    (
-        {EquipmentType::All},
-        {
-            KeyModel(KeyMap::TOP,       []() { _c1->navi_prev(); }),
-            KeyModel(KeyMap::BOTTOM,    []() { _c1->navi_next(); }),
-            KeyModel(KeyMap::LEFT_TOP,  []() { _c1->navi_back(); }),
-            KeyModel(KeyMap::LEFT_BOT,  []() { _c1->navi_ok(); }),
-            KeyModel(KeyMap::R_STACK_4, []() { Serial.println("уровень 2"); })
-        },
-        true,
-        false,
-        PlaceControlIn::Control,
-        UI_service.screen,
-        _list
-    );
-
-    _c2 = new UIClock3
-    (
-        {EquipmentType::All},
-        {
-            KeyModel(KeyMap::TOP,       []() { _c2->navi_prev(); }),
-            KeyModel(KeyMap::BOTTOM,    []() { _c2->navi_next(); }),
-            KeyModel(KeyMap::LEFT_TOP,  []() { _c2->navi_back(); }),
-            KeyModel(KeyMap::LEFT_BOT,  []() { _c2->navi_ok(); }),
-            KeyModel(KeyMap::R_STACK_4, []() { Serial.println("уровень 2"); })
-        },
-        true,
-        false,
-        PlaceControlIn::Control,
-        UI_service.screen,
-        _list
-    );
-
-    _c3 = new UIClock4
-    (
-        {EquipmentType::All},
-        {
-            KeyModel(KeyMap::TOP,       []() { _c3->navi_prev(); }),
-            KeyModel(KeyMap::BOTTOM,    []() { _c3->navi_next(); }),
-            KeyModel(KeyMap::LEFT_TOP,  []() { _c3->navi_back(); }),
-            KeyModel(KeyMap::LEFT_BOT,  []() { _c3->navi_ok(); }),
-            KeyModel(KeyMap::R_STACK_4, []() { Serial.println("уровень 2"); })
-        },
-        true,
-        false,
-        PlaceControlIn::Control,
-        UI_service.screen,
-        _list
-    );
-
-    _c1_1 = new UIClock5
-    (
-        {EquipmentType::All},
-        {
-            KeyModel(KeyMap::TOP,       []() { _c1_1->navi_prev(); }),
-            KeyModel(KeyMap::BOTTOM,    []() { _c1_1->navi_next(); }),
-            KeyModel(KeyMap::LEFT_TOP,  []() { _c1_1->navi_back(); }),
-            KeyModel(KeyMap::LEFT_BOT,  []() { _c1_1->navi_ok(); }),
-            KeyModel(KeyMap::R_STACK_4, []() { Serial.println("уровень 3"); })
-        },
-        true,
-        false,
-        PlaceControlIn::Screen,
-        UI_service.screen,
-        _c1
-    );
-
-    _c1_2 = new UIClock6
-    (
-        {EquipmentType::All},
-        {
-            KeyModel(KeyMap::TOP,       []() { _c1_2->navi_prev(); }),
-            KeyModel(KeyMap::BOTTOM,    []() { _c1_2->navi_next(); }),
-            KeyModel(KeyMap::LEFT_TOP,  []() { _c1_2->navi_back(); }),
-            KeyModel(KeyMap::LEFT_BOT,  []() { _c1_2->navi_ok(); }),
-            KeyModel(KeyMap::R_STACK_4, []() { Serial.println("уровень 3"); })
-        },
-        true,
-        false,
-        PlaceControlIn::Screen,
-        UI_service.screen,
-        _c1
-    );
+    _list->load_list(&demo_task);
 
     UI_clock->add_ui_context_action([]() {
         lv_label_set_text(UI_clock->get_container_content("[time]"), to_string(++ss_ss).c_str());
@@ -171,12 +94,19 @@ void loop()
         interrupted_by_slave = false;
         
         _cont->get_selected()->key_press(key);
+        
+        if(_cont->get_selected(true) != nullptr)
+            _cont->get_selected(true)
+            ->update_ui_base()
+            ->update_ui_context();
+
         //UI_clock->key_press(key);
         //UI_clock->update_ui_context();
     }
 
     if ((ms_curr = millis()) - ms_old >= 1000)
     {
+        Serial.println(millis()/1000);
         ms_old = millis();
         UI_clock->update_ui_context();
     }

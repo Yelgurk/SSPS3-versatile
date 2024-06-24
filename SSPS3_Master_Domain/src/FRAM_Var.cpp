@@ -7,7 +7,7 @@ void FRAM_write(uint32_t startAddress, void *data, uint32_t len)
     itcw->write((uint8_t*) data, len);
     itcw->endTransmission(true);
 
-    delayMicroseconds(240);
+    delayMicroseconds(160);
 }
 
 uint32_t FRAM_read(uint32_t startAddress, void *data, uint32_t len)

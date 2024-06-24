@@ -10,11 +10,12 @@ public:
         vector<EquipmentType> relates_to,
         vector<KeyModel> key_press_actions,
         bool _is_focusable,
+        bool _is_selectable,
         bool _is_container,
         PlaceControlIn bind_to,
         lv_obj_t * lv_screen,
         UIElement * parent_navi = nullptr)
-        : UIElement{relates_to, key_press_actions, _is_focusable, _is_container, bind_to, lv_screen, parent_navi}
+        : UIElement{relates_to, key_press_actions, _is_focusable, _is_selectable, _is_container, bind_to, lv_screen, parent_navi}
     {
         lv_obj_set_width(get_container(), 100);
         lv_obj_set_height(get_container(), 40);
@@ -28,8 +29,8 @@ public:
         lv_obj_align(date, LV_ALIGN_BOTTOM_MID, 0, 0);
         lv_label_set_text(date, "19.06.2024");
 
-        remember_container_child("[time]", time);
-        remember_container_child("[date]", date);
+        remember_child_element("[time]", time);
+        remember_child_element("[date]", date);
     }
 };
 
