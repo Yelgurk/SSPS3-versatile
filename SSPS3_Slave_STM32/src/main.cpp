@@ -26,6 +26,32 @@ uint16_t get_event(I2C_COMM command, uint8_t pin)
     }
 }
 
+void finally_event(I2C_COMM command)
+{
+    if (command == I2C_COMM::STATE_STARTUP)
+        INTERRUPT_MASTER(0);
+        
+    if (master_startup_success)
+        wd_last_call_ms = millis();
+
+    if (command == I2C_COMM::STATE_STARTUP && !master_startup_success)
+    {
+        master_startup_success = true;
+        wd_curr_time_ms = wd_last_call_ms = millis();
+    }
+}
+
+void try_interrupt_master()
+{
+    if (IS_MASTER_INTERRUPTED)
+    {
+        INTERRUPT_MASTER(0);
+        delayMicroseconds(80);
+    }
+
+    INTERRUPT_MASTER(1);
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -53,17 +79,20 @@ void setup()
         pinMode(pin, INPUT_PULLDOWN);
 
     itcw = new TwoWire(SDA, SCL);
-    I2C = new I2C_Service(itcw, STM_I2C_ADR, set_event, get_event);
+    I2C = new I2C_Service(itcw, STM_I2C_ADR, set_event, get_event, finally_event);
 }
 
 void loop()
 {
+    if (master_startup_success && (wd_curr_time_ms = millis()) - wd_last_call_ms >= WATCHDOG_MS)
+        NVIC_SystemReset();
+
     for (uint8_t pin = 0, state; pin < ARR_SIZE(OptIn, uint8_t); pin++)
     {
         state = digitalRead(OptIn[pin]);
 
         if (state != OptIn_state[pin])
-            INTERRUPT_MASTER(1);
+            try_interrupt_master();
 
         OptIn_state[pin] = state;
     }
@@ -76,7 +105,7 @@ void loop()
                     case PRESSED: {
                         KeyPressed = getposition(keysInline, KB_Col * KB_Row, kpd.key[i].kchar);
                         KeyHoldNext = millis() + (KeyHoldDelay = HOLD_begin_ms);
-                        INTERRUPT_MASTER(1);
+                        try_interrupt_master();
                     }; break;
                     
                     case HOLD: {
@@ -85,7 +114,7 @@ void loop()
 
                     case RELEASED: {
                         KeyPressed = KeyPressed == getposition(keysInline, KB_Col * KB_Row, kpd.key[i].kchar) ? KB_Await : KeyPressed; 
-                        INTERRUPT_MASTER(1);
+                        try_interrupt_master();
                     }; break;
 
                     case IDLE: {
@@ -99,6 +128,6 @@ void loop()
         KeyHoldDelay = KeyHoldDelay < HOLD_min_ms ? HOLD_min_ms : KeyHoldDelay;
         
         KeyHoldNext = millis() + KeyHoldDelay;
-        INTERRUPT_MASTER(1);
+        try_interrupt_master();
     }
 }

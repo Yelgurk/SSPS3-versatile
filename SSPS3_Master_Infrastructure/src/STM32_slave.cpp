@@ -2,33 +2,53 @@
 
 void STM32_slave::_set(I2C_COMM cmd, uint8_t pin, uint16_t val)
 {
-    buf[0] = static_cast<uint8_t>(cmd);
-    buf[1] = pin;
-    buf[2] = highByte(val);
-    buf[3] = lowByte(val);
+    if (!connection_error)
+    {
+        buf[0] = static_cast<uint8_t>(cmd);
+        buf[1] = pin;
+        buf[2] = highByte(val);
+        buf[3] = lowByte(val);
 
-    itcw->beginTransmission(addr);
-    itcw->write((uint8_t *) buf, 4);
-    itcw->endTransmission();
+        itcw->beginTransmission(addr);
+        itcw->write((uint8_t *) buf, 4);
+        itcw->endTransmission();
 
-    delayMicroseconds(160);
+        delayMicroseconds(160);
+    }
 }
     
 uint16_t STM32_slave::_get(I2C_COMM cmd, uint8_t pin)
 {
-    _set(cmd, pin, 0);
+    if (!connection_error)
+    {
+        _set(cmd, pin, 0);
 
-    itcw->requestFrom(addr, (uint8_t)2);
-    delayMicroseconds(40);
+        itcw->requestFrom(addr, (uint8_t)2);
+        delayMicroseconds(40);
 
-    if (itcw->available())
-        response = ((uint16_t)itcw->read() << 8) | itcw->read();
+        if (itcw->available())
+            response = ((uint16_t)itcw->read() << 8) | itcw->read();
 
-    return response;
+        return response;
+    }
+    else
+        return 0;
 }
 
 void STM32_slave::set(COMM_SET cmd, uint8_t pin, uint16_t val) {
     this->_set(static_cast<I2C_COMM>(cmd), pin, val);
+}
+
+bool STM32_slave::ping()
+{
+    if (static_cast<I2C_COMM>(this->_get(I2C_COMM::STATE_PING, 0)) != I2C_COMM::STATE_OK)
+        connection_error = true;
+
+    return !connection_error;
+}
+
+void STM32_slave::startup() {
+    this->_set(I2C_COMM::STATE_STARTUP, 0, 0);
 }
 
 uint16_t STM32_slave::get(COMM_GET cmd, uint8_t pin) {

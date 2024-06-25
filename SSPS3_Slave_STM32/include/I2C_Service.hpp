@@ -20,7 +20,13 @@ enum class I2C_COMM : uint8_t
     GET_DGIN_VAL,
     GET_ANIN_VAL,
     GET_KB_VAL,
-    GET_END
+    GET_END,
+
+    STATE_BEGIN,
+    STATE_STARTUP,
+    STATE_OK,
+    STATE_PING,
+    STATE_END
 };
 
 class I2C_Service
@@ -37,13 +43,15 @@ private:
 
     function<void(I2C_COMM, uint8_t, uint16_t)> set_event;
     function<uint16_t(I2C_COMM, uint8_t)> get_event;
+    function<void(I2C_COMM)> finally_event;
 
 public:
     I2C_Service(
         TwoWire * i2c,
         uint8_t addr,
         function<void(I2C_COMM, uint8_t, uint16_t)> set_event,
-        function<uint16_t(I2C_COMM, uint8_t)> get_event
+        function<uint16_t(I2C_COMM, uint8_t)> get_event,
+        function<void(I2C_COMM)> finally_event
         );
 }; 
 

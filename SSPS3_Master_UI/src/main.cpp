@@ -11,15 +11,24 @@ vector<TaskData> demo_task
         TaskData("gooool", 15, 60, 2000)
     };
 
+void IRAM_ATTR interrupt_action() {
+    interrupted_by_slave = true;
+}
+
 void setup()
 {
     Serial.begin(115200);
 
-    pinMode(INT, INPUT);
-    attachInterrupt(INT, [](){ interrupted_by_slave = true; }, RISING);
     itcw = new TwoWire(0);
     itcw->begin(SDA, SCL, 400000);
     STM32 = new STM32_slave(STM_I2C_ADDR);
+    STM32->startup();
+
+    pinMode(INT, INPUT_PULLDOWN);
+    detachInterrupt(digitalPinToInterrupt(INT));
+    delay(10);
+    pinMode(INT, INPUT_PULLDOWN);
+    attachInterrupt(digitalPinToInterrupt(INT), interrupt_action, RISING);
 
     UI_service.init();
 
@@ -105,8 +114,10 @@ void loop()
         //UI_clock->update_ui_context();
     }
 
-    if ((ms_curr = millis()) - ms_old >= 1000)
+    if ((ms_curr = millis()) - ms_old >= 200)
     {
+       Serial.println(STM32->ping());
+
         //Serial.println(millis()/1000);
         ms_old = millis();
         UI_clock->update_ui_context();
@@ -114,7 +125,7 @@ void loop()
         cnt++;
     }
 
-    if (cnt >= 10)
+    if (cnt >= 1)
     {
         cnt = 0;
         uint8_t arr_size = random(1, 20);
