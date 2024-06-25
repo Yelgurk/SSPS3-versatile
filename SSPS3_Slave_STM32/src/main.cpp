@@ -107,18 +107,10 @@ void loop()
                         KeyHoldNext = millis() + (KeyHoldDelay = HOLD_begin_ms);
                         try_interrupt_master();
                     }; break;
-                    
-                    case HOLD: {
-
-                    }; break;
 
                     case RELEASED: {
                         KeyPressed = KeyPressed == getposition(keysInline, KB_Col * KB_Row, kpd.key[i].kchar) ? KB_Await : KeyPressed; 
                         try_interrupt_master();
-                    }; break;
-
-                    case IDLE: {
-
                     }; break;
                 }
 

@@ -25,9 +25,6 @@ void setup()
     STM32->startup();
 
     pinMode(INT, INPUT_PULLDOWN);
-    detachInterrupt(digitalPinToInterrupt(INT));
-    delay(10);
-    pinMode(INT, INPUT_PULLDOWN);
     attachInterrupt(digitalPinToInterrupt(INT), interrupt_action, RISING);
 
     UI_service.init();
@@ -116,7 +113,7 @@ void loop()
 
     if ((ms_curr = millis()) - ms_old >= 200)
     {
-       Serial.println(STM32->ping());
+       STM32->ping();
 
         //Serial.println(millis()/1000);
         ms_old = millis();
@@ -140,9 +137,5 @@ void loop()
             ));
 
         _list->load_list(&demo_task);
-
-        Serial.println();
-        Serial.printf("Total heap: %u \n", ESP.getHeapSize());
-        Serial.printf("Free heap: %u \n", ESP.getFreeHeap());
     }
 }
