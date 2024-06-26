@@ -11,8 +11,25 @@
 
 using namespace std;
 
+#define FOCUS_BORDER_WIDTH_PX   4
+
+#define COLOR_WHITE             lv_color_hex(0xFFFFFF)
+#define COLOR_WHITE_SMOKE       lv_color_hex(0xF5F5F5)
+#define COLOR_GREY              lv_color_hex(0xB5B8B1)
+#define COLOR_DARK_GREY         lv_color_hex(0x2F353B)     
+#define COLOR_YELLOW            lv_color_hex(0xFFDC33)
+#define COLOR_RED               lv_color_hex(0xE34234)
+#define COLOR_GREEN             lv_color_hex(0xBDECB6)
+#define COLOR_BLUE              lv_color_hex(0XB0E0E6)
 
 typedef function<void()> UIAction;
+
+static const vector<StyleActivator> default_activator = {
+    StyleActivator::Rectangle,
+    StyleActivator::Unscrollable,
+    StyleActivator::Focus,
+    StyleActivator::Select
+};
 
 class UIElement
 {
@@ -37,12 +54,16 @@ private:
     bool _is_selectable = false;
     bool _is_container = false;
 
-    UIElement * clear_navi_styles();
-    UIElement * gui_container_set_rect_design();
-    UIElement * gui_container_set_unscrollable();
-    UIElement * gui_container_set_focus_style();
-    UIElement * gui_container_set_select_style();
-    UIElement * gui_container_set_transp_and_hide_style();
+    bool exists_in_the_collection(vector<StyleActivator> * activator, StyleActivator found);
+
+    UIElement * clear_navi_states();
+    UIElement * gui_set_default_style(lv_obj_t * lv_obj);
+    UIElement * gui_set_rect_style(lv_obj_t * lv_obj);
+    UIElement * gui_set_unscrollable(lv_obj_t * lv_obj);
+    UIElement * gui_set_shadow_style(lv_obj_t * lv_obj);
+    UIElement * gui_set_focus_style(lv_obj_t * lv_obj);
+    UIElement * gui_set_select_style(lv_obj_t * lv_obj);
+    UIElement * gui_set_transp_and_hide_style(lv_obj_t * lv_obj);
 
 protected:
     lv_obj_t * get_container();
@@ -60,7 +81,8 @@ public:
         bool is_container,
         PlaceControlIn bind_to,
         lv_obj_t * lv_screen,
-        UIElement * parent_navi = nullptr
+        UIElement * parent_navi = nullptr,
+        vector<StyleActivator> styles_activator = default_activator
     );
     lv_obj_t * get_container_content(string key);
     lv_obj_t * get_screen();

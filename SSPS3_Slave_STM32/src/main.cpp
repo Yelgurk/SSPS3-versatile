@@ -28,16 +28,15 @@ uint16_t get_event(I2C_COMM command, uint8_t pin)
 
 void finally_event(I2C_COMM command)
 {
-    if (command == I2C_COMM::STATE_STARTUP)
-        INTERRUPT_MASTER(0);
-        
     if (master_startup_success)
         wd_last_call_ms = millis();
 
     if (command == I2C_COMM::STATE_STARTUP && !master_startup_success)
     {
         master_startup_success = true;
-        wd_curr_time_ms = wd_last_call_ms = millis();
+        wd_curr_time_ms = millis();
+        wd_last_call_ms = wd_curr_time_ms - 1;
+        INTERRUPT_MASTER(0);
     }
 }
 
@@ -46,7 +45,7 @@ void try_interrupt_master()
     if (IS_MASTER_INTERRUPTED)
     {
         INTERRUPT_MASTER(0);
-        delayMicroseconds(80);
+        delayMicroseconds(32);
     }
 
     INTERRUPT_MASTER(1);
@@ -84,8 +83,10 @@ void setup()
 
 void loop()
 {
-    if (master_startup_success && (wd_curr_time_ms = millis()) - wd_last_call_ms >= WATCHDOG_MS)
+    if (master_startup_success && (((wd_curr_time_ms = millis()) - wd_last_call_ms) >= WATCHDOG_MS))
+    {
         NVIC_SystemReset();
+    }
 
     for (uint8_t pin = 0, state; pin < ARR_SIZE(OptIn, uint8_t); pin++)
     {

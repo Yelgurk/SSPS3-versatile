@@ -8,7 +8,8 @@ UIElement::UIElement(
     bool is_container,
     PlaceControlIn bind_to,
     lv_obj_t * lv_screen,
-    UIElement * parent_navi
+    UIElement * parent_navi,
+    vector<StyleActivator> styles_activator 
 )
 {
     this->relates_to = relates_to;
@@ -40,60 +41,91 @@ UIElement::UIElement(
 
     this->navi_childs_presenter = this->container;
 
-    this
-    ->gui_container_set_rect_design()
-    ->gui_container_set_unscrollable()
-    ->gui_container_set_focus_style()
-    ->gui_container_set_select_style()
-    ->gui_container_set_transp_and_hide_style();
+    gui_set_default_style(this->container);
+    gui_set_transp_and_hide_style(this->container);
+    
+    if (exists_in_the_collection(&styles_activator, StyleActivator::Rectangle))
+        gui_set_rect_style(this->container);
+    
+    if (exists_in_the_collection(&styles_activator, StyleActivator::Unscrollable))
+        gui_set_unscrollable(this->container);
+    
+    if (exists_in_the_collection(&styles_activator, StyleActivator::Shadow))
+        gui_set_shadow_style(this->container);
+    
+    if (exists_in_the_collection(&styles_activator, StyleActivator::Focus))
+        gui_set_focus_style(this->container);
+    
+    if (exists_in_the_collection(&styles_activator, StyleActivator::Select))
+        gui_set_select_style(this->container);
 }
 
-UIElement * UIElement::clear_navi_styles()
+bool UIElement::exists_in_the_collection(vector<StyleActivator> * activator, StyleActivator found) {
+    return count(activator->begin(), activator->end(), StyleActivator::Rectangle) > 0;
+}
+
+UIElement * UIElement::clear_navi_states()
 {
     for (const auto& n_c : navi_childs)
         n_c->lv_clear_states();
     return this;
 }
 
-UIElement * UIElement::gui_container_set_rect_design()
+UIElement * UIElement::gui_set_default_style(lv_obj_t * lv_obj)
 {
-    lv_obj_set_style_pad_all(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+}
+
+UIElement * UIElement::gui_set_rect_style(lv_obj_t * lv_obj)
+{
+    lv_obj_set_style_pad_all(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(lv_obj, COLOR_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(lv_obj, COLOR_WHITE_SMOKE, LV_PART_MAIN | LV_STATE_DEFAULT);
     return this;
 }
 
-UIElement * UIElement::gui_container_set_unscrollable()
+UIElement * UIElement::gui_set_unscrollable(lv_obj_t * lv_obj)
 {
-    lv_obj_clear_flag(container, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(lv_obj, LV_OBJ_FLAG_SCROLLABLE);
     return this;
 }
 
-UIElement * UIElement::gui_container_set_focus_style()
+UIElement * UIElement::gui_set_shadow_style(lv_obj_t * lv_obj)
+{
+    lv_obj_set_style_shadow_color(lv_obj, lv_color_hex(0x9B9B9B), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_opa(lv_obj, 155, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(lv_obj, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_spread(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_offset_x(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_offset_y(lv_obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
+UIElement * UIElement::gui_set_focus_style(lv_obj_t * lv_obj)
 {
     if (_is_focusable)
     {
-        lv_obj_set_style_pad_all(container, -2, LV_PART_MAIN | LV_STATE_FOCUSED);
-        lv_obj_set_style_border_width(container, 2, LV_PART_MAIN | LV_STATE_FOCUSED);
-        lv_obj_set_style_border_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_FOCUSED);
-        lv_obj_set_style_border_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_pad_all(lv_obj, -FOCUS_BORDER_WIDTH_PX, LV_PART_MAIN | LV_STATE_FOCUSED);
+        lv_obj_set_style_border_width(lv_obj, FOCUS_BORDER_WIDTH_PX, LV_PART_MAIN | LV_STATE_FOCUSED);
+        lv_obj_set_style_border_color(lv_obj, COLOR_BLUE, LV_PART_MAIN | LV_STATE_FOCUSED);
     }
     return this;
 }
 
-UIElement * UIElement::gui_container_set_select_style()
+UIElement * UIElement::gui_set_select_style(lv_obj_t * lv_obj)
 {
     if (_is_focusable)
     {
-        lv_obj_set_style_bg_color(container, lv_color_hex(0xFFD800), LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_bg_color(lv_obj, COLOR_YELLOW, LV_PART_MAIN | LV_STATE_PRESSED);
     }
     return this;
 }
 
-UIElement * UIElement::gui_container_set_transp_and_hide_style()
+UIElement * UIElement::gui_set_transp_and_hide_style(lv_obj_t * lv_obj)
 {
-    lv_obj_set_style_opa(container, 120, LV_PART_MAIN | LV_STATE_USER_1);
-    lv_obj_set_style_opa(container, 0, LV_PART_MAIN | LV_STATE_USER_2);
+    lv_obj_set_style_opa(lv_obj, 120, LV_PART_MAIN | LV_STATE_USER_1);
+    lv_obj_set_style_opa(lv_obj, 0, LV_PART_MAIN | LV_STATE_USER_2);
     return this;
 }
 
@@ -235,7 +267,7 @@ UIElement * UIElement::navi_ok()
 
 UIElement * UIElement::navi_back()
 {
-    clear_navi_styles();
+    clear_navi_states();
     lv_clear_states();
     navi_pointer = selected = nullptr;
 

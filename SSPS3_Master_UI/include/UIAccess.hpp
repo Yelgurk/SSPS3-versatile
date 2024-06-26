@@ -21,4 +21,13 @@ enum class PlaceControlIn : uint8_t
     Control
 };
 
+enum class StyleActivator : uint8_t
+{
+    Rectangle,
+    Unscrollable,
+    Shadow,
+    Focus,
+    Select
+};
+
 #endif
