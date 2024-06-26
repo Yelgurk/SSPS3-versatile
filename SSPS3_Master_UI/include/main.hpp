@@ -14,7 +14,7 @@
 extern TwoWire * itcw;
 extern STM32_slave * STM32;
 
-void print(bool only_digital = false);
+void print();
 
 uint8_t OptIn_state[8] = { 0 };
 

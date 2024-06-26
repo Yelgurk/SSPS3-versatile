@@ -7,6 +7,11 @@
 
 using namespace std;
 
+#define MASTER_INT_DEL          500
+#define MASTER_AWAIT_LIMIT_MS   2000
+
+
+
 enum class I2C_COMM : uint8_t
 {
     SET_BEGIN,
@@ -20,13 +25,7 @@ enum class I2C_COMM : uint8_t
     GET_DGIN_VAL,
     GET_ANIN_VAL,
     GET_KB_VAL,
-    GET_END,
-
-    STATE_BEGIN,
-    STATE_STARTUP,
-    STATE_OK,
-    STATE_PING,
-    STATE_END
+    GET_END
 };
 
 class I2C_Service
@@ -43,15 +42,20 @@ private:
 
     function<void(I2C_COMM, uint8_t, uint16_t)> set_event;
     function<uint16_t(I2C_COMM, uint8_t)> get_event;
-    function<void(I2C_COMM)> finally_event;
+
+    
+    void is_master_runned_check();
 
 public:
+    uint32_t volatile i2c_last_call_ms = 0,
+                      i2c_silent_cnt = 0;
+    bool volatile i2c_master_runned = false;
+
     I2C_Service(
         TwoWire * i2c,
         uint8_t addr,
         function<void(I2C_COMM, uint8_t, uint16_t)> set_event,
-        function<uint16_t(I2C_COMM, uint8_t)> get_event,
-        function<void(I2C_COMM)> finally_event
+        function<uint16_t(I2C_COMM, uint8_t)> get_event
         );
 }; 
 

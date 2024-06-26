@@ -22,13 +22,7 @@ enum class I2C_COMM : uint8_t
     GET_DGIN_VAL,
     GET_ANIN_VAL,
     GET_KB_VAL,
-    GET_END,
-
-    STATE_BEGIN,
-    STATE_STARTUP,
-    STATE_OK,
-    STATE_PING,
-    STATE_END
+    GET_END
 };
 
 enum class COMM_SET : uint8_t
@@ -51,7 +45,6 @@ private:
     uint8_t addr;
     uint8_t buf[4];
     uint16_t response;
-    bool connection_error = false;
 
     void        _set(I2C_COMM cmd, uint8_t pin, uint16_t val);
     uint16_t    _get(I2C_COMM cmd, uint8_t pin);
@@ -59,8 +52,6 @@ private:
 public:
     STM32_slave(uint8_t addr) : addr(addr) {}
 
-    bool        ping(); 
-    void        startup();
     void        set(COMM_SET cmd, uint8_t pin, uint16_t val);
     uint16_t    get(COMM_GET cmd, uint8_t pin);
     uint16_t    get_kb();

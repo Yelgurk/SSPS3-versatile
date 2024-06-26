@@ -1,5 +1,17 @@
 #include "../include/main.hpp"
 
+bool is_key_press = false;
+uint8_t get_pressed_key()
+{
+    if (is_key_press)
+    {
+        is_key_press = false;
+        return KeyPressed;
+    }
+    else
+        return KB_Await;
+}
+
 void set_event(I2C_COMM command, uint8_t pin, uint16_t value)
 {
     switch (command)
@@ -13,42 +25,16 @@ void set_event(I2C_COMM command, uint8_t pin, uint16_t value)
 
 uint16_t get_event(I2C_COMM command, uint8_t pin)
 {
-    INTERRUPT_MASTER(0);
     switch (command)
     {
     case I2C_COMM::GET_RELAY_VAL:   return digitalRead(Relay[PIN_EXISTS(pin, Relay, uint8_t)]);
     case I2C_COMM::GET_DAC_VAL:     return analogRead(Dac[PIN_EXISTS(pin, Dac, uint8_t)]);
     case I2C_COMM::GET_DGIN_VAL:    return digitalRead(OptIn[PIN_EXISTS(pin, OptIn, uint8_t)]);
     case I2C_COMM::GET_ANIN_VAL:    return analogRead(Adc[PIN_EXISTS(pin, Adc, uint8_t)]);
-    case I2C_COMM::GET_KB_VAL:      return KeyPressed;
+    case I2C_COMM::GET_KB_VAL:      return get_pressed_key();
     default:
         return 0;
     }
-}
-
-void finally_event(I2C_COMM command)
-{
-    if (master_startup_success)
-        wd_last_call_ms = millis();
-
-    if (command == I2C_COMM::STATE_STARTUP && !master_startup_success)
-    {
-        master_startup_success = true;
-        wd_curr_time_ms = millis();
-        wd_last_call_ms = wd_curr_time_ms - 1;
-        INTERRUPT_MASTER(0);
-    }
-}
-
-void try_interrupt_master()
-{
-    if (IS_MASTER_INTERRUPTED)
-    {
-        INTERRUPT_MASTER(0);
-        delayMicroseconds(32);
-    }
-
-    INTERRUPT_MASTER(1);
 }
 
 void setup()
@@ -78,25 +64,36 @@ void setup()
         pinMode(pin, INPUT_PULLDOWN);
 
     itcw = new TwoWire(SDA, SCL);
-    I2C = new I2C_Service(itcw, STM_I2C_ADR, set_event, get_event, finally_event);
+    I2C = new I2C_Service(itcw, STM_I2C_ADR, set_event, get_event);
 }
 
+uint8_t changed;
 void loop()
 {
-    if (master_startup_success && (((wd_curr_time_ms = millis()) - wd_last_call_ms) >= WATCHDOG_MS))
+    if (I2C->i2c_master_runned)
+        if (I2C->i2c_silent_cnt >= MASTER_AWAIT_LIMIT_MS / MASTER_INT_DEL)
+            NVIC_SystemReset();
+
+    if (millis() - I2C->i2c_last_call_ms >= MASTER_INT_DEL)
     {
-        NVIC_SystemReset();
+        I2C->i2c_last_call_ms = millis();
+        I2C->i2c_silent_cnt++;
+        CHANGE_INT_SIGNAL();
     }
 
+    changed = 0;
     for (uint8_t pin = 0, state; pin < ARR_SIZE(OptIn, uint8_t); pin++)
     {
         state = digitalRead(OptIn[pin]);
 
         if (state != OptIn_state[pin])
-            try_interrupt_master();
+            changed++;
 
         OptIn_state[pin] = state;
     }
+
+    if (changed > 0)
+        CHANGE_INT_SIGNAL();
 
     if (kpd.getKeys())
         for (int i = 0; i < LIST_MAX; i++)
@@ -106,12 +103,14 @@ void loop()
                     case PRESSED: {
                         KeyPressed = getposition(keysInline, KB_Col * KB_Row, kpd.key[i].kchar);
                         KeyHoldNext = millis() + (KeyHoldDelay = HOLD_begin_ms);
-                        try_interrupt_master();
+                        is_key_press = true;
+                        CHANGE_INT_SIGNAL();
                     }; break;
 
                     case RELEASED: {
                         KeyPressed = KeyPressed == getposition(keysInline, KB_Col * KB_Row, kpd.key[i].kchar) ? KB_Await : KeyPressed; 
-                        try_interrupt_master();
+                        is_key_press = true;
+                        CHANGE_INT_SIGNAL();
                     }; break;
                 }
 
@@ -121,6 +120,7 @@ void loop()
         KeyHoldDelay = KeyHoldDelay < HOLD_min_ms ? HOLD_min_ms : KeyHoldDelay;
         
         KeyHoldNext = millis() + KeyHoldDelay;
-        try_interrupt_master();
+        is_key_press = true;
+        CHANGE_INT_SIGNAL();
     }
 }

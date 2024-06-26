@@ -7,22 +7,17 @@ TwoWire * itcw;
 I2C_Service * I2C;
 
 /* I2C var's */
-#define SDA                 PB7
-#define SCL                 PB6
-#define INT                 PB8
-#define STM_I2C_ADR         0x30
-#define WATCHDOG_MS         2500
-
-uint32_t volatile wd_last_call_ms = 0;
-uint32_t volatile wd_curr_time_ms = 0;
-
-bool volatile master_startup_success = false;
+#define SDA                     PB7
+#define SCL                     PB6
+#define INT                     PB8
+#define STM_I2C_ADR             0x30
 
 /* STM32 slave calc func for i2c data transmittion */
 #define ARR_SIZE(arr, type)         (sizeof(arr) / sizeof(type))
 #define PIN_EXISTS(pin, arr, type)  InRange(pin, ARR_SIZE(arr, type))
-#define INTERRUPT_MASTER(val)       digitalWrite(INT, val)       
-#define IS_MASTER_INTERRUPTED       digitalRead(INT)
+//#define INTERRUPT_MASTER(val)       digitalWrite(INT, val)       
+//#define IS_MASTER_INTERRUPTED       digitalRead(INT)
+#define CHANGE_INT_SIGNAL()         digitalWrite(INT, !static_cast<bool>(digitalRead(INT)))
 
 /* Keypad 4x4 var's */
 #define KB_Row                      4
