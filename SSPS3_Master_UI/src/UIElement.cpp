@@ -82,7 +82,6 @@ UIElement * UIElement::gui_set_default_style(lv_obj_t * lv_obj)
 
 UIElement * UIElement::gui_set_rect_style(lv_obj_t * lv_obj)
 {
-    
     lv_obj_set_style_radius(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     return this;
 }
@@ -416,6 +415,9 @@ int16_t UIElement::get_focused_index()
         return -1;
 } 
 
+/* begin */
+/* если container != navi_childs_presenter, только тогда отображать либо скрывать, если в состоянии focused|selected */
+
 UIElement * UIElement::hide()
 {
     return this;
@@ -425,6 +427,7 @@ UIElement * UIElement::show()
 {
     return this;
 }
+/* end */
 
 void UIElement::clear_ui_childs()
 {

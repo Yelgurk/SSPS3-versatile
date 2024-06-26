@@ -17,7 +17,9 @@ public:
         false,
         true,
         PlaceControlIn::Screen,
-        lv_screen
+        lv_screen,
+        nullptr,
+        { StyleActivator::Rectangle }
     }
     {
         lv_obj_set_width(get_container(), 480);

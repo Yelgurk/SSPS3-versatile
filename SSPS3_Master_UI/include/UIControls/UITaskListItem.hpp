@@ -1,16 +1,16 @@
-#ifndef UILItem_hpp
-#define UILItem_hpp
+#ifndef UITaskListItem_hpp
+#define UITaskListItem_hpp
 
 #include "../UIElement.hpp"
 
-struct TaskData
+struct UITaskItemData
 {
     string      name;
     uint8_t     rotation;
     uint8_t     tempC;
     int16_t     duratTotalSS;
 
-    TaskData(string name, uint8_t rotation, uint8_t tempC, int16_t duratTotalSS)
+    UITaskItemData(string name, uint8_t rotation, uint8_t tempC, int16_t duratTotalSS)
     : name(name), rotation(rotation), tempC(tempC), duratTotalSS(duratTotalSS) {}
 
     int16_t get_durat_ss();
@@ -18,17 +18,17 @@ struct TaskData
     int16_t get_durat_hh();
 };
 
-class UILItem : public UIElement
+class UITaskListItem : public UIElement
 {
 private:
 lv_obj_t * header;
 lv_obj_t * lab_1;
 lv_obj_t * lab_2;
 lv_obj_t * lab_3;
-TaskData * node;
+UITaskItemData * node;
 
 public:
-    UILItem(UIElement * parent_navi, TaskData * node, vector<KeyModel> key_press_actions)
+    UITaskListItem(UIElement * parent_navi, UITaskItemData * node, vector<KeyModel> key_press_actions)
     : UIElement
     {
         { EquipmentType::All },

@@ -24,7 +24,7 @@ using namespace std;
 
 typedef function<void()> UIAction;
 
-static const vector<StyleActivator> default_activator = {
+static const vector<StyleActivator> default_styles_activator = {
     StyleActivator::Rectangle,
     StyleActivator::Unscrollable,
     StyleActivator::Focus,
@@ -45,7 +45,7 @@ static void anim_focus_create(lv_obj_t* obj)
     lv_anim_t a;
     lv_anim_init(&a);
     lv_anim_set_var(&a, obj);
-    lv_anim_set_values(&a, 0xFFFFFF, 0xE0E0E0);
+    lv_anim_set_values(&a, 0xFFFFFF, 0xF9DFCF); //E0E0E0);
     lv_anim_set_time(&a, 500);
     lv_anim_set_exec_cb(&a, anim_focus_cb);
     lv_anim_set_path_cb(&a, lv_anim_path_ease_in_out);
@@ -118,7 +118,7 @@ public:
         PlaceControlIn bind_to,
         lv_obj_t * lv_screen,
         UIElement * parent_navi = nullptr,
-        vector<StyleActivator> styles_activator = default_activator
+        vector<StyleActivator> styles_activator = default_styles_activator
     );
     lv_obj_t * get_container_content(string key);
     lv_obj_t * get_screen();
