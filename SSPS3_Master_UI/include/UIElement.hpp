@@ -31,6 +31,42 @@ static const vector<StyleActivator> default_activator = {
     StyleActivator::Select
 };
 
+static void anim_focus_cb(void* lv_obj, int32_t v)
+{
+    lv_obj_set_style_bg_color(
+        (lv_obj_t*)lv_obj,
+        lv_color_hex(v),
+        LV_PART_MAIN | LV_STATE_FOCUSED
+    );
+}
+
+static void anim_focus_create(lv_obj_t* obj)
+{
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, obj);
+    lv_anim_set_values(&a, 0xFFFFFF, 0xE0E0E0);
+    lv_anim_set_time(&a, 500);
+    lv_anim_set_exec_cb(&a, anim_focus_cb);
+    lv_anim_set_path_cb(&a, lv_anim_path_ease_in_out);
+    lv_anim_set_playback_time(&a, 500);
+    lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
+    lv_anim_start(&a);
+}
+
+static void event_handler(lv_event_t* e)
+{
+    lv_obj_t* obj = (lv_obj_t*)lv_event_get_target(e);
+    lv_event_code_t code = lv_event_get_code(e);
+
+    if (code == LV_EVENT_FOCUSED) {
+        anim_focus_create(obj);
+    }
+    else if (code == LV_EVENT_DEFOCUSED) {
+        lv_anim_delete(obj, anim_focus_cb);
+    }
+}
+
 class UIElement
 {
 private:

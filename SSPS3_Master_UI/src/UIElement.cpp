@@ -73,16 +73,17 @@ UIElement * UIElement::clear_navi_states()
 
 UIElement * UIElement::gui_set_default_style(lv_obj_t * lv_obj)
 {
-
+    lv_obj_set_style_pad_all(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(lv_obj, COLOR_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(lv_obj, COLOR_WHITE_SMOKE, LV_PART_MAIN | LV_STATE_DEFAULT);
+    return this;
 }
 
 UIElement * UIElement::gui_set_rect_style(lv_obj_t * lv_obj)
 {
-    lv_obj_set_style_pad_all(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    
     lv_obj_set_style_radius(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(lv_obj, COLOR_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(lv_obj, COLOR_WHITE_SMOKE, LV_PART_MAIN | LV_STATE_DEFAULT);
     return this;
 }
 
@@ -109,6 +110,7 @@ UIElement * UIElement::gui_set_focus_style(lv_obj_t * lv_obj)
         lv_obj_set_style_pad_all(lv_obj, -FOCUS_BORDER_WIDTH_PX, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_set_style_border_width(lv_obj, FOCUS_BORDER_WIDTH_PX, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_set_style_border_color(lv_obj, COLOR_BLUE, LV_PART_MAIN | LV_STATE_FOCUSED);
+        lv_obj_add_event_cb(lv_obj, event_handler, LV_EVENT_ALL, NULL);
     }
     return this;
 }
@@ -427,7 +429,10 @@ UIElement * UIElement::show()
 void UIElement::clear_ui_childs()
 {
     for (auto child : navi_childs)
-        child->clear_ui_childs();
+    {
+       child->clear_ui_childs();
+       lv_anim_delete(child->container, NULL);
+    }
     
     navi_childs.clear();
     selected = navi_pointer = nullptr;
@@ -438,7 +443,12 @@ void UIElement::delete_ui_element(bool is_dynamic_alloc)
     clear_ui_childs();
 
     if (container != navi_childs_presenter)
+    {
+        lv_anim_delete(navi_childs_presenter, NULL);
         lv_obj_delete(navi_childs_presenter);
+    }
+        
+    lv_anim_delete(container, NULL);
     lv_obj_delete(container);
 
     if (is_dynamic_alloc)
