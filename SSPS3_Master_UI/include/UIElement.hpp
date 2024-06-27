@@ -15,11 +15,13 @@ using namespace std;
 
 #define COLOR_WHITE             lv_color_hex(0xFFFFFF)
 #define COLOR_WHITE_SMOKE       lv_color_hex(0xF5F5F5)
-#define COLOR_GREY              lv_color_hex(0xB5B8B1)
+#define COLOR_GREY              lv_color_hex(0xC8C8C8)
+#define COLOR_MEDIUM_GREY       lv_color_hex(0xB5B8B1)
 #define COLOR_DARK_GREY         lv_color_hex(0x2F353B)     
 #define COLOR_YELLOW            lv_color_hex(0xFFDC33)
 #define COLOR_RED               lv_color_hex(0xE34234)
 #define COLOR_GREEN             lv_color_hex(0xBDECB6)
+#define COLOR_DARK_GREEN        lv_color_hex(0x8CCB5E)
 #define COLOR_BLUE              lv_color_hex(0XB0E0E6)
 
 typedef function<void()> UIAction;

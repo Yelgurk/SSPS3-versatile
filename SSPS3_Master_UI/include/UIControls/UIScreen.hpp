@@ -25,7 +25,7 @@ public:
         lv_obj_set_width(get_container(), 480);
         lv_obj_set_height(get_container(), 320);
         lv_obj_align(get_container(), LV_ALIGN_CENTER, 0, 0);
-        lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(get_container(), 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 };
 

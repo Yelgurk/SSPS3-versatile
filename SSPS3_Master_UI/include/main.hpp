@@ -1,8 +1,14 @@
 #include "UIService.hpp"
-#include "./UIElements/global_ui_clock.hpp"
-#include "./UIElements/demo_list.hpp"
-#include "./UIElements/ui_container.hpp"
 #include "../../SSPS3_Master_Infrastructure/include/main.hpp"
+
+#include "./UIControls/UIDateTime.hpp"
+#include "./UIControls/UIFlowGunProgressBar.hpp"
+#include "./UIControls/UIList.hpp"
+#include "./UIControls/UIObject.hpp"
+#include "./UIControls/UIScreen.hpp"
+#include "./UIControls/UITaskListItem.hpp"
+#include "./UIControls/UITaskRoadmapList.hpp"
+#include "./UIControls/UIValueSetter.hpp"
 
 #ifndef SSPS3_APPLICATION_SOLUTION
 
@@ -21,6 +27,4 @@ uint8_t OptIn_state[8] = { 0 };
 #endif
 
 UIService UI_service;
-UIClock * UI_clock;
-UIClock1 * _list;
-UIClockx * _cont;
+UITaskRoadmapList * UI_task_roadmap_control;

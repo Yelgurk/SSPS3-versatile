@@ -2,19 +2,14 @@
 #define UIList_hpp
 
 #include "../UIElement.hpp"
-#include "./UITaskListItem.hpp"
-#include "./UIObject.hpp"
 
 class UIList : public UIElement
 {
-private:
-    vector<UITaskListItem*> _collection;
-
 public:
     UIList(
         vector<EquipmentType> relates_to,
         vector<KeyModel> key_press_actions,
-        UIElement * parent_navi = nullptr,
+        UIElement * parent_navi,
         vector<StyleActivator> styles_activator,
         uint32_t width,
         uint32_t height,
@@ -48,38 +43,6 @@ public:
 
         this->remember_child_element("[list_presenter]", list_presenter);
         this->set_childs_presenter("[list_presenter]");
-    }
-
-    void clear_list()
-    {
-        lv_obj_clean(this->get_navi_childs_presenter());
-        clear_ui_childs();
-
-        for (uint16_t i = 0; i < _collection.size(); i++)
-        {
-            _collection.at(i)->delete_ui_element(false);
-            delete _collection.at(i);   
-        }
-        _collection.clear();
-    }
-
-    void DEMO_load_task_list(vector<UITaskItemData> * list)
-    {
-        clear_list();
-        for (uint16_t i = 0; i < list->size(); i++)
-            _collection.push_back(new UITaskListItem(this, &list->at(i), {
-                KeyModel(KeyMap::R_STACK_4, []() { Serial.println("Нажата фокус из списка"); })
-            }));
-    }
-
-    void load_list(vector<UITaskListItem> ui_controls)
-    {
-
-    }
-
-    void load_list(vector<UIObject> ui_controls)
-    {
-
     }
 };
 

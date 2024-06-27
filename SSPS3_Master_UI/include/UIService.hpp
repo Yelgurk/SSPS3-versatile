@@ -6,6 +6,7 @@
 #include <Arduino.h>
 #include <lvgl.h>
 #include "../config/LGFX_SSPS3_V1.hpp"
+#include "./UIElement.hpp"
 
 #define LGFX_USE_V1
 #define SCREEN_WIDTH            480U

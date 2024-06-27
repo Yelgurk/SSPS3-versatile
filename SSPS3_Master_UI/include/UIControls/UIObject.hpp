@@ -14,7 +14,7 @@ public:
         bool is_container,
         PlaceControlIn bind_to,
         lv_obj_t * lv_screen,
-        UIElement * parent_navi = nullptr,
+        UIElement * parent_navi,
         vector<StyleActivator> styles_activator,
         uint32_t width,
         uint32_t height,
@@ -36,7 +36,7 @@ public:
         lv_obj_set_width(get_container(), width);
         lv_obj_set_height(get_container(), height);
         lv_obj_align(get_container(), align, offset_x, offset_y);
-        lv_obj_set_style_bg_color(get_container(), COLOR_WHITE_SMOKE, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 };
 
