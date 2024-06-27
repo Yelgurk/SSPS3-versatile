@@ -8,11 +8,31 @@ class UITaskRoadmapList : public UIElement
 {
 private:
     vector<UITaskListItem*> _collection;
+    /*
+    тут ссылка на сам таск,
+    т.к. будет ещё структура самой задачи,
+    откуда будет браться _collection
+    */
+    
+    void clear_list()
+    {
+        for (uint16_t i = 0; i < _collection.size(); i++)
+        {
+            _collection.at(i)->delete_ui_element(false);
+            delete _collection.at(i);   
+        }
+        _collection.clear();
+
+        clear_ui_childs();
+        lv_obj_clean(this->get_navi_childs_presenter());
+    }
+
     void set_progress_bar_state_pause();
     void set_progress_bar_state_error();
     void set_progress_bar_state_working();
     void set_progress_bar_state_done();
     /* тут остальные методы, что отображают время и % + переменная, что хранит список шагов */
+
 
 public:
     UITaskRoadmapList(
@@ -48,74 +68,24 @@ public:
         lv_obj_set_style_shadow_ofs_x(get_container(), 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_ofs_y(get_container(), 5, LV_PART_MAIN | LV_STATE_DEFAULT);
     
-        
         lv_obj_t * lv_task_progress_bar_indicator = lv_arc_create(get_container());
-        /*
         lv_obj_set_width(lv_task_progress_bar_indicator, 460);
         lv_obj_set_height(lv_task_progress_bar_indicator, 460);
         lv_obj_set_align(lv_task_progress_bar_indicator, LV_ALIGN_CENTER);
+        lv_arc_set_range(lv_task_progress_bar_indicator, 0, 10000);
         lv_arc_set_bg_angles(lv_task_progress_bar_indicator, 91, 90);
-        lv_arc_set_range(lv_task_progress_bar_indicator, 0, 1000);
-        lv_arc_set_value(lv_task_progress_bar_indicator, 500);
-        
+        lv_arc_set_value(lv_task_progress_bar_indicator, 7500);
+        lv_obj_set_style_pad_all(lv_task_progress_bar_indicator, -24, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_arc_width(lv_task_progress_bar_indicator, 170, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        lv_obj_set_style_arc_rounded(lv_task_progress_bar_indicator, false, LV_PART_INDICATOR | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_opa(lv_task_progress_bar_indicator, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
-        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, COLOR_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-        lv_obj_set_style_arc_opa(lv_task_progress_bar_indicator, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, COLOR_GREEN, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, COLOR_YELLOW, LV_PART_INDICATOR | LV_STATE_USER_1);
-        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, COLOR_BLUE, LV_PART_INDICATOR | LV_STATE_USER_2);
-        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, COLOR_RED, LV_PART_INDICATOR | LV_STATE_USER_3);
-
-        
-        lv_obj_set_style_pad_left(lv_task_progress_bar_indicator, -250, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_right(lv_task_progress_bar_indicator, -250, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_top(lv_task_progress_bar_indicator, -250, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_bottom(lv_task_progress_bar_indicator, -250, LV_PART_MAIN | LV_STATE_DEFAULT);
-        
-
-        lv_obj_set_style_arc_width(lv_task_progress_bar_indicator, 140, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_arc_width(lv_task_progress_bar_indicator, 140, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-        */
-
-        lv_obj_set_width(lv_task_progress_bar_indicator, 460);
-        lv_obj_set_height(lv_task_progress_bar_indicator, 460);
-        lv_obj_set_align(lv_task_progress_bar_indicator, LV_ALIGN_CENTER);
-        lv_arc_set_value(lv_task_progress_bar_indicator, 555);
-        lv_arc_set_bg_angles(lv_task_progress_bar_indicator, 91, 90);
-        lv_arc_set_range(lv_task_progress_bar_indicator, 0, 1000);
-        lv_obj_set_style_pad_left(lv_task_progress_bar_indicator, -70, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_right(lv_task_progress_bar_indicator, -70, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_top(lv_task_progress_bar_indicator, -70, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_bottom(lv_task_progress_bar_indicator, -70, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, lv_color_hex(0xC8C8C8), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_arc_opa(lv_task_progress_bar_indicator, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_arc_width(lv_task_progress_bar_indicator, 210, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-        lv_obj_set_style_arc_opa(lv_task_progress_bar_indicator, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-        lv_obj_set_style_arc_width(lv_task_progress_bar_indicator, 210, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-        lv_obj_set_style_arc_opa(lv_task_progress_bar_indicator, 255, LV_PART_INDICATOR | LV_STATE_USER_1);
-        lv_obj_set_style_arc_opa(lv_task_progress_bar_indicator, 255, LV_PART_INDICATOR | LV_STATE_USER_2);
-        lv_obj_set_style_arc_opa(lv_task_progress_bar_indicator, 255, LV_PART_INDICATOR | LV_STATE_USER_3);
-
+        lv_obj_set_style_arc_opa(lv_task_progress_bar_indicator, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_arc_width(lv_task_progress_bar_indicator, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, lv_color_hex(0x8CCB5E), LV_PART_INDICATOR | LV_STATE_DEFAULT);
         lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, lv_color_hex(0xFFD800), LV_PART_INDICATOR | LV_STATE_USER_1);
         lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, lv_color_hex(0x80DAEB), LV_PART_INDICATOR | LV_STATE_USER_2);
         lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, lv_color_hex(0xE34234), LV_PART_INDICATOR | LV_STATE_USER_3);
 
-        lv_obj_set_style_bg_color(lv_task_progress_bar_indicator, lv_color_hex(0xFFFFFF), LV_PART_KNOB | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_opa(lv_task_progress_bar_indicator, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
-
-
-
-
-        
-
-        
-
-
-        
-        //lv_obj_t * lv_task_progress_bar_content_presenter = lv_obj_create(lv_task_progress_bar_indicator);
         lv_obj_t * lv_task_progress_bar_content_presenter = lv_obj_create(get_container());
         lv_obj_set_width(lv_task_progress_bar_content_presenter, 420);
         lv_obj_set_height(lv_task_progress_bar_content_presenter, 190);
@@ -124,6 +94,7 @@ public:
         lv_obj_set_align(lv_task_progress_bar_content_presenter, LV_ALIGN_CENTER);
         lv_obj_clear_flag(lv_task_progress_bar_content_presenter, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
         lv_obj_set_style_radius(lv_task_progress_bar_content_presenter, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+        
         lv_obj_set_style_border_width(lv_task_progress_bar_content_presenter, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_color(lv_task_progress_bar_content_presenter, COLOR_MEDIUM_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_opa(lv_task_progress_bar_content_presenter, 155, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -248,7 +219,6 @@ public:
         lv_obj_set_align(lv_col_header_label_name, LV_ALIGN_CENTER);
         /////////////////////lv_obj_set_style_text_font(lv_col_header_label_name, &MontserratInt24, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-        //lv_obj_t * lv_task_progress_bar_lap_line = lv_obj_create(lv_task_progress_bar_indicator);
         lv_obj_t * lv_task_progress_bar_lap_line = lv_obj_create(get_container());
         lv_obj_set_width(lv_task_progress_bar_lap_line, 4);
         lv_obj_set_height(lv_task_progress_bar_lap_line, 30);
@@ -261,7 +231,6 @@ public:
         lv_obj_set_style_bg_opa(lv_task_progress_bar_lap_line, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_border_width(lv_task_progress_bar_lap_line, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-        //lv_obj_t * lv_task_progress_state_percentage = lv_label_create(lv_task_progress_bar_indicator);
         lv_obj_t * lv_task_progress_state_percentage = lv_label_create(get_container());
         lv_obj_set_width(lv_task_progress_state_percentage, LV_SIZE_CONTENT);   /// 1
         lv_obj_set_height(lv_task_progress_state_percentage, LV_SIZE_CONTENT);    /// 1
@@ -271,7 +240,6 @@ public:
         lv_label_set_text(lv_task_progress_state_percentage, "77%");
         /////////////////////////lv_obj_set_style_text_font(lv_task_progress_state_percentage, &MontserratInt24, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-        //lv_obj_t * lv_task_progress_state_duration = lv_label_create(lv_task_progress_bar_indicator);
         lv_obj_t * lv_task_progress_state_duration = lv_label_create(get_container());
         lv_obj_set_width(lv_task_progress_state_duration, LV_SIZE_CONTENT);   /// 1
         lv_obj_set_height(lv_task_progress_state_duration, LV_SIZE_CONTENT);    /// 1
@@ -298,32 +266,23 @@ public:
         lv_obj_set_style_pad_bottom(lv_list, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         remember_child_element("[list]", lv_list);
+        remember_child_element("[progress_bar]", lv_task_progress_bar_indicator);
         remember_child_element("[header_name]", lv_col_header_label_name);
         remember_child_element("[state_percentage]", lv_task_progress_state_percentage);
         remember_child_element("[state_duration]", lv_task_progress_state_duration);
         
+        set_childs_presenter("[list]");
     }
 
-    void clear_list()
-    {
-        lv_obj_clean(this->get_navi_childs_presenter());
-        clear_ui_childs();
-
-        for (uint16_t i = 0; i < _collection.size(); i++)
-        {
-            _collection.at(i)->delete_ui_element(false);
-            delete _collection.at(i);   
-        }
-        _collection.clear();
-    }
-
-    void DEMO_load_task_list(vector<UITaskItemData> * list)
+    void load_task_list(vector<UITaskItemData> * list)
     {
         clear_list();
         for (uint16_t i = 0; i < list->size(); i++)
+        {
             _collection.push_back(new UITaskListItem(this, &list->at(i), {
                 KeyModel(KeyMap::R_STACK_4, []() { Serial.println("Нажата фокус из списка"); })
             }));
+        }
     }
 };
 

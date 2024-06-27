@@ -38,15 +38,18 @@ public:
     {
         { EquipmentType::All },
         key_press_actions,
-        true, false, false,
+        true,
+        false,
+        false,
         PlaceControlIn::Control,
         parent_navi->get_screen(),
-        parent_navi
+        parent_navi,
+        { StyleActivator::Unscrollable, StyleActivator::Rectangle, StyleActivator::Focus }
     }
     {
         this->node = node;
 
-        lv_obj_set_width(get_container(), 320);
+        lv_obj_set_width(get_container(), 420);
         lv_obj_set_height(get_container(), 30);
         lv_obj_set_style_bg_opa(get_container(), 185, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, 0);

@@ -26,9 +26,13 @@ UIElement::UIElement(
     {
         case PlaceControlIn::Control: {
             if (this->parent_navi != nullptr)
+            {
                 container = lv_obj_create(parent_navi->get_navi_childs_presenter());
+            }
             else
+            {
                 container = lv_obj_create(this->lv_screen);
+            }
         }; break;
 
         default: {
@@ -43,6 +47,7 @@ UIElement::UIElement(
 
     gui_set_default_style(this->container);
     gui_set_transp_and_hide_style(this->container);
+    
     
     if (exists_in_the_collection(&styles_activator, StyleActivator::Rectangle))
         gui_set_rect_style(this->container);
@@ -60,8 +65,13 @@ UIElement::UIElement(
         gui_set_select_style(this->container);
 }
 
-bool UIElement::exists_in_the_collection(vector<StyleActivator> * activator, StyleActivator found) {
-    return count(activator->begin(), activator->end(), StyleActivator::Rectangle) > 0;
+bool UIElement::exists_in_the_collection(vector<StyleActivator> * activator, StyleActivator found)
+{
+    for (auto &key : *activator)
+        if (key == found)
+            return true;
+    
+    return false;
 }
 
 UIElement * UIElement::clear_navi_states()
@@ -100,6 +110,7 @@ UIElement * UIElement::gui_set_shadow_style(lv_obj_t * lv_obj)
     lv_obj_set_style_shadow_spread(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_offset_x(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_offset_y(lv_obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    return this;
 }
 
 UIElement * UIElement::gui_set_focus_style(lv_obj_t * lv_obj)
@@ -435,6 +446,7 @@ void UIElement::clear_ui_childs()
     {
        child->clear_ui_childs();
        lv_anim_delete(child->container, NULL);
+       lv_clear_states();
     }
     
     navi_childs.clear();

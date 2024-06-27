@@ -38,7 +38,7 @@ public:
     {
       auto cfg = _bus_instance.config();
 
-      cfg.freq_write = 32000000;
+      cfg.freq_write = 16000000;
       cfg.pin_wr = LCD_WR;
       cfg.pin_rd = LCD_RD;
       cfg.pin_rs = LCD_RS;
@@ -70,7 +70,7 @@ public:
       cfg.invert          = true;
       cfg.rgb_order       = false;
       cfg.dlen_16bit      = false;
-      cfg.bus_shared      = true;
+      cfg.bus_shared      = false;
 
       _panel_instance.config(cfg);
     }
