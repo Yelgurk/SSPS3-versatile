@@ -19,18 +19,24 @@ private:
 
 public:
     S_DateTime(const S_Date& d, const S_Time& t) : date(d), time(t) {}
-    S_DateTime(int day, int month, int year, int hours, int minutes, int seconds)
-        : date(day, month, year), time(hours, minutes, seconds,
-                                      [this]() { this->date.setDay(this->date.getDay() - 1); },
-                                      [this]() { this->date.setDay(this->date.getDay() + 1); }) {}
 
-    S_Date getDate() const { return date; }
-    S_Time getTime() const { return time; }
+    S_DateTime(int day = 1, int month = 1, int year = 1970, int hours = 0, int minutes = 0, int seconds = 0)
+    :   date(day, month, year),
+        time
+        (
+            hours, minutes, seconds,
+            [this]() { this->date.set_day(this->date.get_day() - 1); },
+            [this]() { this->date.set_day(this->date.get_day() + 1); }
+        )
+    {}
 
-    void setDate(const S_Date& d) { date = d; }
-    void setTime(const S_Time& t) { time = t; }
+    S_Date get_date() const { return date; }
+    S_Time get_time() const { return time; }
 
-    string toString(bool new_line = false) { return date.toString() + (new_line ? "\n" : " ") + time.toString(); }
+    void set_date(const S_Date& d) { date = d; }
+    void set_time(const S_Time& t) { time = t; }
+
+    string to_string(bool new_line = false) { return date.to_string() + (new_line ? "\n" : " ") + time.to_string(); }
 
     // Operator overloading with S_DateTime
     S_DateTime operator+(const S_DateTime& other) const {
@@ -117,20 +123,20 @@ public:
         return !(*this < other);
     }
 
-    long differenceInSeconds(const S_DateTime& other) const {
-        return date.differenceInDays(other.date) * 24 * 3600 + time.differenceInSeconds(other.time);
+    long difference_in_seconds(S_DateTime& other) {
+        return date.get_diff_in_days(other.date) * 24 * 3600 + time.get_diff_in_seconds(other.time);
     }
 
-    long differenceInMinutes(const S_DateTime& other) const {
-        return differenceInSeconds(other) / 60;
+    long difference_in_minutes(S_DateTime& other) {
+        return difference_in_seconds(other) / 60;
     }
 
-    long differenceInHours(const S_DateTime& other) const {
-        return differenceInMinutes(other) / 60;
+    long difference_in_hours(S_DateTime& other) {
+        return difference_in_minutes(other) / 60;
     }
 
-    long differenceInDays(const S_DateTime& other) const {
-        return differenceInHours(other) / 24;
+    long difference_in_days(S_DateTime& other) {
+        return difference_in_hours(other) / 24;
     }
 };
 

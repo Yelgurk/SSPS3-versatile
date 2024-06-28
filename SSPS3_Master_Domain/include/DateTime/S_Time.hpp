@@ -69,15 +69,15 @@ public:
         normalize(get_total_ss());
     }
 
-    int getHours() const { return hours; }
-    int getMinutes() const { return minutes; }
-    int getSeconds() const { return seconds; }
+    int get_hours() const { return hours; }
+    int get_minutes() const { return minutes; }
+    int get_seconds() const { return seconds; }
 
-    void setHours(int h) { hours = h; normalize(get_total_ss()); }
-    void setMinutes(int m) { minutes = m; normalize(get_total_ss()); }
-    void setSeconds(int s) { seconds = s; normalize(get_total_ss()); }
+    void set_hours(int h) { hours = h; normalize(get_total_ss()); }
+    void set_minutes(int m) { minutes = m; normalize(get_total_ss()); }
+    void set_seconds(int s) { seconds = s; normalize(get_total_ss()); }
 
-    string toString()
+    string to_string()
     {
         sprintf(buffer, "%02d:%02d:%02d", hours, minutes, seconds);
         return string(buffer);
@@ -93,30 +93,30 @@ public:
         return S_Time(hours - other.hours, minutes - other.minutes, seconds - other.seconds, decreaseDay, increaseDay);
     }
 
-    S_Time& operator+=( S_Time& other)
+    S_Time& operator+=(const S_Time& other)
     {
         normalize(get_total_ss() + other.get_total_ss());
         return *this;
     }
 
-    S_Time& operator-=(S_Time& other)
+    S_Time& operator-=(const S_Time& other)
     {
         normalize(get_total_ss() - other.get_total_ss());
         return *this;
     }
 
-    bool operator==(S_Time& other)              { return get_total_ss() == other.get_total_ss(); }
-    bool operator!=(S_Time& other)              { return !(*this == other); }
-    bool operator<(S_Time& other)               { return get_total_ss() < other.get_total_ss(); }
-    bool operator<=(S_Time& other)              { return *this < other || *this == other; }
-    bool operator>(S_Time& other)               { return !(*this <= other); }
-    bool operator>=(S_Time& other)              { return !(*this < other); }
+    bool operator==(const S_Time& other) const        { return get_total_ss() == other.get_total_ss(); }
+    bool operator!=(const S_Time& other) const        { return !(*this == other); }
+    bool operator<(const S_Time& other) const         { return get_total_ss() < other.get_total_ss(); }
+    bool operator<=(const S_Time& other) const        { return *this < other || *this == other; }
+    bool operator>(const S_Time& other) const         { return !(*this <= other); }
+    bool operator>=(const S_Time& other) const        { return !(*this < other); }
 
     int64_t get_diff_in_seconds(S_Time& other)  { return get_total_ss() - other.get_total_ss(); }
     int64_t get_diff_in_minutes(S_Time& other)  { return get_diff_in_seconds(other) / 60; }
     int64_t get_diff_in_hours(S_Time& other)    { return get_diff_in_minutes(other) / 60; }
-    
-    int64_t get_total_ss()                      { return ((hours * 60) + minutes) * 60 + seconds; }
+
+    int64_t get_total_ss() const                { return ((hours * 60) + minutes) * 60 + seconds; }
 };
 
 #endif
