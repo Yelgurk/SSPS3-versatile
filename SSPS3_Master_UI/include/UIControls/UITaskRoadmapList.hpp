@@ -57,8 +57,8 @@ public:
         lv_obj_set_align(get_container(), LV_ALIGN_CENTER);
         lv_obj_clear_flag(get_container(), LV_OBJ_FLAG_SCROLLABLE);      /// Flags
         lv_obj_set_style_radius(get_container(), 20, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_opa(get_container(), 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(get_container(), COLOR_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(get_container(), 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_clip_corner(get_container(), true, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_border_width(get_container(), 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_color(get_container(), COLOR_MEDIUM_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
