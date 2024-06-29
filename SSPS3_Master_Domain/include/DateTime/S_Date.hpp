@@ -99,8 +99,8 @@ private:
     }
 
 public:
-    S_Date(int d = 1, int m = 1, int y = 1970, bool is_time_span = false)
-    : day(d), month(m), year(y), is_time_span(is_time_span)
+    S_Date(int d = 1, int m = 1, int y = 2000, bool is_time_span = false)
+    : day(d), month(m), year(y < 2000 ? 2000 : y), is_time_span(is_time_span)
     {
         normalize();
     }
