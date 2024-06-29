@@ -19,7 +19,7 @@ private:
 
     static DTLambdaType get_rt_ds3231;
     static uint8_t hours, minutes, seconds, days, months, years;
-    
+
     void _set_rt_lambda(DTLambdaType get_rt_ds3231)
     {
         if (get_rt_ds3231 != NULL && !S_DateTime::get_rt_ds3231)
@@ -204,5 +204,13 @@ public:
         return difference_in_hours(other) / 24;
     }
 };
+
+DTLambdaType S_DateTime::get_rt_ds3231 = NULL;
+uint8_t S_DateTime::hours = 0;
+uint8_t S_DateTime::minutes = 0;
+uint8_t S_DateTime::seconds = 0;
+uint8_t S_DateTime::days = 0;
+uint8_t S_DateTime::months = 0;
+uint8_t S_DateTime::years = 0;
 
 #endif
