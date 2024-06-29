@@ -1,13 +1,10 @@
-#ifndef DateTime_hpp
-#define DateTime_hpp
+#pragma once
+#ifndef S_DateTime_hpp
+#define S_DateTime_hpp
 
-#include <iostream>
-#include <iomanip>
-#include <functional>
-#include <stdexcept>
 #include <Arduino.h>
-#include "./S_Date.hpp"
-#include "./S_Time.hpp"
+#include "S_Date.hpp"
+#include "S_Time.hpp"
 
 using namespace std;
 
@@ -18,7 +15,23 @@ private:
     S_Time time;
 
 public:
-    S_DateTime(const S_Date& d, const S_Time& t) : date(d), time(t) {}
+    S_DateTime(const S_Date& d, const int64_t& total_ss)
+    :   date(d),
+        time
+        (
+            total_ss,
+            [this]() { this->date.set_day(this->date.get_day() - 1); },
+            [this]() { this->date.set_day(this->date.get_day() + 1); }
+        )
+    {}
+
+    S_DateTime(const S_Date& d, const S_Time& t) : date(d), time(t)
+    {
+        this->time.set_time_changed_cb(
+            [this]() { this->date.set_day(this->date.get_day() - 1); },
+            [this]() { this->date.set_day(this->date.get_day() + 1); }
+        );
+    }
 
     S_DateTime(int day = 1, int month = 1, int year = 1970, int hours = 0, int minutes = 0, int seconds = 0)
     :   date(day, month, year),
@@ -30,21 +43,28 @@ public:
         )
     {}
 
-    S_Date get_date() const { return date; }
-    S_Time get_time() const { return time; }
+    S_Date * get_date() { return &date; }
+    S_Time * get_time() { return &time; }
 
     void set_date(const S_Date& d) { date = d; }
-    void set_time(const S_Time& t) { time = t; }
+    void set_time(const S_Time& t)
+    {
+        time = t;
+        time.set_time_changed_cb(
+            [this]() { this->date.set_day(this->date.get_day() - 1); },
+            [this]() { this->date.set_day(this->date.get_day() + 1); }
+        );
+    }
 
     string to_string(bool new_line = false) { return date.to_string() + (new_line ? "\n" : " ") + time.to_string(); }
 
     // Operator overloading with S_DateTime
     S_DateTime operator+(const S_DateTime& other) const {
-        return S_DateTime(date + other.date, time + other.time);
+        return S_DateTime(date + other.date, time.get_total_ss() + other.time.get_total_ss());
     }
 
     S_DateTime operator-(const S_DateTime& other) const {
-        return S_DateTime(date - other.date, time - other.time);
+        return S_DateTime(date - other.date, time.get_total_ss() - other.time.get_total_ss());
     }
 
     S_DateTime& operator+=(const S_DateTime& other) {
@@ -61,11 +81,11 @@ public:
 
     // Operator overloading with S_Time
     S_DateTime operator+(const S_Time& t) const {
-        return S_DateTime(date, time + t);
+        return S_DateTime(date, time.get_total_ss() + t.get_total_ss());
     }
 
     S_DateTime operator-(const S_Time& t) const {
-        return S_DateTime(date, time - t);
+        return S_DateTime(date, time.get_total_ss() - t.get_total_ss());
     }
 
     S_DateTime& operator+=(const S_Time& t) {
@@ -80,11 +100,11 @@ public:
 
     // Operator overloading with S_Date
     S_DateTime operator+(const S_Date& d) const {
-        return S_DateTime(date + d, time);
+        return S_DateTime(date + d, time.get_total_ss());
     }
 
     S_DateTime operator-(const S_Date& d) const {
-        return S_DateTime(date - d, time);
+        return S_DateTime(date - d, time.get_total_ss());
     }
 
     S_DateTime& operator+=(const S_Date& d) {

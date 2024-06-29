@@ -1,10 +1,7 @@
-#ifndef Time_hpp
-#define Time_hpp
+#pragma once
+#ifndef S_Time_hpp
+#define S_Time_hpp
 
-#include <iostream>
-#include <iomanip>
-#include <functional>
-#include <stdexcept>
 #include <Arduino.h>
 
 #define TOTAL_SS_IN_DAY     (60 * 60 * 24)
@@ -40,7 +37,10 @@ private:
             }
 
         if (new_time_value_in_ss < 0)
+        {
+            if (decreaseDay) decreaseDay();
             new_time_value_in_ss = TOTAL_SS_IN_DAY + new_time_value_in_ss;
+        }
 
         seconds = new_time_value_in_ss % 60;
         minutes = (new_time_value_in_ss / 60) % 60;
@@ -50,23 +50,25 @@ private:
 public:
     S_Time(int64_t total_ss, function<void()> decreaseDay = NULL, function<void()> increaseDay = NULL)
     {
-        if (decreaseDay != NULL)
-            this->decreaseDay = decreaseDay;
-        if (increaseDay != NULL)
-            this->increaseDay = increaseDay;
-
+        set_time_changed_cb(decreaseDay, increaseDay);
         normalize(total_ss);
     }
 
     S_Time(int h = 0, int m = 0, int s = 0, function<void()> decreaseDay = NULL, function<void()> increaseDay = NULL)
     : hours(h), minutes(m), seconds(s)
     {
+        set_time_changed_cb(decreaseDay, increaseDay);
+        normalize(get_total_ss());
+    }
+
+    S_Time * set_time_changed_cb(function<void()> decreaseDay = NULL, function<void()> increaseDay = NULL)
+    {
         if (decreaseDay != NULL)
             this->decreaseDay = decreaseDay;
         if (increaseDay != NULL)
             this->increaseDay = increaseDay;
 
-        normalize(get_total_ss());
+        return this;
     }
 
     int get_hours() const { return hours; }
@@ -85,12 +87,12 @@ public:
 
     S_Time operator+(const S_Time& other) const
     {
-        return S_Time(hours + other.hours, minutes + other.minutes, seconds + other.seconds, decreaseDay, increaseDay);
+        return S_Time(hours + other.hours, minutes + other.minutes, seconds + other.seconds);
     }
 
     S_Time operator-(const S_Time& other) const
     {
-        return S_Time(hours - other.hours, minutes - other.minutes, seconds - other.seconds, decreaseDay, increaseDay);
+        return S_Time(hours - other.hours, minutes - other.minutes, seconds - other.seconds);
     }
 
     S_Time& operator+=(const S_Time& other)

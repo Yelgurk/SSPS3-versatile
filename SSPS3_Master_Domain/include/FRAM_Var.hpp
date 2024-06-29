@@ -4,7 +4,7 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include "./FRAM_crc.hpp"
+#include "FRAM_crc.hpp"
 
 #define MAX_VARIABLE_LENGTH 16
 

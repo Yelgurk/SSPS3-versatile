@@ -1,10 +1,7 @@
-#ifndef Date_hpp
-#define Date_hpp
+#pragma once
+#ifndef S_Date_hpp
+#define S_Date_hpp
 
-#include <iostream>
-#include <iomanip>
-#include <functional>
-#include <stdexcept>
 #include <Arduino.h>
 
 using namespace std;
@@ -17,6 +14,7 @@ private:
     int day;
     int month;
     int year;
+    bool is_time_span;
 
     bool is_leap_year(int32_t Year) {
         return (Year % 4 == 0 && Year % 100 != 0) || (Year % 400 == 0);
@@ -63,30 +61,47 @@ private:
 
     void normalize()
     {
-        while (day > days_in_month(month, year))
+        if (!is_time_span)
         {
-            day -= days_in_month(month, year);
-            month++;
-            if (month > 12) {
-                month = 1;
+            while (month > 12)
+            {
+                month -= 12;
                 year++;
             }
-        }
 
-        while (day < 1)
-        {
-            month--;
-            if (month < 1)
+            while (month < 1)
             {
-                month = 12;
+                month += 12;
                 year--;
             }
-            day += days_in_month(month, year);
+
+            while (day > days_in_month(month, year))
+            {
+                day -= days_in_month(month, year);
+                month++;
+                if (month > 12) {
+                    month = 1;
+                    year++;
+                }
+            }
+
+            while (day < 1)
+            {
+                month--;
+                if (month < 1)
+                {
+                    month = 12;
+                    year--;
+                }
+                day += days_in_month(month, year);
+            }
         }
     }
 
 public:
-    S_Date(int d = 1, int m = 1, int y = 1970) : day(d), month(m), year(y) {
+    S_Date(int d = 1, int m = 1, int y = 1970, bool is_time_span = false)
+    : day(d), month(m), year(y), is_time_span(is_time_span)
+    {
         normalize();
     }
 
@@ -157,12 +172,6 @@ public:
     bool operator>=(const S_Date& other) const {
         return !(*this < other);
     }
-
-    /*
-    int64_t difference_in_days(const S_Date& other) const {
-        return (year - other.year) * 365 + (month - other.month) * 30 + (day - other.day);
-    }
-    */
 
    int64_t get_diff_in_days(S_Date& other)
    {
