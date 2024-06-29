@@ -6,7 +6,7 @@
 #include <Wire.h>
 #include "FRAM_crc.hpp"
 
-#define MAX_VARIABLE_LENGTH 16
+#define MAX_VARIABLE_LENGTH 100
 
 extern TwoWire * itcw;
 extern uint8_t FRAM_address;
@@ -151,7 +151,6 @@ public:
     void set(T value) 
     {
         FRAM_write(this->_address, &value, sizeof(T));
-
         uint8_t checksum = FRAM_CRC<T>::get(value);
         FRAM_write(this->checksumAddress(), &checksum, 1);
     }

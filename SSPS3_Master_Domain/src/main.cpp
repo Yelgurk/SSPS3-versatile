@@ -2,8 +2,8 @@
 
 #include "../include/main.hpp"
 
-#define DEMO_DT         1
-#define DEMO_FRAM_MEM   0
+#define DEMO_DT         0
+#define DEMO_FRAM_MEM   1
 
 /*
 1)
