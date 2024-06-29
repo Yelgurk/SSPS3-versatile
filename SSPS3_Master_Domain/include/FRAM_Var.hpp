@@ -21,13 +21,19 @@ class FRAM_Var
 private:
     uint32_t _address = 0;
     T _defaultValue;
+    T _currentValue;
+    T _crcValue;
 
 public:
     FRAM_Var(T defaultValue, const uint32_t var_address) :
     _address(var_address), _defaultValue(defaultValue)
     {}
 
-    operator T() {
+    operator T&() {
+        return *this->get();
+    }
+
+    operator T*() {
         return this->get();
     }
 
@@ -136,37 +142,35 @@ public:
       return this->get() == value;
     }
 
-    T get()
+    T* get()
     {
-        T returnValue;
-
         if (this->isInitialized())
-            FRAM_read(this->_address, &returnValue, sizeof(T));
+            FRAM_read(this->_address, &_currentValue, sizeof(T));
         else
-            returnValue = this->_defaultValue;
+            _currentValue = this->_defaultValue;
 
-      return returnValue;
+        return &_currentValue;
     }
 
     void set(T value) 
     {
         FRAM_write(this->_address, &value, sizeof(T));
-        uint8_t checksum = FRAM_CRC<T>::get(value);
+        uint8_t checksum = FRAM_CRC<T>::get(&value, sizeof(T));
         FRAM_write(this->checksumAddress(), &checksum, 1);
     }
 
     bool isInitialized() {
         return (this->checksum() == this->checksumByte());
     }
-
-    uint16_t length() {
-        return sizeof(T) + 1; // + 1 crc byte
-    }
-
+    
     void unset(uint8_t unsetValue = 0xff)
     {
         for ( int i = 0; i < this->length(); i++)
             FRAM_write(this->_address + i, &unsetValue, 1);
+    }
+
+    uint16_t length() {
+        return sizeof(T) + 1; // + 1 crc byte
     }
 
     uint16_t checksumAddress() {
@@ -179,14 +183,8 @@ public:
 
     uint8_t checksum()
     {
-        uint8_t data[MAX_VARIABLE_LENGTH];
-        this->copyTo(data, sizeof(T));
-
-        return FRAM_CRC<T>::get(data, sizeof(T));
-    }
-
-    void copyTo(uint8_t* data, uint32_t length) {
-        FRAM_read(this->_address, data, length);
+        FRAM_read(this->_address, &_crcValue, sizeof(T));
+        return FRAM_CRC<T>::get(&_crcValue, sizeof(T));
     }
 
     uint16_t getAddress() {
@@ -205,6 +203,7 @@ private:
     uint32_t _address = 0;
     uint8_t _max_str_len = 0;
     std::string _defaultValue;
+    std::string _currentValue;
     char * buffer;
     char * crc_buffer;
 
@@ -219,29 +218,32 @@ public:
         memset(crc_buffer, 0, _max_str_len);
     }
 
-    operator std::string() {
-        return this->get();
+    operator const char *() {
+        return this->get()->c_str();
     }
 
-    std::string operator = (const std::string& value)
+    operator std::string&() {
+        return *this->get();
+    }
+
+    std::string* operator = (const std::string& value)
     {
         this->set(value);
         return this->get();
     }
 
-    std::string get()
+    std::string* get()
     {
         if (this->isInitialized())
         {
             FRAM_read(this->_address, buffer, _max_str_len);
             buffer[_max_str_len - 1] = '\0';
+            _currentValue.assign(buffer);
         }
         else
-        {
-            return this->_defaultValue;
-        }
+            _currentValue = _defaultValue;
 
-        return std::string(buffer);
+        return &_currentValue;
     }
 
     void set(const std::string& value) 
