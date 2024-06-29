@@ -197,4 +197,104 @@ public:
         return this->_defaultValue;
     }
 };
+
+template <>
+class FRAM_Var<std::string>
+{
+private:
+    uint32_t _address = 0;
+    uint8_t _max_str_len = 0;
+    std::string _defaultValue;
+    char * buffer;
+    char * crc_buffer;
+
+public:
+    FRAM_Var(std::string defaultValue, uint8_t max_str_len, const uint32_t var_address) :
+    _address(var_address), _max_str_len(max_str_len), _defaultValue(defaultValue)
+    {
+        buffer = new char[_max_str_len];
+        crc_buffer = new char[_max_str_len];
+
+        memset(buffer, 0, _max_str_len);
+        memset(crc_buffer, 0, _max_str_len);
+    }
+
+    operator std::string() {
+        return this->get();
+    }
+
+    std::string operator = (const std::string& value)
+    {
+        this->set(value);
+        return this->get();
+    }
+
+    std::string get()
+    {
+        if (this->isInitialized())
+        {
+            FRAM_read(this->_address, buffer, _max_str_len);
+            buffer[_max_str_len - 1] = '\0';
+        }
+        else
+        {
+            return this->_defaultValue;
+        }
+
+        return std::string(buffer);
+    }
+
+    void set(const std::string& value) 
+    {
+        memset(buffer, 0, _max_str_len);
+
+        strncpy(buffer, value.c_str(), min<uint8_t>(_max_str_len - 1, value.length()));
+        buffer[min<uint8_t>(_max_str_len - 1, value.length())] = '\0';
+
+        FRAM_write(this->_address, buffer, _max_str_len);
+        uint8_t checksum = FRAM_CRC<std::string>::get((uint8_t*)buffer, _max_str_len);
+        FRAM_write(this->checksumAddress(), &checksum, 1);
+    }
+
+    bool isInitialized() {
+        return (this->checksum() == this->checksumByte());
+    }
+
+    uint16_t length() {
+        return _max_str_len + 1;  // + 1 crc byte
+    }
+
+    void unset(uint8_t unsetValue = 0xff)
+    {
+        for (int i = 0; i < this->length(); i++)
+            FRAM_write(this->_address + i, &unsetValue, 1);
+    }
+
+    uint16_t checksumAddress() {
+        return this->_address + this->length() - 1;
+    }
+
+    uint16_t checksumByte() {
+        return FRAM_readByte(this->checksumAddress());
+    }
+
+    uint8_t checksum()
+    {
+        memset(crc_buffer, 0, _max_str_len);
+        this->copyTo((uint8_t*)crc_buffer, _max_str_len);
+        return FRAM_CRC<std::string>::get((uint8_t*)crc_buffer, _max_str_len);
+    }
+
+    void copyTo(uint8_t* data, uint32_t length) {
+        FRAM_read(this->_address, data, length);
+    }
+
+    uint16_t getAddress() {
+        return this->_address;
+    }
+
+    std::string getDefaultValue() {
+        return this->_defaultValue;
+    }
+};
 #endif

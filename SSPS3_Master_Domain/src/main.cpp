@@ -68,12 +68,15 @@ void loop()
             Serial.print(mem_Timer4.isInitialized());
             Serial.print(" | ");
             Serial.print(mem_Timer5.isInitialized());
+            Serial.print(" | ");
+            Serial.print(mem_String.isInitialized());
             Serial.println();
             if (!mem_Timer1.isInitialized()) mem_Timer1.unset();
             if (!mem_Timer2.isInitialized()) mem_Timer2.unset();
             if (!mem_Timer3.isInitialized()) mem_Timer3.unset();
             if (!mem_Timer4.isInitialized()) mem_Timer4.unset();
             if (!mem_Timer5.isInitialized()) mem_Timer5.unset();
+            if (!mem_String.isInitialized()) mem_String.unset();
         }
 
         if (true)
@@ -88,18 +91,21 @@ void loop()
             Serial.print(mem_Timer4);
             Serial.print(" | ");
             Serial.print(mem_Timer5);
+            Serial.print(" | ");
+            Serial.print(mem_String.get().c_str());
             Serial.println();
         }
 
         if (true)
         {
             Serial.print("set:      ");
-            mem_Timer1.set(290 * multipl);
+            mem_Timer1.set(!mem_Timer1);
             mem_Timer2.set(290 * multipl);
             mem_Timer3.set(290 * 10 * multipl);
             mem_Timer4.set(290 * 10 * 2 * multipl);
             mem_Timer5.set(290 * 10 * 4 * multipl);
-            Serial.print((boolean)(290 * multipl));
+            mem_String.set("inc = " + to_string(multipl));
+            Serial.print(mem_Timer1);
             Serial.print(" | ");
             Serial.print((uint8_t)(290 * multipl));
             Serial.print(" | ");
@@ -108,6 +114,8 @@ void loop()
             Serial.print((uint32_t)(290 * 10 * 2 * multipl));
             Serial.print(" | ");
             Serial.print((uint32_t)(290 * 10 * 4 * multipl));
+            Serial.print(" | ");
+            Serial.print(("inc = " + to_string(multipl)).c_str());
             Serial.println();
         }
 
@@ -123,6 +131,8 @@ void loop()
             Serial.print(mem_Timer4);
             Serial.print(" | ");
             Serial.print(mem_Timer5);
+            Serial.print(" | ");
+            Serial.print(mem_String.get().c_str());
             Serial.println();
         }
 
@@ -138,6 +148,8 @@ void loop()
             Serial.print(mem_Timer4.getAddress());
             Serial.print(" | ");
             Serial.print(mem_Timer5.getAddress());
+            Serial.print(" | ");
+            Serial.print(mem_String.getAddress());
             Serial.println();
         }
         
