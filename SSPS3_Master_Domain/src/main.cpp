@@ -59,68 +59,65 @@ void loop()
         if (true)
         {
             Serial.print("is init:  ");
-            Serial.print(mem_Timer1.isInitialized());
+            Serial.print(mem_Timer1.crc_state());
             Serial.print(" | ");
-            Serial.print(mem_Timer2.isInitialized());
+            Serial.print(mem_Timer2.crc_state());
             Serial.print(" | ");
-            Serial.print(mem_Timer3.isInitialized());
+            Serial.print(mem_Timer3.crc_state());
             Serial.print(" | ");
-            Serial.print(mem_Timer4.isInitialized());
+            Serial.print(mem_Timer4.crc_state());
             Serial.print(" | ");
-            Serial.print(mem_Timer5.isInitialized());
+            Serial.print(mem_Timer5.crc_state());
             Serial.print(" | ");
-            Serial.print(mem_String.isInitialized());
-            //Serial.print(" | ");
-            //Serial.print(mem_TDS_1.isInitialized());
+            Serial.print(mem_String.crc_state());
+            Serial.print(" | ");
+            Serial.print(mem_TDS_1.crc_state());
             Serial.println();
-            if (!mem_Timer1.isInitialized()) mem_Timer1.unset();
-            if (!mem_Timer2.isInitialized()) mem_Timer2.unset();
-            if (!mem_Timer3.isInitialized()) mem_Timer3.unset();
-            if (!mem_Timer4.isInitialized()) mem_Timer4.unset();
-            if (!mem_Timer5.isInitialized()) mem_Timer5.unset();
-            if (!mem_String.isInitialized()) mem_String.unset();
-            //if (!mem_TDS_1.isInitialized()) mem_TDS_1.unset();
+            if (!mem_Timer1.crc_state()) mem_Timer1.unset();
+            if (!mem_Timer2.crc_state()) mem_Timer2.unset();
+            if (!mem_Timer3.crc_state()) mem_Timer3.unset();
+            if (!mem_Timer4.crc_state()) mem_Timer4.unset();
+            if (!mem_Timer5.crc_state()) mem_Timer5.unset();
+            if (!mem_TDS_1.crc_state()) mem_TDS_1.unset();
+            if (!mem_TDS_1.crc_state()) mem_TDS_2.unset();
+            if (!mem_TDS_1.crc_state()) mem_TDS_4.unset();
         }
 
         if (true)
         {
             Serial.print("read old: ");
-            Serial.print(mem_Timer1);
+            Serial.print(mem_Timer1.get());
             Serial.print(" | ");
-            Serial.print(mem_Timer2);
+            Serial.print(mem_Timer2.get());
             Serial.print(" | ");
-            Serial.print(mem_Timer3);
+            Serial.print(mem_Timer3.get());
             Serial.print(" | ");
-            Serial.print(mem_Timer4);
+            Serial.print(mem_Timer4.get());
             Serial.print(" | ");
-            Serial.print(mem_Timer5);
+            Serial.print(mem_Timer5.get());
             Serial.print(" | ");
-            Serial.print(mem_String);
-            Serial.print(" | ");
-            Serial.print(mem_TDS_1.get()->get_str().c_str());
+            Serial.print(mem_TDS_1.get().get_str().c_str());
             Serial.println();
         }
 
         if (true)
         {
             Serial.print("set:      ");
-            mem_Timer1.set(!mem_Timer1);
+            mem_Timer1.set(!mem_Timer1.get());
             mem_Timer2.set(290 * multipl);
             mem_Timer3.set(290 * 10 * multipl);
             mem_Timer4.set(290 * 10 * 2 * multipl);
             mem_Timer5.set(290 * 10 * 4 * multipl);
-            mem_String.set("inc = " + to_string(multipl));
             
             
-            TaskDataStruct *tds_edit = mem_TDS_1;
-            tds_edit->done = !tds_edit->done;
-            ++tds_edit->lap;
-            tds_edit->lap += 2;
-            tds_edit->tempC += 5;
-            tds_edit->ms_total += 10;
-            tds_edit->ms_left += 20;
+            TaskDataStruct tds_edit = mem_TDS_1.get();
+            tds_edit.done = !tds_edit.done;
+            tds_edit.lap += 2;
+            tds_edit.tempC += 5;
+            tds_edit.ms_total += 10;
+            tds_edit.ms_left += 20;
 
-            Serial.print(mem_Timer1);
+            Serial.print(mem_Timer1.get());
             Serial.print(" | ");
             Serial.print((uint8_t)(290 * multipl));
             Serial.print(" | ");
@@ -132,31 +129,26 @@ void loop()
             Serial.print(" | ");
             Serial.print(("inc = " + to_string(multipl)).c_str());
             Serial.print(" | ");
-            Serial.print(tds_edit->get_str().c_str());
+            Serial.print(tds_edit.get_str().c_str());
             Serial.println();
 
-            //mem_TDS_1.saveChanges(); 
+            mem_TDS_1.set(tds_edit); 
         }
 
         if (true)
         {
             Serial.print("read new: ");
-            Serial.print(mem_Timer1);
+            Serial.print(mem_Timer1.get());
             Serial.print(" | ");
-            Serial.print(mem_Timer2);
+            Serial.print(mem_Timer2.get());
             Serial.print(" | ");
-            Serial.print(mem_Timer3);
+            Serial.print(mem_Timer3.get());
             Serial.print(" | ");
-            Serial.print(mem_Timer4);
+            Serial.print(mem_Timer4.get());
             Serial.print(" | ");
-            Serial.print(mem_Timer5);
+            Serial.print(mem_Timer5.get());
             Serial.print(" | ");
-
-            string kek = mem_String;
-            Serial.print(kek.c_str());
-
-            Serial.print(" | ");
-            Serial.print(mem_TDS_1.get()->get_str().c_str());
+            Serial.print(mem_TDS_1.get().get_str().c_str());
 
             Serial.println();
         }
@@ -164,6 +156,7 @@ void loop()
         if (true)
         {
             Serial.print("addr:     ");
+            /*
             Serial.print(mem_Timer1.getAddress());
             Serial.print(" | ");
             Serial.print(mem_Timer2.getAddress());
@@ -178,6 +171,7 @@ void loop()
             Serial.print(" | ");
             Serial.print(mem_TDS_1.getAddress());
             Serial.println();
+            */
         }
         
         ms_last_1 = millis();

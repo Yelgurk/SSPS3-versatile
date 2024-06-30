@@ -3,9 +3,12 @@
 #define main_hpp
 
 #include <Arduino.h>
+#include "DateTime/S_DateTime.hpp"
+
 #include "FRAM_Var.hpp"
 #include "FRAM_allocator.hpp"
-#include "DateTime/S_DateTime.hpp"
+
+#include "./FRAM/FRAM_Storage.hpp"
 
 #define FRAM_ALLOC(type)            FRAM_allocator::getAddr(sizeof(type))
 #define FRAM_ALLOC_ADDR(type, addr) FRAM_allocator::getAddr(sizeof(type), addr)
@@ -21,13 +24,14 @@ using namespace std;
 extern uint8_t FRAM_address;
 extern TwoWire * itcw;
 
-struct TaskDataStruct
+
+struct __attribute__((packed)) TaskDataStruct
 {
     bool done = 0;
     uint8_t lap = 0;
-    float tempC = 0;
     double ms_total = 0;
     double ms_left = 0;
+    float tempC = 0;
 
     std::string get_str() {
         return 
@@ -41,13 +45,20 @@ struct TaskDataStruct
     }
 };
 
-FRAM_Var<boolean>           mem_Timer1(123, FRAM_ALLOC(boolean));
-FRAM_Var<uint8_t>           mem_Timer2(123, FRAM_ALLOC_ADDR(uint8_t, 100));
-FRAM_Var<uint16_t>          mem_Timer3(123, FRAM_ALLOC(uint16_t));
-FRAM_Var<uint32_t>          mem_Timer4(123, FRAM_ALLOC_ADDR(uint32_t, 200));
-FRAM_Var<uint32_t>          mem_Timer5(123, FRAM_ALLOC(uint32_t));
-FRAM_Var<std::string>       mem_String("default", 10, FRAM_ALLOC(char[10]));
-FRAM_Var<TaskDataStruct>    mem_TDS_1(TaskDataStruct(), FRAM_ALLOC(TaskDataStruct));
+TaskDataStruct defaultTaskData;
+
+auto& mem_TDS_4 = Storage::allocate<TaskDataStruct>(defaultTaskData);
+auto& mem_TDS_2 = Storage::allocate<TaskDataStruct>(defaultTaskData);
+auto& mem_TDS_1 = Storage::allocate<TaskDataStruct>(defaultTaskData);
+auto& mem_Timer1 = Storage::allocate<bool>(false);
+auto& mem_Timer2 = Storage::allocate<uint8_t>(255);
+auto& mem_Timer3 = Storage::allocate<uint16_t>(255);
+auto& mem_String = Storage::allocate<std::string>("err");
+auto& mem_Timer4 = Storage::allocate<uint32_t>(255);
+auto& mem_Timer5 = Storage::allocate<uint32_t>(255);
+auto& mem_TDS_3 = Storage::allocate<TaskDataStruct>(defaultTaskData);
+auto& mem_TDS_5 = Storage::allocate<TaskDataStruct>(defaultTaskData);
+auto& mem_TDS_6 = Storage::allocate<TaskDataStruct>(defaultTaskData);
 
 #endif
 #endif

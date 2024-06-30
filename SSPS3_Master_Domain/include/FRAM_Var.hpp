@@ -29,12 +29,21 @@ public:
     _address(var_address), _defaultValue(defaultValue)
     {}
 
-    operator T&() {
-        return *this->get();
+    void show_addr(std::string x)
+    {
+        Serial.print((x + ": ").c_str());
+
+        for (uint16_t i = 0; i < length(); i++)
+        {
+            Serial.print(_address + i);
+            Serial.print(", ");
+        }
+        
+        Serial.println();
     }
 
-    operator T*() {
-        return this->get();
+    operator T() {
+        return *this->get();
     }
 
     T operator = (T const& value) const
@@ -115,12 +124,12 @@ public:
         return newValue;
     }
 
-	T operator |= (T const& value) const
-	{
-	    T newValue = this->get() | value;
-	    this->set(newValue);
-	    return newValue;
-	}
+    T operator |= (T const& value) const
+    {
+        T newValue = this->get() | value;
+        this->set(newValue);
+        return newValue;
+    }
 
     bool operator > (T const& value) const {
         return this->get() > value;
@@ -154,13 +163,13 @@ public:
 
     void set(T value) 
     {
-        FRAM_write(this->_address, &value, sizeof(T));
+        FRAM_write(_address, &value, sizeof(T));
         uint8_t checksum = FRAM_CRC<T>::get(&value, sizeof(T));
-        FRAM_write(this->checksumAddress(), &checksum, 1);
+        FRAM_write(checksumAddress(), &checksum, 1);
     }
 
     bool isInitialized() {
-        return (this->checksum() == this->checksumByte());
+        return true;(this->checksum() == this->checksumByte());
     }
     
     void unset(uint8_t unsetValue = 0xff)
@@ -230,6 +239,19 @@ public:
     {
         this->set(value);
         return this->get();
+    }
+
+    void show_addr(std::string x)
+    {
+        Serial.print((x + ": ").c_str());
+
+        for (uint16_t i = 0; i < length(); i++)
+        {
+            Serial.print(_address + i);
+            Serial.print(", ");
+        }
+        
+        Serial.println();
     }
 
     std::string* get()
