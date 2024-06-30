@@ -25,6 +25,7 @@ public:
         for (size_t i = 0; i < size; ++i)
             itcw->write(filler);
         itcw->endTransmission();
+        delayMicroseconds(8);
     }
 
     static void write(uint16_t addr, const uint8_t* data, size_t size)
@@ -35,6 +36,7 @@ public:
         for (size_t i = 0; i < size; ++i)
             itcw->write(*(data + i));
         itcw->endTransmission();
+        delayMicroseconds(8);
     }
 
     static void read(uint16_t addr, uint8_t* data, size_t size)
@@ -43,6 +45,8 @@ public:
         itcw->write((addr >> 8) & 0xFF);
         itcw->write(addr & 0xFF);
         itcw->endTransmission();
+        delayMicroseconds(8);
+
         itcw->requestFrom(FRAM_I2C_ADDRESS, size);
         for (size_t i = 0; i < size; ++i)
             if (itcw->available())

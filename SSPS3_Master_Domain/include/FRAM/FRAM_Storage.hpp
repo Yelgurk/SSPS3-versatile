@@ -30,12 +30,22 @@ private:
 
 public:
     template<typename T>
+    static FRAMObject<T>& allocate(T default_value, size_t size) {
+        return Storage::allocate(default_value, size);
+    }
+
+    template<typename T>
+    static FRAMObject<T>& allocate(T default_value, std::string name) {
+        return Storage::allocate(default_value, sizeof(T), name);
+    }
+
+    template<typename T>
     static FRAMObject<T>& allocate(T default_value, size_t size = sizeof(T), std::string name = "_")
     {
         uint16_t address = currentAddress;
         currentAddress += (size + 1);
 
-        auto obj = make_unique<FRAMObject<T>>(address, default_value);
+        auto obj = make_unique<FRAMObject<T>>(address, default_value, size);
         FRAMObject<T>* ptr = obj.get();
 
         name = name == "_" ? ("v_" + to_string(address)) : name;  

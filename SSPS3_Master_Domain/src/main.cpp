@@ -18,7 +18,7 @@ uint8_t FRAM_address = FRAM_I2C_ADDR;
 TwoWire * itcw;
 S_DateTime * dateTime;
 
-uint8_t multipl = 0;
+uint16_t multipl = 0;
 uint64_t ms_last_1 = 0,
          ms_last_2 = 0;
 
@@ -28,6 +28,9 @@ void setup()
 
     itcw = new TwoWire(0);
     itcw->begin(SDA, SCL, 400000);
+
+    delay(5000);
+
 
 #if DEMO_DT == 1
     S_Date date(28, 2, 2024); // Valid leap year date
@@ -54,7 +57,7 @@ void setup()
 void loop()
 {
 #if DEMO_FRAM_MEM == 1
-    if (millis() - ms_last_1 >= 5000)
+    if (millis() - ms_last_1 >= 10)
     {
         if (true)
         {
@@ -78,9 +81,10 @@ void loop()
             if (!mem_Timer3.crc_state()) mem_Timer3.unset();
             if (!mem_Timer4.crc_state()) mem_Timer4.unset();
             if (!mem_Timer5.crc_state()) mem_Timer5.unset();
+            if (!mem_String.crc_state()) mem_String.unset();
             if (!mem_TDS_1.crc_state()) mem_TDS_1.unset();
-            if (!mem_TDS_1.crc_state()) mem_TDS_2.unset();
-            if (!mem_TDS_1.crc_state()) mem_TDS_4.unset();
+            if (!mem_TDS_2.crc_state()) mem_TDS_2.unset();
+            if (!mem_TDS_4.crc_state()) mem_TDS_4.unset();
         }
 
         if (true)
@@ -96,6 +100,8 @@ void loop()
             Serial.print(" | ");
             Serial.print(mem_Timer5.get());
             Serial.print(" | ");
+            Serial.print(mem_String.get().c_str());
+            Serial.print(" | ");
             Serial.print(mem_TDS_1.get().get_str().c_str());
             Serial.println();
         }
@@ -108,6 +114,7 @@ void loop()
             mem_Timer3.set(290 * 10 * multipl);
             mem_Timer4.set(290 * 10 * 2 * multipl);
             mem_Timer5.set(290 * 10 * 4 * multipl);
+            mem_String.set("inc = " + to_string(multipl));
             
             
             TaskDataStruct tds_edit = mem_TDS_1.get();
@@ -148,6 +155,8 @@ void loop()
             Serial.print(" | ");
             Serial.print(mem_Timer5.get());
             Serial.print(" | ");
+            Serial.print(mem_String.get().c_str());
+            Serial.print(" | ");
             Serial.print(mem_TDS_1.get().get_str().c_str());
 
             Serial.println();
@@ -155,8 +164,8 @@ void loop()
 
         if (true)
         {
-            Serial.print("addr:     ");
             /*
+            Serial.print("addr:     ");
             Serial.print(mem_Timer1.getAddress());
             Serial.print(" | ");
             Serial.print(mem_Timer2.getAddress());
