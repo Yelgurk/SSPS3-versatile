@@ -11,7 +11,7 @@
 #define LGFX_USE_V1
 #define SCREEN_WIDTH            480U
 #define SCREEN_HEIGHT           320U
-#define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 24 / 2    
+#define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 16 / 2    
 
 static uint8_t lv_buff_1[SCREEN_BUFFER];
 static uint8_t lv_buff_2[SCREEN_BUFFER];

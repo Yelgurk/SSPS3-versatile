@@ -83,10 +83,10 @@ UIElement * UIElement::clear_navi_states()
 
 UIElement * UIElement::gui_set_default_style(lv_obj_t * lv_obj)
 {
-    lv_obj_set_style_pad_all(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_width(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_color(lv_obj, COLOR_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(lv_obj, COLOR_WHITE_SMOKE, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(lv_obj, COLOR_WHITE, LV_PART_MAIN | LV_STATE_DEFAULT);
     return this;
 }
 
@@ -105,11 +105,11 @@ UIElement * UIElement::gui_set_unscrollable(lv_obj_t * lv_obj)
 UIElement * UIElement::gui_set_shadow_style(lv_obj_t * lv_obj)
 {
     lv_obj_set_style_shadow_color(lv_obj, lv_color_hex(0x9B9B9B), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_opa(lv_obj, 155, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(lv_obj, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_opa(lv_obj, 100, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(lv_obj, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_spread(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_offset_x(lv_obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_offset_y(lv_obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_offset_y(lv_obj, 4, LV_PART_MAIN | LV_STATE_DEFAULT);
     return this;
 }
 
@@ -120,7 +120,6 @@ UIElement * UIElement::gui_set_focus_style(lv_obj_t * lv_obj)
         lv_obj_set_style_pad_all(lv_obj, -FOCUS_BORDER_WIDTH_PX, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_set_style_border_width(lv_obj, FOCUS_BORDER_WIDTH_PX, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_set_style_border_color(lv_obj, COLOR_BLUE, LV_PART_MAIN | LV_STATE_FOCUSED);
-        lv_obj_add_event_cb(lv_obj, event_handler, LV_EVENT_ALL, NULL);
     }
     return this;
 }

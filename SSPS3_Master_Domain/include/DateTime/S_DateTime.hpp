@@ -11,7 +11,7 @@
 using namespace std;
 using DTLambdaType = function<tuple<uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t>()>;
 
-class S_DateTime
+struct __attribute__((packed)) S_DateTime
 {
 private:
     S_Date date;
@@ -126,7 +126,7 @@ public:
 
     // Operator overloading with S_Time
     S_DateTime operator+(const S_Time& t) const {
-        return S_DateTime(date, time.get_total_ss() + t.get_total_ss());
+        return S_DateTime(date + S_Date(0, 0, 0, true), time.get_total_ss() + t.get_total_ss());
     }
 
     S_DateTime operator-(const S_Time& t) const {

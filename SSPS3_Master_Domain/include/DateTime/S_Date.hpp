@@ -6,14 +6,12 @@
 
 using namespace std;
 
-class S_Date
+struct __attribute__((packed)) S_Date
 {
 private:
-    char buffer[50];
-
-    int day;
-    int month;
-    int year;
+    int16_t day;
+    int16_t month;
+    int16_t year;
     bool is_time_span;
 
     bool is_leap_year(int32_t Year) {
@@ -100,7 +98,7 @@ private:
 
 public:
     S_Date(int d = 1, int m = 1, int y = 2000, bool is_time_span = false)
-    : day(d), month(m), year(y < 2000 ? 2000 : y), is_time_span(is_time_span)
+    : day(d), month(m), year(y < 2000 ? (is_time_span ? y : 2000) : y), is_time_span(is_time_span)
     {
         normalize();
     }
@@ -112,9 +110,17 @@ public:
     void set_day(int d)      { day = d; normalize(); }
     void set_month(int m)    { month = m; normalize(); }
     void set_year(int y)     { year = y; normalize(); }
+    void set_date(const S_Date& copy)
+    {
+        this->day = copy.get_day();
+        this->month = copy.get_month();
+        this->year = copy.get_day();
+        normalize();
+    }
 
     string to_string()
     {
+        static char buffer[50];
         sprintf(buffer, "%02d.%02d.%04d", day, month, year);
         return string(buffer);
     }

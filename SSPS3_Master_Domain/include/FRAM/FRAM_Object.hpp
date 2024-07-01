@@ -38,7 +38,11 @@ public:
         _buffer = new uint8_t[full_size];
     }
 
-    uint8_t crc_calc()
+    uint8_t crc_calc_local() {
+        return FRAM::calculateCRC(_buffer, var_size);
+    }
+
+    uint8_t crc_calc_fram()
     {
         FRAM::read(address, _buffer, full_size);
         return FRAM::calculateCRC(_buffer, var_size);
@@ -48,8 +52,12 @@ public:
         return FRAM::readByte(address + var_size);
     }
 
-    bool crc_state() {
-        return crc_calc() == crc_fram();
+    bool crc_state()
+    {
+        if (crc_calc_local() == crc_fram())
+            return true;
+        else
+            return crc_calc_fram() == crc_fram();
     }
     
     void unset(uint8_t unset_val = 0x00) {
