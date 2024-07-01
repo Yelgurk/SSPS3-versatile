@@ -80,4 +80,6 @@ void init_ui_controls()
     UI_date_time = new UIDateTime(UI_service.screen);
 
     UI_machine_state_bar = new UIMachineStateBar(UI_service.screen);
+
+    UI_notify_bar = new UINotifyBar(UI_service.screen);
 }

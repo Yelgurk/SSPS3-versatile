@@ -6,6 +6,7 @@
 #include "UIControls/UIFlowGunProgressBar.hpp"
 #include "UIControls/UIList.hpp"
 #include "UIControls/UIMachineStateBar.hpp"
+#include "UIControls/UINotifyBar.hpp"
 #include "UIControls/UIObject.hpp"
 #include "UIControls/UIScreen.hpp"
 #include "UIControls/UITaskListItem.hpp"
@@ -32,3 +33,4 @@ UIService UI_service;
 UITaskRoadmapList * UI_task_roadmap_control;
 UIDateTime * UI_date_time;
 UIMachineStateBar * UI_machine_state_bar;
+UINotifyBar * UI_notify_bar;

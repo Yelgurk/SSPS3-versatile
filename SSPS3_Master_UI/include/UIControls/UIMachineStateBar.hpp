@@ -43,7 +43,10 @@ public:
         create_state_bar(get_container(), 65, 0, "fan", "об/мин", &img_fan);
         create_state_bar(get_container(), 65, 65, "tempC", "вода °C", &img_tempC);
         create_state_bar(get_container(), 95, 130, "wJacket", "рубашка", &img_water_hose);
-        create_state_bar(get_container(), 95, 225, "charge", "батарея", &img_charge, 0);
+        create_state_bar(
+            create_charge_progress_bar(get_container(), 95, 225, "charge_bar")
+            , 95, 0, "charge", "батарея", &img_charge, 0
+        );
 
         control_set_values_state_bar(30, 85, 2, 101);
     }
@@ -60,7 +63,7 @@ public:
 
         lv_label_set_text(get_container_content("[context_wJacket]"), (state_water_in_jacket > 1 ? "набор" : (string)(state_water_in_jacket == 1 ? "заполн." : "пусто")).c_str());
 
-        lv_label_set_text(get_container_content("[context_charge]"), state_charge > 100 ? "зарядка" : (to_string(state_charge) + "%").c_str());
+        lv_label_set_text(get_container_content("[context_charge]"), state_charge > 100 ? (state_charge == 101 ? "зарядка" : "ошибка") : (to_string(state_charge) + "%").c_str());
     }
 
 private:
@@ -121,6 +124,38 @@ private:
 
         remember_child_element("[base_" + name + "]", lv_base_text);
         remember_child_element("[context_" + name + "]", lv_context_text);
+    }
+
+    lv_obj_t * create_charge_progress_bar(lv_obj_t * bar, int32_t width, int32_t margin, string name)
+    {
+        lv_obj_t * progress_bar = lv_bar_create(bar);
+        lv_bar_set_value(progress_bar, 40, LV_ANIM_ON);
+        lv_obj_set_width(progress_bar, width);
+        lv_obj_set_height(progress_bar, bar_height);
+        lv_obj_align(progress_bar, LV_ALIGN_LEFT_MID, margin, 0);
+        lv_obj_set_style_radius(progress_bar, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_radius(progress_bar, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(progress_bar, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(progress_bar, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+
+        lv_obj_set_style_bg_color(progress_bar, COLOR_SKY_BLUE, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(progress_bar, COLOR_SKY_BLUE, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        
+        lv_obj_set_style_bg_color(progress_bar, COLOR_GREEN, LV_PART_MAIN | LV_STATE_USER_1);
+        lv_obj_set_style_bg_color(progress_bar, COLOR_GREEN_MEDIUM, LV_PART_INDICATOR | LV_STATE_USER_1);
+        
+        lv_obj_set_style_bg_color(progress_bar, COLOR_YELLOW_SMOKE, LV_PART_MAIN | LV_STATE_USER_2);
+        lv_obj_set_style_bg_color(progress_bar, COLOR_YELLOW, LV_PART_INDICATOR | LV_STATE_USER_2);
+        
+        lv_obj_set_style_bg_color(progress_bar, COLOR_PINK, LV_PART_MAIN | LV_STATE_USER_3);
+        lv_obj_set_style_bg_color(progress_bar, COLOR_RED, LV_PART_INDICATOR | LV_STATE_USER_3);
+        
+        //lv_obj_add_state(progress_bar, LV_STATE_USER_1);
+        //lv_obj_add_state(progress_bar, LV_STATE_USER_2);
+        //lv_obj_add_state(progress_bar, LV_STATE_USER_3);
+
+        remember_child_element("[context_" + name + "]", progress_bar);
+        return progress_bar;
     }
 };
 

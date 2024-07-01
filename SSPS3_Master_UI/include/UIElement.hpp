@@ -17,14 +17,25 @@ using namespace std;
 
 #define COLOR_WHITE             lv_color_hex(0xFFFFFF)
 #define COLOR_WHITE_SMOKE       lv_color_hex(0xF5F5F5)
+
 #define COLOR_GREY              lv_color_hex(0xC8C8C8)
 #define COLOR_MEDIUM_GREY       lv_color_hex(0xB5B8B1)
-#define COLOR_DARK_GREY         lv_color_hex(0x2F353B)     
+#define COLOR_DARK_GREY         lv_color_hex(0x2F353B)    
+
 #define COLOR_YELLOW            lv_color_hex(0xFFDC33)
+#define COLOR_YELLOW_SMOKE      lv_color_hex(0xFDEAA8)
+
 #define COLOR_RED               lv_color_hex(0xE34234)
+#define COLOR_RED_INDIAN        lv_color_hex(0xCF7272)
+
+#define COLOR_PINK              lv_color_hex(0xFDBDBA)
+
 #define COLOR_GREEN             lv_color_hex(0xBDECB6)
-#define COLOR_DARK_GREEN        lv_color_hex(0x8CCB5E)
-#define COLOR_BLUE              lv_color_hex(0XB0E0E6)
+#define COLOR_GREEN_MEDIUM      lv_color_hex(0x8CCB5E)
+#define COLOR_DARK_GREEN        lv_color_hex(0x8CCB5E)       
+
+#define COLOR_BLUE              lv_color_hex(0x80DAEB)
+#define COLOR_SKY_BLUE          lv_color_hex(0XAFEEEE)
 
 LV_FONT_DECLARE(OpenSans_bold_12px);
 LV_FONT_DECLARE(OpenSans_bold_14px);
