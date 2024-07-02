@@ -2,7 +2,8 @@
 #include "../../SSPS3_Master_Infrastructure/include/main.hpp"
 #include "../resource/lv_resources.hpp"
 
-#include "UIControls/UIBlowValList.hpp"
+#include "UIControls/UIBlowingControl.hpp"
+#include "UIControls/UIBlowValListItem.hpp"
 #include "UIControls/UIDateTime.hpp"
 #include "UIControls/UIFlowGunProgressBar.hpp"
 #include "UIControls/UIMachineStateBar.hpp"
@@ -46,3 +47,5 @@ UIMenuListItem * UI_settings_user_pasteurizer_template_1;
 UIValueSetter * UI_Set1;
 UIValueSetter * UI_Set2;
 UIValueSetter * UI_Set3;
+
+UIBlowingControl * UI_blowing_control;

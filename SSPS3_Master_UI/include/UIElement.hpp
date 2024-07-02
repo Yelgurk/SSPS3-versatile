@@ -36,6 +36,7 @@ using namespace std;
 
 #define COLOR_BLUE              lv_color_hex(0x80DAEB)
 #define COLOR_SKY_BLUE          lv_color_hex(0XAFEEEE)
+#define COLOR_DUST_BLUE         lv_color_hex(0xD7EEEF)
 
 LV_FONT_DECLARE(OpenSans_bold_12px);
 LV_FONT_DECLARE(OpenSans_bold_14px);

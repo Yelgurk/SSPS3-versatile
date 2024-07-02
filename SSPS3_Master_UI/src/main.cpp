@@ -2,7 +2,8 @@
 
 #define SSPS_STATE_BAR      1
 #define SSPS_SCREEN_TASK    0
-#define SSPS_MENU_USER      1
+#define SSPS_MENU_USER      0
+#define SSPS_BLOWING_PANEL  1
 
 uint32_t ss_ss = 0;
 TwoWire * itcw;
@@ -138,6 +139,13 @@ void init_ui_controls()
         LV_ALIGN_TOP_LEFT, 1,
         40, 50, 40, false,
         "час"
+    );
+#endif
+
+#if SSPS_BLOWING_PANEL == 1
+    UI_blowing_control = new UIBlowingControl(
+        {},
+        UI_service.screen
     );
 #endif
 }
