@@ -9,7 +9,8 @@ UIElement::UIElement(
     PlaceControlIn bind_to,
     lv_obj_t * lv_screen,
     UIElement * parent_navi,
-    vector<StyleActivator> styles_activator 
+    vector<StyleActivator> styles_activator,
+    bool is_childs_changes_transparency
 )
 {
     this->relates_to = relates_to;
@@ -17,6 +18,7 @@ UIElement::UIElement(
     this->_is_focusable = is_focusable;
     this->_is_selectable = is_selectable;
     this->_is_container = is_container;
+    this->_is_childs_changes_transparency = is_childs_changes_transparency;
     this->lv_screen = lv_screen;
     this->parent_navi = parent_navi;
 
@@ -40,14 +42,10 @@ UIElement::UIElement(
         }; break;
     }
 
-    if (this->parent_navi != nullptr)
-        parent_navi->navi_childs.push_back(this);
-
     this->navi_childs_presenter = this->container;
 
     gui_set_default_style(this->container);
     gui_set_transp_and_hide_style(this->container);
-    
     
     if (exists_in_the_collection(&styles_activator, StyleActivator::Rectangle))
         gui_set_rect_style(this->container);
@@ -63,6 +61,9 @@ UIElement::UIElement(
     
     if (exists_in_the_collection(&styles_activator, StyleActivator::Select))
         gui_set_select_style(this->container);
+
+    if (this->parent_navi != nullptr)
+        parent_navi->navi_childs.push_back(this);
 }
 
 bool UIElement::exists_in_the_collection(vector<StyleActivator> * activator, StyleActivator found)
@@ -202,7 +203,7 @@ UIElement * UIElement::navi_next()
 
     if (navi_pointer != nullptr)
     {
-        navi_pointer->lv_set_focused(true);
+        navi_pointer->set_focused(true);
         lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
     }
 
@@ -256,7 +257,7 @@ UIElement * UIElement::navi_prev()
 
     if (navi_pointer != nullptr)
     {
-        navi_pointer->lv_set_focused(true);
+        navi_pointer->set_focused(true);
         lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
     }
     
@@ -270,7 +271,7 @@ UIElement * UIElement::navi_ok()
         selected = navi_pointer;
         selected
         ->lv_clear_states()
-        ->lv_set_selected(true)
+        ->set_selected(true)
         ->navi_next();
     }
     return this;
@@ -289,7 +290,7 @@ UIElement * UIElement::navi_back()
     }
 
     if (!_is_container)
-        lv_set_focused(true);
+        set_focused(true);
     return this;
 }
 
@@ -314,6 +315,10 @@ lv_obj_t * UIElement::get_container_content(string key)
 lv_obj_t * UIElement::get_navi_childs_presenter()
 {
     return this->navi_childs_presenter;
+}
+
+void UIElement::set_key_press_actions(vector<KeyModel> key_press_actions) {
+    this->key_press_actions = key_press_actions;
 }
 
 UIElement * UIElement::set_childs_presenter(string key)
@@ -366,37 +371,57 @@ UIElement * UIElement::update_ui_context()
     return this;
 }
 
-UIElement * UIElement::lv_clear_states()
+UIElement * UIElement::lv_clear_states(lv_obj_t * lv_obj)
 {
-    lv_obj_set_state(container, LV_STATE_DEFAULT, true);
-    lv_obj_set_state(container, LV_STATE_FOCUSED, false);
-    lv_obj_set_state(container, LV_STATE_PRESSED, false);
-    lv_obj_set_state(container, LV_STATE_USER_1, false);
-    lv_obj_set_state(container, LV_STATE_USER_2, false);
+    if (lv_obj != nullptr)
+    {
+        lv_obj_set_state(lv_obj, LV_STATE_DEFAULT, true);
+        lv_obj_set_state(lv_obj, LV_STATE_FOCUSED, false);
+        lv_obj_set_state(lv_obj, LV_STATE_PRESSED, false);
+        lv_obj_set_state(lv_obj, LV_STATE_USER_1, false);
+        lv_obj_set_state(lv_obj, LV_STATE_USER_2, false);
+        lv_obj_set_state(lv_obj, LV_STATE_USER_3, false);
+        lv_obj_set_state(lv_obj, LV_STATE_USER_4, false);
+    }
+    else
+    {
+        set_childs_hidden();
+        lv_obj_set_state(container, LV_STATE_DEFAULT, true);
+        lv_obj_set_state(container, LV_STATE_FOCUSED, false);
+        lv_obj_set_state(container, LV_STATE_PRESSED, false);
+        lv_obj_set_state(container, LV_STATE_USER_1, false);
+        lv_obj_set_state(container, LV_STATE_USER_2, false);
+        lv_obj_set_state(container, LV_STATE_USER_3, false);
+        lv_obj_set_state(container, LV_STATE_USER_4, false);
+    }
     return this;
 }
 
-UIElement * UIElement::lv_set_focused(bool state)
+UIElement * UIElement::set_focused(bool state)
 {
     lv_obj_set_state(container, LV_STATE_FOCUSED, state);
+    set_childs_transarent();
     return this;
 }
 
-UIElement * UIElement::lv_set_selected(bool state)
+UIElement * UIElement::set_selected(bool state)
 {
     lv_obj_set_state(container, LV_STATE_PRESSED, state);
+    set_childs_visible();
     return this;
 }
 
-UIElement * UIElement::lv_set_transparent(bool state)
+UIElement * UIElement::set_transparent(bool state)
 {
     lv_obj_set_state(container, LV_STATE_USER_1, state);
+    set_childs_hidden();
     return this;
 }
 
-UIElement * UIElement::lv_set_hidden(bool state)
+UIElement * UIElement::set_hidden(bool state)
 {
     lv_obj_set_state(container, LV_STATE_USER_2, state);
+    set_childs_hidden();
     return this;
 }
 
@@ -425,19 +450,34 @@ int16_t UIElement::get_focused_index()
         return -1;
 } 
 
-/* begin */
-/* если container != navi_childs_presenter, только тогда отображать либо скрывать, если в состоянии focused|selected */
-
-UIElement * UIElement::hide()
+UIElement * UIElement::set_childs_hidden()
 {
+    if (_is_childs_changes_transparency && container != navi_childs_presenter)
+    {
+        lv_obj_set_style_opa(navi_childs_presenter, 0, 0);
+    }
     return this;
 }
 
-UIElement * UIElement::show()
+UIElement * UIElement::set_childs_transarent()
 {
+    if (_is_childs_changes_transparency && container != navi_childs_presenter)
+    {
+        lv_obj_set_style_bg_color(navi_childs_presenter, COLOR_GREY, 0);
+        lv_obj_set_style_opa(navi_childs_presenter, 255, 0);
+    }
     return this;
 }
-/* end */
+
+UIElement * UIElement::set_childs_visible()
+{
+    if (_is_childs_changes_transparency && container != navi_childs_presenter)
+    {
+        lv_obj_set_style_bg_color(navi_childs_presenter, COLOR_WHITE, 0);
+        lv_obj_set_style_opa(navi_childs_presenter, 255, 0);
+    }
+    return this;
+}
 
 void UIElement::clear_ui_childs()
 {

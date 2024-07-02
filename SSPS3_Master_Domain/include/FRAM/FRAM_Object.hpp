@@ -64,6 +64,10 @@ public:
         FRAM::fill(address, unset_val, full_size);
     }
 
+    void reset() {
+        set(_default_value);
+    }
+
     void set(const T& value)
     {
         memcpy(_buffer, &value, var_size);
@@ -80,7 +84,8 @@ public:
         }
         else
         {
-            unset();
+            //unset();
+            reset();
             return _default_value;
         }
     }
@@ -131,6 +136,10 @@ public:
         FRAM::fill(address, unset_val, full_size);
     }
 
+    void reset() {
+        set(_default_value);
+    }
+
     void set(const std::string& value)
     {
         clear_buff();
@@ -146,7 +155,8 @@ public:
             return _value.assign((char*)_buffer, var_size);
         else
         {
-            unset();
+            //unset();
+            reset();
             return _default_value;
         }
     }

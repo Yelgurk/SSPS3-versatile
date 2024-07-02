@@ -79,6 +79,7 @@ private:
     bool _is_focusable = false;
     bool _is_selectable = false;
     bool _is_container = false;
+    bool _is_childs_changes_transparency = false;
 
     bool exists_in_the_collection(vector<StyleActivator> * activator, StyleActivator found);
 
@@ -95,6 +96,7 @@ protected:
     lv_obj_t * get_container();
     lv_obj_t * get_navi_childs_presenter();
     
+    void set_key_press_actions(vector<KeyModel> key_press_actions);
     UIElement * set_childs_presenter(string key);
     UIElement * remember_child_element(string key, lv_obj_t * child);
 
@@ -108,7 +110,8 @@ public:
         PlaceControlIn bind_to,
         lv_obj_t * lv_screen,
         UIElement * parent_navi = nullptr,
-        vector<StyleActivator> styles_activator = default_styles_activator
+        vector<StyleActivator> styles_activator = default_styles_activator,
+        bool is_childs_changes_transparency = false
     );
     lv_obj_t * get_container_content(string key);
     lv_obj_t * get_screen();
@@ -125,16 +128,17 @@ public:
     UIElement * clear_ui_context_action();
     UIElement * update_ui_base();
     UIElement * update_ui_context();
-    UIElement * lv_clear_states();
-    UIElement * lv_set_focused(bool state);
-    UIElement * lv_set_selected(bool state);
-    UIElement * lv_set_transparent(bool state);
-    UIElement * lv_set_hidden(bool state);
+    UIElement * lv_clear_states(lv_obj_t * lv_obj = nullptr);
+    UIElement * set_focused(bool state);
+    UIElement * set_selected(bool state);
+    UIElement * set_transparent(bool state);
+    UIElement * set_hidden(bool state);
     UIElement * get_parent();
     UIElement * get_selected(bool get_focused = false);
     int16_t get_focused_index();
-    UIElement * hide();
-    UIElement * show();
+    UIElement * set_childs_hidden();
+    UIElement * set_childs_transarent();
+    UIElement * set_childs_visible();
     void clear_ui_childs();
     void delete_ui_element(bool is_dynamic_alloc);
 };

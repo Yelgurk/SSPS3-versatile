@@ -3,6 +3,8 @@
 
 #include "../UIElement.hpp"
 
+enum class NotifyIconEnum : uint8_t { OK, INFO, WARNING, ERROR };
+
 class UINotifyBar : public UIElement
 {
 public:
@@ -55,7 +57,7 @@ public:
         lv_obj_set_style_align(lv_setter_icon, LV_ALIGN_TOP_MID, LV_PART_MAIN | LV_STATE_USER_3);
 
         lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, 0);
-        lv_obj_set_style_bg_color(get_container(), COLOR_SKY_BLUE, LV_PART_MAIN | LV_STATE_USER_1);
+        lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, LV_PART_MAIN | LV_STATE_USER_1);
         lv_obj_set_style_bg_color(get_container(), COLOR_YELLOW_SMOKE, LV_PART_MAIN | LV_STATE_USER_2);
         lv_obj_set_style_bg_color(get_container(), COLOR_PINK, LV_PART_MAIN | LV_STATE_USER_3);
         lv_obj_set_style_opa(get_container(), 255, 0);
@@ -66,44 +68,55 @@ public:
         remember_child_element("[context_count]", lv_context_text);
         remember_child_element("[context_icon]", lv_setter_icon);
 
-        //control_set_values_notify_bar(LV_STATE_DEFAULT, 0);
-        //control_set_values_notify_bar(LV_STATE_USER_1, 1);
-        control_set_values_notify_bar(LV_STATE_USER_2, 2);
-        //control_set_values_notify_bar(LV_STATE_USER_3, 3);
+        //control_set_values_notify_bar(NotifyIconEnum::OK, 0);
+        control_set_values_notify_bar(NotifyIconEnum::INFO, 1);
+        //control_set_values_notify_bar(NotifyIconEnum::WARNING, 2);
+        //control_set_values_notify_bar(NotifyIconEnum::ERROR, 3);
     }
 
-    void control_set_values_notify_bar(_lv_state_t selector, uint8_t count)
+    void control_set_values_notify_bar(NotifyIconEnum notify_importance, uint8_t count)
     {
-        set_bar_style(selector);
+        set_bar_style(notify_importance);
         lv_label_set_text(get_container_content("[context_count]"), to_string(count).c_str());
     }
 
 private:
-    void clear_all_flags(lv_obj_t * label)
+    void set_bar_style(NotifyIconEnum selector)
     {
-        lv_obj_set_state(label, LV_STATE_USER_1, false);
-        lv_obj_set_state(label, LV_STATE_USER_2, false);
-        lv_obj_set_state(label, LV_STATE_USER_3, false);
-    }
+        lv_clear_states(get_container_content("[context_count]"));
+        lv_clear_states(get_container_content("[context_icon]"));
+        lv_clear_states(get_container());
 
-    void set_bar_style(_lv_state_t selector)
-    {
-        clear_all_flags(get_container_content("[context_count]"));
-        clear_all_flags(get_container_content("[context_icon]"));
-        clear_all_flags(get_container());
-        if (selector != LV_STATE_DEFAULT)
-        {
-            lv_obj_set_state(get_container_content("[context_count]"), selector, true);
-            lv_obj_set_state(get_container_content("[context_icon]"), selector, true);
-            lv_obj_set_state(get_container(), selector, true);
-        }
-
+        static _lv_state_t obj_state;
         switch (selector)
         {
-        case LV_STATE_USER_1:   lv_image_set_src(get_container_content("[context_icon]"), &img_info); break;
-        case LV_STATE_USER_2:   lv_image_set_src(get_container_content("[context_icon]"), &img_warning); break;
-        case LV_STATE_USER_3:   lv_image_set_src(get_container_content("[context_icon]"), &img_error); break;
-        default:                lv_image_set_src(get_container_content("[context_icon]"), &img_checkmark); break;
+        case NotifyIconEnum::OK: {
+            obj_state = LV_STATE_DEFAULT;
+            lv_image_set_src(get_container_content("[context_icon]"), &img_checkmark); break;
+            }; break;
+            
+        case NotifyIconEnum::INFO: {
+            obj_state = LV_STATE_USER_1;
+            lv_image_set_src(get_container_content("[context_icon]"), &img_info); break;
+            }; break;
+            
+        case NotifyIconEnum::WARNING: {
+            obj_state = LV_STATE_USER_2;
+            lv_image_set_src(get_container_content("[context_icon]"), &img_warning); break;
+            }; break;
+
+            
+        default: {
+            obj_state = LV_STATE_USER_3;
+            lv_image_set_src(get_container_content("[context_icon]"), &img_error); break;
+            }; break;
+        }
+
+        if (selector != NotifyIconEnum::OK)
+        {
+            lv_obj_set_state(get_container_content("[context_count]"), obj_state, true);
+            lv_obj_set_state(get_container_content("[context_icon]"), obj_state, true);
+            lv_obj_set_state(get_container(), obj_state, true);
         }
     }
 };

@@ -3,6 +3,10 @@
 
 #include "../UIElement.hpp"
 
+enum class ChargeStateEnum : uint8_t { ERROR, STABLE, CHARGERING };
+
+enum class WaterJacketStateEnum : uint8_t { EMPTY, FILLING, FILLED };
+
 class UIMachineStateBar : public UIElement
 {
 private:
@@ -44,26 +48,64 @@ public:
         create_state_bar(get_container(), 65, 65, "tempC", "вода °C", &img_tempC);
         create_state_bar(get_container(), 95, 130, "wJacket", "рубашка", &img_water_hose);
         create_state_bar(
-            create_charge_progress_bar(get_container(), 95, 225, "charge_bar")
-            , 95, 0, "charge", "батарея", &img_charge, 0
+            create_charge_progress_bar(get_container(), 95, 225, "charge_bar"),
+            95,
+            0,
+            "charge",
+            "батарея",
+            &img_charge,
+            0
         );
 
-        control_set_values_state_bar(30, 85, 2, 101);
+        control_set_values_state_bar(30, 85, WaterJacketStateEnum::EMPTY, 101, ChargeStateEnum::ERROR);
     }
 
-    void control_set_values_state_bar(int16_t state_fan, int16_t state_tempC, uint8_t state_water_in_jacket, int16_t state_charge)
+    void control_set_values_state_bar(int16_t fan, int16_t tempC, WaterJacketStateEnum water_jacket_state, int16_t charge_value, ChargeStateEnum charge_state)
     {
         static char buffer[20];
+        charge_value = charge_value < 0 ? 0 : (charge_value > 100 ? 100 : charge_value);
 
-        sprintf(buffer, "%d", state_fan);
+        sprintf(buffer, "%d", fan);
         lv_label_set_text(get_container_content("[context_fan]"), buffer);
-
-        sprintf(buffer, "%d", state_tempC);
+        sprintf(buffer, "%d", tempC);
         lv_label_set_text(get_container_content("[context_tempC]"), buffer);
 
-        lv_label_set_text(get_container_content("[context_wJacket]"), (state_water_in_jacket > 1 ? "набор" : (string)(state_water_in_jacket == 1 ? "заполн." : "пусто")).c_str());
+        switch (water_jacket_state)
+        {
+            case WaterJacketStateEnum::FILLING: lv_label_set_text(get_container_content("[context_wJacket]"), "набор"); break;
+            case WaterJacketStateEnum::FILLED: lv_label_set_text(get_container_content("[context_wJacket]"), "заполн."); break;
+            default: lv_label_set_text(get_container_content("[context_wJacket]"), "пусто"); break;
+        }
 
-        lv_label_set_text(get_container_content("[context_charge]"), state_charge > 100 ? (state_charge == 101 ? "зарядка" : "ошибка") : (to_string(state_charge) + "%").c_str());
+        lv_obj_t * bar_ptr = get_container_content("[context_charge_bar]");
+
+        lv_clear_states(bar_ptr);
+        switch (charge_state)
+        {
+        case ChargeStateEnum::CHARGERING: {
+            lv_label_set_text(get_container_content("[context_charge]"), "зарядка");
+            }; break;
+        
+        case ChargeStateEnum::STABLE: {
+            lv_label_set_text(get_container_content("[context_charge]"), (to_string(charge_value) + "%").c_str());
+            if (charge_value > 70)
+                lv_obj_set_state(bar_ptr, LV_STATE_USER_1, true);
+            else
+            if (charge_value > 30)
+                lv_obj_set_state(bar_ptr, LV_STATE_USER_2, true);
+            else
+            if (charge_value <= 30)
+                lv_obj_set_state(bar_ptr, LV_STATE_USER_3, true);
+
+            lv_bar_set_value(bar_ptr, charge_value, LV_ANIM_OFF);
+            }; break;
+        
+        default: {
+            lv_obj_set_state(bar_ptr, LV_STATE_USER_3, true);
+            lv_label_set_text(get_container_content("[context_charge]"), "ошибка");
+            lv_bar_set_value(bar_ptr, 100, LV_ANIM_OFF);
+            }; break;
+        }
     }
 
 private:
@@ -149,10 +191,6 @@ private:
         
         lv_obj_set_style_bg_color(progress_bar, COLOR_PINK, LV_PART_MAIN | LV_STATE_USER_3);
         lv_obj_set_style_bg_color(progress_bar, COLOR_RED, LV_PART_INDICATOR | LV_STATE_USER_3);
-        
-        //lv_obj_add_state(progress_bar, LV_STATE_USER_1);
-        //lv_obj_add_state(progress_bar, LV_STATE_USER_2);
-        //lv_obj_add_state(progress_bar, LV_STATE_USER_3);
 
         remember_child_element("[context_" + name + "]", progress_bar);
         return progress_bar;

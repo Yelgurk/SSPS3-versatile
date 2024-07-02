@@ -52,7 +52,7 @@ public:
         sprintf(buffer, "%02d:%02d:%02d", hh, mm, ss);
         lv_label_set_text(get_container_content("[time]"), buffer);
 
-        sprintf(buffer, "%02d.%02d.%04d", dd, MM, yyyy);
+        sprintf(buffer, "%02d / %02d / %04d", dd, MM, yyyy);
         lv_label_set_text(get_container_content("[date]"), buffer);
     }
 };

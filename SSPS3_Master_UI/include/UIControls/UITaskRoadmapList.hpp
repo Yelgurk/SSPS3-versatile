@@ -165,7 +165,7 @@ public:
         lv_obj_set_style_border_width(lv_col_splitter_name, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         lv_obj_t * lv_col_header_icon_fan = lv_img_create(lv_col_splitter_1);
-        /////////////////////////////////lv_img_set_src(lv_col_header_icon_fan, &ui_img_fan_png);
+        lv_img_set_src(lv_col_header_icon_fan, &img_fan);
         lv_obj_set_width(lv_col_header_icon_fan, LV_SIZE_CONTENT);   /// 36
         lv_obj_set_height(lv_col_header_icon_fan, LV_SIZE_CONTENT);    /// 36
         lv_obj_set_x(lv_col_header_icon_fan, 0);
@@ -176,7 +176,7 @@ public:
         lv_img_set_zoom(lv_col_header_icon_fan, 144);
 
         lv_obj_t * lv_col_header_icon_tempC = lv_img_create(lv_col_splitter_2);
-        ////////////////////////////////lv_img_set_src(lv_col_header_icon_tempC, &ui_img_thermometer_2_png);
+        lv_img_set_src(lv_col_header_icon_tempC, &img_tempC);
         lv_obj_set_width(lv_col_header_icon_tempC, LV_SIZE_CONTENT);   /// 48
         lv_obj_set_height(lv_col_header_icon_tempC, LV_SIZE_CONTENT);    /// 48
         lv_obj_set_x(lv_col_header_icon_tempC, 0);
@@ -187,7 +187,7 @@ public:
         lv_img_set_zoom(lv_col_header_icon_tempC, 172);
 
         lv_obj_t * lv_col_header_icon_clock = lv_img_create(lv_col_splitter_3);
-        ///////////////////////////////lv_img_set_src(lv_col_header_icon_clock, &ui_img_sand_watch_3_png);
+        lv_img_set_src(lv_col_header_icon_clock, &img_sand_watch);
         lv_obj_set_width(lv_col_header_icon_clock, LV_SIZE_CONTENT);   /// 48
         lv_obj_set_height(lv_col_header_icon_clock, LV_SIZE_CONTENT);    /// 48
         lv_obj_set_x(lv_col_header_icon_clock, 10);
@@ -217,7 +217,7 @@ public:
         lv_obj_set_y(lv_col_header_label_name, -78);
         lv_label_set_text(lv_col_header_label_name, "\"mozarella\"");
         lv_obj_set_align(lv_col_header_label_name, LV_ALIGN_CENTER);
-        /////////////////////lv_obj_set_style_text_font(lv_col_header_label_name, &MontserratInt24, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(lv_col_header_label_name, &OpenSans_bold_24px, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         lv_obj_t * lv_task_progress_bar_lap_line = lv_obj_create(get_container());
         lv_obj_set_width(lv_task_progress_bar_lap_line, 4);
@@ -238,7 +238,7 @@ public:
         lv_obj_set_y(lv_task_progress_state_percentage, 105);
         lv_obj_set_align(lv_task_progress_state_percentage, LV_ALIGN_CENTER);
         lv_label_set_text(lv_task_progress_state_percentage, "77%");
-        /////////////////////////lv_obj_set_style_text_font(lv_task_progress_state_percentage, &MontserratInt24, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(lv_task_progress_state_percentage, &OpenSans_bold_24px, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         lv_obj_t * lv_task_progress_state_duration = lv_label_create(get_container());
         lv_obj_set_width(lv_task_progress_state_duration, LV_SIZE_CONTENT);   /// 1
@@ -247,7 +247,7 @@ public:
         lv_obj_set_y(lv_task_progress_state_duration, 105);
         lv_obj_set_align(lv_task_progress_state_duration, LV_ALIGN_CENTER);
         lv_label_set_text(lv_task_progress_state_duration, "24:59:59");
-        /////////////////////////lv_obj_set_style_text_font(lv_task_progress_state_duration, &MontserratInt24, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(lv_task_progress_state_duration, &OpenSans_bold_24px, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         lv_obj_t * lv_list = lv_list_create(lv_task_progress_bar_content_presenter);
         lv_obj_set_width(lv_list, 420);
