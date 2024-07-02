@@ -10,7 +10,8 @@ UIElement::UIElement(
     lv_obj_t * lv_screen,
     UIElement * parent_navi,
     vector<StyleActivator> styles_activator,
-    bool is_childs_changes_transparency
+    bool is_childs_changes_transparency,
+    int32_t focus_offset_y
 )
 {
     this->relates_to = relates_to;
@@ -21,6 +22,7 @@ UIElement::UIElement(
     this->_is_childs_changes_transparency = is_childs_changes_transparency;
     this->lv_screen = lv_screen;
     this->parent_navi = parent_navi;
+    this->_focus_offset_y = focus_offset_y;
 
     _is_focusable = _is_container ? false : _is_focusable;
 
@@ -158,10 +160,15 @@ bool UIElement::key_press(KeyMap key)
 
 UIElement * UIElement::navi_next()
 {
+    bool first_focus_iteration = false;
+
     if (navi_childs.size() > 0)
     {
         if (navi_pointer == nullptr)
+        {
+            first_focus_iteration = true;
             navi_pointer = navi_childs.back();
+        }
 
         navi_pointer->lv_clear_states();
 
@@ -204,7 +211,14 @@ UIElement * UIElement::navi_next()
     if (navi_pointer != nullptr)
     {
         navi_pointer->set_focused(true);
-        lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
+        if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration)
+        {
+            lv_area_t child_pos;
+            lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
+            lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1 + _focus_offset_y, LV_ANIM_ON);
+        }
+        else
+            lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
     }
 
     return this;
@@ -212,10 +226,15 @@ UIElement * UIElement::navi_next()
 
 UIElement * UIElement::navi_prev()
 {
+    bool first_focus_iteration = false;
+
     if (navi_childs.size() > 0)
     {
         if (navi_pointer == nullptr)
+        {
+            first_focus_iteration = true;
             navi_pointer = navi_childs.front();
+        }
 
         navi_pointer->lv_clear_states();
 
@@ -258,7 +277,15 @@ UIElement * UIElement::navi_prev()
     if (navi_pointer != nullptr)
     {
         navi_pointer->set_focused(true);
-        lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
+
+        if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration)
+        {
+            lv_area_t child_pos;
+            lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
+            lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1 + _focus_offset_y, LV_ANIM_ON);
+        }
+        else
+            lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
     }
     
     return this;

@@ -112,30 +112,31 @@ void init_ui_controls()
         }
     );
 
-    UI_settings_user_datetime = new UIMenuListItem(UI_menu_list_user);
-    UI_settings_user_pump = new UIMenuListItem(UI_menu_list_user);
-    UI_settings_user_pasteurizer_template_1 = new UIMenuListItem(UI_menu_list_user);
+    UI_settings_user_datetime = new UIMenuListItem(UI_menu_list_user, "Привет");
+    UI_settings_user_pump = new UIMenuListItem(UI_menu_list_user, "Как дела?");
+    UI_settings_user_pasteurizer_template_1 = new UIMenuListItem(UI_menu_list_user, "У меня нормально, как-то так");
     
     UI_settings_user_pasteurizer_template_1->set_page_header("Установка времени", 0);
+    UI_settings_user_pasteurizer_template_1->set_page_header("Установка времени 2", 1);
 
     UI_Set1 = new UIValueSetter(
         UI_settings_user_pasteurizer_template_1,
         LV_ALIGN_TOP_LEFT, 0,
-        0, 10, 40,
+        0, 10, 40, true,
         "", &img_fan
     );
 
     UI_Set2 = new UIValueSetter(
         UI_settings_user_pasteurizer_template_1,
-        LV_ALIGN_TOP_LEFT, 0,
-        40, 10, 140, 
+        LV_ALIGN_TOP_LEFT, 1,
+        40, 10, 40, false,
         "", &img_tempC
     );
 
     UI_Set3 = new UIValueSetter(
         UI_settings_user_pasteurizer_template_1,
-        LV_ALIGN_TOP_LEFT, 0,
-        40, 50, 140, 
+        LV_ALIGN_TOP_LEFT, 1,
+        40, 50, 40, false,
         "час"
     );
 #endif

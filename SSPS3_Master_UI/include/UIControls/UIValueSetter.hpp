@@ -19,6 +19,7 @@ public:
         int32_t width = 0,
         int32_t offset_x = 0,
         int32_t offset_y = 0,
+        bool top_column_setter = false,
         string header_text = "",
         const lv_image_dsc_t * header_icon = nullptr,
         UIAction var_inc = NULL,
@@ -34,7 +35,9 @@ public:
         PlaceControlIn::Control,
         parent_navi->get_screen(),
         parent_navi,
-        { StyleActivator::Focus, StyleActivator::Select, StyleActivator::Unscrollable, StyleActivator::Shadow }
+        { StyleActivator::Focus, StyleActivator::Select, StyleActivator::Unscrollable, StyleActivator::Shadow },
+        false,
+        top_column_setter ? -offset_y : 0
     }
     {
         if (var_inc != NULL)
@@ -47,8 +50,16 @@ public:
             this->setter_set_value = setter_set_value;
 
         set_key_press_actions({
-            KeyModel(KeyMap::TOP,       [this]() { if (this->var_inc) this->var_inc(); }),
-            KeyModel(KeyMap::BOTTOM,    [this]() { if (this->var_dec) this->var_dec(); }),
+            KeyModel(KeyMap::TOP,
+            [this]() {
+                if (this->var_inc) this->var_inc();
+                if (this->setter_set_value) this->setter_set_value();
+            }),
+            KeyModel(KeyMap::BOTTOM,
+            [this]() {
+                if (this->var_dec) this->var_dec();
+                if (this->setter_set_value) this->setter_set_value();
+            }),
             KeyModel(KeyMap::LEFT,      [this]() { this->navi_prev(); }),
             KeyModel(KeyMap::RIGHT,     [this]() { this->navi_next(); }),
             KeyModel(KeyMap::LEFT_TOP,  [this]() { this->navi_back(); })

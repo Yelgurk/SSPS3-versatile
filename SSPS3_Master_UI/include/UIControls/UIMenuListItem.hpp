@@ -12,7 +12,7 @@ private:
     const uint16_t width_setter_container = 295;
 
 public:
-    UIMenuListItem(UIElement * parent_navi)
+    UIMenuListItem(UIElement * parent_navi, string name = "Настройка # $ # $ #")
     : UIElement
     {
         { EquipmentType::All },
@@ -43,14 +43,13 @@ public:
         lv_obj_align(label_name, LV_ALIGN_LEFT_MID, 10, 0);
         lv_label_set_long_mode(label_name, LV_LABEL_LONG_SCROLL_CIRCULAR);
         lv_obj_set_style_text_font(label_name, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_label_set_text(label_name, "Настройка # $ # $ #");
+        lv_label_set_text(label_name, name.c_str());
 
         lv_obj_t * setters_container = lv_obj_create(parent_navi->get_screen());
         lv_obj_set_style_pad_all(setters_container, 0, 0);
         lv_obj_set_width(setters_container, width_setter_container);
         lv_obj_set_height(setters_container, height_setter_container);
         lv_obj_align(setters_container, LV_ALIGN_RIGHT_MID, -10, 30);
-        lv_obj_remove_flag(setters_container, LV_OBJ_FLAG_SCROLLABLE);
         lv_obj_set_style_radius(setters_container, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_opa(setters_container, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_color(setters_container, COLOR_WHITE, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -75,7 +74,7 @@ public:
         page = page < 0 ? 0 : page;
 
         lv_obj_t * header_label = lv_label_create(get_navi_childs_presenter());
-        lv_obj_align(header_label, LV_ALIGN_TOP_LEFT, 10, 5);
+        lv_obj_align(header_label, LV_ALIGN_TOP_LEFT, 10, 5 + height_setter_container * page);
         lv_obj_set_style_text_font(header_label, &OpenSans_bold_24px, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_label_set_text(header_label, page_header.c_str());
 
