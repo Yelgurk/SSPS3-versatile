@@ -3,14 +3,34 @@
 
 #include "../UIElement.hpp"
 
+enum class BlowVarTypeEnum : uint8_t { NONE, LITRES, TIMER };
+
 class UIBlowValListItem : public UIElement
 {
+private:
+    const int16_t width = 210;
+    const int16_t height = 50;
+    BlowVarTypeEnum var_type = BlowVarTypeEnum::NONE;
+
+    UIAction var_inc;
+    UIAction var_dec;
+    UIAction setter_set_value;
+    UIAction task_start;
+
 public:
-    UIBlowValListItem(UIElement * parent_navi, vector<KeyModel> key_press_actions)
+    UIBlowValListItem(
+        UIElement * parent_navi,
+        BlowVarTypeEnum type,
+        int32_t value = 5000,
+        UIAction var_inc = NULL,
+        UIAction var_dec = NULL,
+        UIAction setter_set_value = NULL,
+        UIAction task_start = NULL
+    )
     : UIElement
     {
         { EquipmentType::All },
-        key_press_actions,
+        {},
         true,
         false,
         false,
@@ -20,76 +40,78 @@ public:
         { StyleActivator::Unscrollable, StyleActivator::Rectangle, StyleActivator::Focus }
     }
     {
-        lv_obj_set_width(get_container(), 420);
-        lv_obj_set_height(get_container(), 30);
+        this->var_type = type;
+
+        if (setter_set_value != NULL)
+        {
+            this->setter_set_value = setter_set_value;
+            add_ui_context_action(setter_set_value);
+        }
+        if (var_inc != NULL)
+            this->var_inc = var_inc;
+        if (var_dec != NULL)
+            this->var_dec = var_dec;
+        if (task_start != NULL)
+            this->task_start = task_start;
+
+        set_key_press_actions({
+            KeyModel(KeyMap::LEFT,
+            [this]() {
+                if (this->var_inc) this->var_inc();
+                if (this->setter_set_value) this->setter_set_value();
+            }),
+            KeyModel(KeyMap::RIGHT,
+            [this]() {
+                if (this->var_dec) this->var_dec();
+                if (this->setter_set_value) this->setter_set_value();
+            }),
+            KeyModel(KeyMap::RIGHT,
+            [this]() {
+                if (this->task_start) this->task_start();
+            })
+        });
+
+        lv_obj_set_width(get_container(), width);
+        lv_obj_set_height(get_container(), height);
         lv_obj_set_style_bg_opa(get_container(), 185, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, 0);
-        lv_obj_set_style_bg_color(get_container(), COLOR_GREEN, LV_PART_MAIN | LV_STATE_USER_1);
-        lv_obj_set_style_bg_color(get_container(), COLOR_YELLOW, LV_PART_MAIN | LV_STATE_USER_2);
-        lv_obj_set_style_bg_color(get_container(), COLOR_BLUE, LV_PART_MAIN | LV_STATE_USER_3);
-        lv_obj_set_style_bg_color(get_container(), COLOR_RED, LV_PART_MAIN | LV_STATE_USER_4);
+        lv_obj_set_style_border_opa(get_container(), 0, 0);
+        lv_obj_set_style_bg_color(get_container(), COLOR_YELLOW, LV_PART_MAIN | LV_STATE_FOCUSED);
 
-        /*
-        header = lv_label_create(get_container());
-        lv_label_set_long_mode(header, LV_LABEL_LONG_SCROLL_CIRCULAR);
-        lv_obj_set_flex_grow(header, 1);
-        lv_obj_set_width(header, LV_SIZE_CONTENT);   /// 1
-        lv_obj_set_style_max_width(header, 210, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_height(header, LV_SIZE_CONTENT);
-        lv_obj_set_align(header, LV_ALIGN_LEFT_MID);
-        lv_obj_set_x(header, 0);
-        lv_obj_set_style_pad_left(header, 8, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_font(header, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_t * type_icon = lv_image_create(get_container());
+        lv_obj_align(type_icon, LV_ALIGN_LEFT_MID, 0, 0);
+        lv_obj_set_width(type_icon, LV_SIZE_CONTENT);
+        lv_obj_set_height(type_icon, LV_SIZE_CONTENT);
+        lv_image_set_scale(type_icon, 160);
 
+        if (type == BlowVarTypeEnum::LITRES)
+            lv_image_set_src(type_icon, &img_water_glass);
+        else
+            lv_image_set_src(type_icon, &img_sand_watch);
 
-        lab_1 = lv_label_create(get_container());
-        lv_obj_set_width(lab_1, LV_SIZE_CONTENT);
-        lv_obj_set_height(lab_1, LV_SIZE_CONTENT);
-        lv_obj_set_align(lab_1, LV_ALIGN_CENTER);
-        lv_obj_set_x(lab_1, 25);
-        lv_label_set_text(lab_1, string("13").c_str());
-        lv_obj_set_style_text_font(lab_1, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_opa(lab_1, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_opa(lab_1, 0, LV_PART_MAIN | LV_STATE_USER_1);
+        lv_obj_t * value_presenter = lv_label_create(get_container());
+        lv_obj_align(value_presenter, LV_ALIGN_LEFT_MID, 50, 0);
+        lv_obj_set_style_text_font(value_presenter, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_label_set_text(value_presenter, "5.000 л.");
 
-        lab_2 = lv_label_create(get_container());
-        lv_obj_set_width(lab_2, LV_SIZE_CONTENT);
-        lv_obj_set_height(lab_2, LV_SIZE_CONTENT);
-        lv_obj_set_align(lab_2, LV_ALIGN_CENTER);
-        lv_obj_set_x(lab_2, 75);
-        lv_label_set_text(lab_2, string("65").c_str());
-        lv_obj_set_style_text_font(lab_2, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_opa(lab_2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_opa(lab_2, 0, LV_PART_MAIN | LV_STATE_USER_1);
-
-        lab_3 = lv_label_create(get_container());
-        lv_obj_set_width(lab_3, LV_SIZE_CONTENT);
-        lv_obj_set_height(lab_3, LV_SIZE_CONTENT);
-        lv_obj_set_align(lab_3, LV_ALIGN_CENTER);
-        lv_obj_set_x(lab_3, 155);
-        lv_label_set_text(lab_3, string("128м 77с").c_str());
-        lv_obj_set_style_text_font(lab_3, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_opa(lab_3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_opa(lab_3, 0, LV_PART_MAIN | LV_STATE_USER_1);
-
-        remember_child_element("[header]", header);
-        remember_child_element("[val1]", lab_1);
-        remember_child_element("[val2]", lab_2);
-        remember_child_element("[val3]", lab_3);
-
-        add_ui_base_action([this](){
-            lv_label_set_text(this->header, this->node->name.c_str());
-        });
-        
-        add_ui_context_action([this]() {
-            lv_label_set_text(this->lab_1, to_string(this->node->rotation).c_str());
-            lv_label_set_text(this->lab_2, to_string(this->node->tempC).c_str());
-            lv_label_set_text(this->lab_3, to_string(this->node->duratTotalSS).c_str());
-        });
-
-        update_ui_base();
+        remember_child_element("[label_value]", value_presenter);
         update_ui_context();
-        */
+    }
+
+    void set_value(int32_t value, string post_fix = "")
+    {
+        static char buffer[50];
+
+        if (var_type == BlowVarTypeEnum::LITRES)
+        {
+            sprintf(buffer, "%.3f ", (double)value / 1000.0);
+            lv_label_set_text(get_container_content("[label_value]"), (string(buffer) + post_fix).c_str());
+        }
+        else
+        {
+            sprintf(buffer, "%02d:%02d", (uint32_t)value / 60, (uint32_t)value % 60);
+            lv_label_set_text(get_container_content("[label_value]"), buffer);
+        }
     }
 };
 

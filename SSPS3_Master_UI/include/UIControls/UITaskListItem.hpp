@@ -3,41 +3,62 @@
 
 #include "../UIElement.hpp"
 
-struct UITaskItemData
+enum class StepStateEnum : uint8_t { AWAIT, RUNNED, PAUSE, DONE, ERROR };
+
+struct EditFuctionContainer
 {
-    string      name;
-    uint8_t     rotation = 0;
-    uint8_t     tempC = 0;
-    int16_t     duratTotalSS = 0;
+private:
+    bool _is_init = false;
 
-    UITaskItemData(string name, uint8_t rotation, uint8_t tempC, int16_t duratTotalSS)
-    : name(name), rotation(rotation), tempC(tempC), duratTotalSS(duratTotalSS) {}
+public:
+    UIAction var_inc_fan;
+    UIAction var_dec_fan;
+    UIAction var_inc_tempC;
+    UIAction var_dec_tempC;
+    UIAction var_inc_durat;
+    UIAction var_dec_durat;
 
-    int16_t get_durat_ss();
-    int16_t get_durat_mm();
-    int16_t get_durat_hh();
+    EditFuctionContainer() {}
+
+    EditFuctionContainer(
+        UIAction var_inc_fan,
+        UIAction var_dec_fan,
+        UIAction var_inc_tempC,
+        UIAction var_dec_tempC,
+        UIAction var_inc_durat,
+        UIAction var_dec_durat):
+    var_inc_fan(var_inc_fan),
+    var_dec_fan(var_dec_fan),
+    var_inc_tempC(var_inc_tempC),
+    var_dec_tempC(var_dec_tempC),
+    var_inc_durat(var_inc_durat),
+    var_dec_durat(var_dec_durat)
+    {
+        _is_init = true;
+    }
+
+    bool is_init() {
+        return _is_init;
+    }
 };
 
 class UITaskListItem : public UIElement
 {
 private:
-lv_obj_t * header;
-lv_obj_t * lab_1;
-lv_obj_t * lab_2;
-lv_obj_t * lab_3;
-UITaskItemData * node;
-
-void set_node_state_pause();
-void set_node_state_error();
-void set_node_state_working();
-void set_node_state_done();
+    EditFuctionContainer var_edit_func;
+    UIAction setter_set_header;
+    UIAction setter_set_value;
 
 public:
-    UITaskListItem(UIElement * parent_navi, UITaskItemData * node, vector<KeyModel> key_press_actions)
+    UITaskListItem(
+        UIElement * parent_navi,
+        UIAction setter_set_header = NULL,
+        UIAction setter_set_value = NULL,
+        EditFuctionContainer var_edit_func = EditFuctionContainer())
     : UIElement
     {
         { EquipmentType::All },
-        key_press_actions,
+        {},
         true,
         false,
         false,
@@ -47,18 +68,40 @@ public:
         { StyleActivator::Unscrollable, StyleActivator::Rectangle, StyleActivator::Focus }
     }
     {
-        this->node = node;
+        if (setter_set_header != NULL)
+        {
+            this->setter_set_header = setter_set_header;
+            add_ui_base_action(setter_set_header);
+        }
+
+        if (setter_set_value != NULL)
+        {
+            this->setter_set_value = setter_set_value;
+            add_ui_context_action(setter_set_value);
+        }
+
+        this->var_edit_func = var_edit_func;
+
+        if (var_edit_func.is_init())
+            set_key_press_actions({
+                KeyModel(KeyMap::L_STACK_4, [this]() { this->var_edit_func.var_inc_fan(); }),
+                KeyModel(KeyMap::L_STACK_3, [this]() { this->var_edit_func.var_dec_fan(); }),
+                KeyModel(KeyMap::R_STACK_4, [this]() { this->var_edit_func.var_inc_tempC(); }),
+                KeyModel(KeyMap::R_STACK_3, [this]() { this->var_edit_func.var_dec_tempC(); }),
+                KeyModel(KeyMap::R_STACK_2, [this]() { this->var_edit_func.var_inc_durat(); }),
+                KeyModel(KeyMap::R_STACK_1, [this]() { this->var_edit_func.var_inc_durat(); })
+            });
 
         lv_obj_set_width(get_container(), 420);
         lv_obj_set_height(get_container(), 30);
         lv_obj_set_style_bg_opa(get_container(), 185, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, 0);
-        lv_obj_set_style_bg_color(get_container(), COLOR_GREEN, LV_PART_MAIN | LV_STATE_USER_1);
+        lv_obj_set_style_bg_color(get_container(), COLOR_BLUE, LV_PART_MAIN | LV_STATE_USER_1);
         lv_obj_set_style_bg_color(get_container(), COLOR_YELLOW, LV_PART_MAIN | LV_STATE_USER_2);
-        lv_obj_set_style_bg_color(get_container(), COLOR_BLUE, LV_PART_MAIN | LV_STATE_USER_3);
+        lv_obj_set_style_bg_color(get_container(), COLOR_GREEN, LV_PART_MAIN | LV_STATE_USER_3);
         lv_obj_set_style_bg_color(get_container(), COLOR_RED, LV_PART_MAIN | LV_STATE_USER_4);
 
-        header = lv_label_create(get_container());
+        lv_obj_t * header = lv_label_create(get_container());
         lv_label_set_long_mode(header, LV_LABEL_LONG_SCROLL_CIRCULAR);
         lv_obj_set_flex_grow(header, 1);
         lv_obj_set_width(header, LV_SIZE_CONTENT);   /// 1
@@ -70,7 +113,7 @@ public:
         lv_obj_set_style_text_font(header, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 
-        lab_1 = lv_label_create(get_container());
+        lv_obj_t * lab_1 = lv_label_create(get_container());
         lv_obj_set_width(lab_1, LV_SIZE_CONTENT);
         lv_obj_set_height(lab_1, LV_SIZE_CONTENT);
         lv_obj_set_align(lab_1, LV_ALIGN_CENTER);
@@ -80,7 +123,7 @@ public:
         lv_obj_set_style_opa(lab_1, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_opa(lab_1, 0, LV_PART_MAIN | LV_STATE_USER_1);
 
-        lab_2 = lv_label_create(get_container());
+        lv_obj_t * lab_2 = lv_label_create(get_container());
         lv_obj_set_width(lab_2, LV_SIZE_CONTENT);
         lv_obj_set_height(lab_2, LV_SIZE_CONTENT);
         lv_obj_set_align(lab_2, LV_ALIGN_CENTER);
@@ -90,7 +133,7 @@ public:
         lv_obj_set_style_opa(lab_2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_opa(lab_2, 0, LV_PART_MAIN | LV_STATE_USER_1);
 
-        lab_3 = lv_label_create(get_container());
+        lv_obj_t * lab_3 = lv_label_create(get_container());
         lv_obj_set_width(lab_3, LV_SIZE_CONTENT);
         lv_obj_set_height(lab_3, LV_SIZE_CONTENT);
         lv_obj_set_align(lab_3, LV_ALIGN_CENTER);
@@ -105,18 +148,34 @@ public:
         remember_child_element("[val2]", lab_2);
         remember_child_element("[val3]", lab_3);
 
-        add_ui_base_action([this](){
-            lv_label_set_text(this->header, this->node->name.c_str());
-        });
-        
-        add_ui_context_action([this]() {
-            lv_label_set_text(this->lab_1, to_string(this->node->rotation).c_str());
-            lv_label_set_text(this->lab_2, to_string(this->node->tempC).c_str());
-            lv_label_set_text(this->lab_3, to_string(this->node->duratTotalSS).c_str());
-        });
-
         update_ui_base();
         update_ui_context();
+    }
+
+    void set_step_name(string task_step_name)
+    {
+        lv_label_set_text(get_container_content("[header]"), task_step_name.c_str());
+    }
+
+    void set_step_values(int32_t val_fan, int32_t val_tempC, int32_t val_durat, StepStateEnum state)
+    {
+        static char buffer[50];
+
+        sprintf(buffer, "%02d:%02d", (uint32_t)abs(val_durat) / 60, (uint32_t)abs(val_durat) % 60);
+
+        lv_label_set_text(get_container_content("[val1]"), to_string(val_fan).c_str());
+        lv_label_set_text(get_container_content("[val2]"), to_string(val_tempC).c_str());
+        lv_label_set_text(get_container_content("[val3]"), ((val_durat < 0 ? "-" : "") + string(buffer)).c_str());
+
+        lv_clear_states(get_container());
+        switch (state)
+        {
+        case StepStateEnum::RUNNED: lv_obj_set_state(get_container(), LV_STATE_USER_1, true); break;
+        case StepStateEnum::PAUSE: lv_obj_set_state(get_container(), LV_STATE_USER_2, true); break;
+        case StepStateEnum::DONE: lv_obj_set_state(get_container(), LV_STATE_USER_3, true); break;
+        case StepStateEnum::ERROR: lv_obj_set_state(get_container(), LV_STATE_USER_4, true); break;
+        default: break;
+        }
     }
 };
 

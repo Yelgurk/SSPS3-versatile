@@ -4,40 +4,19 @@
 #include "../UIElement.hpp"
 #include "./UITaskListItem.hpp"
 
+enum class TaskStateEnum : uint8_t { AWAIT, RUNNED, PAUSE, DONE, ERROR };
+
 class UITaskRoadmapList : public UIElement
 {
 private:
     vector<UITaskListItem*> _collection;
-    /*
-    тут ссылка на сам таск,
-    т.к. будет ещё структура самой задачи,
-    откуда будет браться _collection
-    */
-    
-    void clear_list()
-    {
-        for (uint16_t i = 0; i < _collection.size(); i++)
-        {
-            _collection.at(i)->delete_ui_element(false);
-            delete _collection.at(i);   
-        }
-        _collection.clear();
-
-        clear_ui_childs();
-        lv_obj_clean(this->get_navi_childs_presenter());
-    }
-
-    void set_progress_bar_state_pause();
-    void set_progress_bar_state_error();
-    void set_progress_bar_state_working();
-    void set_progress_bar_state_done();
-    /* тут остальные методы, что отображают время и % + переменная, что хранит список шагов */
-
 
 public:
     UITaskRoadmapList(
         vector<KeyModel> key_press_actions,
-        lv_obj_t * lv_screen
+        lv_obj_t * lv_screen,
+        UIAction task_state_set_header,
+        UIAction task_state_set_values
     ) : UIElement {
         { EquipmentType::All },
         key_press_actions,
@@ -50,6 +29,9 @@ public:
         { StyleActivator::None }
     }
     {
+        add_ui_base_action(task_state_set_header);
+        add_ui_context_action(task_state_set_values);
+
         lv_obj_set_width(get_container(), 460);
         lv_obj_set_height(get_container(), 240);
         lv_obj_set_x(get_container(), 0);
@@ -81,10 +63,11 @@ public:
         lv_obj_set_style_bg_opa(lv_task_progress_bar_indicator, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
         lv_obj_set_style_arc_opa(lv_task_progress_bar_indicator, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_arc_width(lv_task_progress_bar_indicator, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, lv_color_hex(0x8CCB5E), LV_PART_INDICATOR | LV_STATE_DEFAULT);
-        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, lv_color_hex(0xFFD800), LV_PART_INDICATOR | LV_STATE_USER_1);
-        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, lv_color_hex(0x80DAEB), LV_PART_INDICATOR | LV_STATE_USER_2);
-        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, lv_color_hex(0xE34234), LV_PART_INDICATOR | LV_STATE_USER_3);
+        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, COLOR_WHITE, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, COLOR_BLUE, LV_PART_INDICATOR | LV_STATE_USER_1);
+        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, COLOR_YELLOW, LV_PART_INDICATOR | LV_STATE_USER_2);
+        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, COLOR_GREEN, LV_PART_INDICATOR | LV_STATE_USER_3);
+        lv_obj_set_style_arc_color(lv_task_progress_bar_indicator, COLOR_RED, LV_PART_INDICATOR | LV_STATE_USER_4);
 
         lv_obj_t * lv_task_progress_bar_content_presenter = lv_obj_create(get_container());
         lv_obj_set_width(lv_task_progress_bar_content_presenter, 420);
@@ -272,17 +255,70 @@ public:
         remember_child_element("[state_duration]", lv_task_progress_state_duration);
         
         set_childs_presenter("[list]");
+
+        update_ui_base();
+        update_ui_context();
     }
 
-    void load_task_list(vector<UITaskItemData> * list)
+    void clear_list()
     {
-        clear_list();
-        for (uint16_t i = 0; i < list->size(); i++)
+        for (uint16_t i = 0; i < _collection.size(); i++)
         {
-            _collection.push_back(new UITaskListItem(this, &list->at(i), {
-                KeyModel(KeyMap::R_STACK_4, []() { Serial.println("Нажата фокус из списка"); })
-            }));
+            _collection.at(i)->delete_ui_element(false);
+            delete _collection.at(i);   
         }
+        _collection.clear();
+
+        clear_ui_childs();
+        lv_obj_clean(this->get_navi_childs_presenter());
+
+        update_ui_base();
+        update_ui_context();
+    }
+
+    void bind_task_list_item(UITaskListItem* list_item)
+    {
+        _collection.push_back(list_item);
+    }
+
+    void bind_task_list_item(vector<UITaskListItem*> list_items)
+    {
+        for (uint8_t i = 0; i < list_items.size(); i++)
+            bind_task_list_item(list_items.at(i));
+    }
+
+    void set_task_header_name(string name)
+    {
+        lv_label_set_text(get_container_content("[header_name]"), name.c_str());
+    }
+
+    void set_task_state_values(double percentage_done, int64_t task_gone_ss, TaskStateEnum state)
+    {
+        static char buffer[50];
+
+        sprintf(buffer, "%.2f", percentage_done);
+        lv_label_set_text(get_container_content("[state_percentage]"), (string(buffer) + "%").c_str());
+
+        sprintf(buffer, "%02d:%02d:%02d", (uint32_t)task_gone_ss / (60 * 60), (uint32_t)task_gone_ss / 60, (uint32_t)task_gone_ss % 60);
+        lv_label_set_text(get_container_content("[state_duration]"), buffer);
+
+        lv_obj_t * bar = get_container_content("[progress_bar]");
+
+        lv_clear_states(bar);
+        switch (state)
+        {
+        case TaskStateEnum::RUNNED: lv_obj_set_state(bar, LV_STATE_USER_1, true); break;
+        case TaskStateEnum::PAUSE: lv_obj_set_state(bar, LV_STATE_USER_2, true); break;
+        case TaskStateEnum::DONE: lv_obj_set_state(bar, LV_STATE_USER_3, true); break;
+        case TaskStateEnum::ERROR: lv_obj_set_state(bar, LV_STATE_USER_4, true); break;
+        default: break;
+        }
+    }
+
+    void update_task_steps_state()
+    {
+        for (uint8_t i = 0; i < _collection.size(); i++)
+            _collection.at(i)->update_ui_context();
     }
 };
 

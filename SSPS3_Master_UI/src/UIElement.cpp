@@ -387,14 +387,14 @@ UIElement * UIElement::clear_ui_context_action()
 UIElement * UIElement::update_ui_base()
 {
     for (auto action : ui_base_actions)
-        action();
+        if (action) action();
     return this;
 }
 
 UIElement * UIElement::update_ui_context()
 {
     for (auto action : ui_context_actions)
-        action();
+        if (action) action();
     return this;
 }
 

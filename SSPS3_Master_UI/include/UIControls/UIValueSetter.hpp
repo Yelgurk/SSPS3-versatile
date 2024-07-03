@@ -40,14 +40,20 @@ public:
         top_column_setter ? -offset_y : 0
     }
     {
+        if (setter_set_header != NULL)
+        {
+            this->setter_set_header = setter_set_header;
+            add_ui_base_action(setter_set_header);
+        }
+        if (setter_set_value != NULL)
+        {
+            this->setter_set_value = setter_set_value;
+            add_ui_context_action(setter_set_value);
+        }
         if (var_inc != NULL)
             this->var_inc = var_inc;
         if (var_dec != NULL)
             this->var_dec = var_dec;
-        if (setter_set_header != NULL)
-            this->setter_set_header = setter_set_header;
-        if (setter_set_value != NULL)
-            this->setter_set_value = setter_set_value;
 
         set_key_press_actions({
             KeyModel(KeyMap::TOP,
@@ -120,6 +126,9 @@ public:
 
         remember_child_element("[header]", label_setter_header);
         remember_child_element("[value]", label_setter_value);
+
+        update_ui_base();
+        update_ui_context();
     }
 
     void set_header_text(string new_header) {

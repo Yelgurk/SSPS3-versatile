@@ -1,13 +1,132 @@
 #include "../include/main.hpp"
 
 #define SSPS_STATE_BAR      1
-#define SSPS_SCREEN_TASK    0
+#define SSPS_SCREEN_TASK    1
 #define SSPS_MENU_USER      0
-#define SSPS_BLOWING_PANEL  1
+#define SSPS_BLOWING_PANEL  0
 
 uint32_t ss_ss = 0;
 TwoWire * itcw;
 STM32_slave * STM32;
+
+/* DEMO STRUCT BEGIN */
+struct DEMO_TASK_STEP
+{
+    uint8_t fan,
+            tempC;
+    uint32_t duration;
+    uint32_t gone_ss = 0;
+    StepStateEnum state = StepStateEnum::AWAIT;
+    bool await_ok_button = false;
+
+    DEMO_TASK_STEP(uint8_t fan, uint8_t tempC, uint32_t duration)
+    : fan(fan), tempC(tempC), duration(duration)
+    {}
+
+    bool is_time_out() {
+        return gone_ss >= duration;
+    }
+
+    void iteration_ss(uint32_t ss) {
+        gone_ss += ss;
+    }
+};
+
+struct DEMO_TASK
+{
+    int64_t started_at_ss;
+    int64_t last_iteration_ss;
+    int64_t gone_ss;
+    TaskStateEnum state = TaskStateEnum::AWAIT;
+    vector<DEMO_TASK_STEP> * steps;
+
+    DEMO_TASK(vector<DEMO_TASK_STEP> * steps)
+    : steps(steps)
+    {}
+
+    double get_prog_percentage()
+    {
+        int32_t aim_ss = 0,
+                done_ss = 0;
+
+        for (auto step : *steps)
+        {
+            aim_ss += step.duration;
+
+            if (step.state == StepStateEnum::RUNNED || step.state == StepStateEnum::DONE)
+                done_ss += gone_ss;
+        }
+
+        return 100.0 / (double)aim_ss * gone_ss;
+    }
+
+    bool is_last_step(uint16_t index) {
+        return index == steps->size() - 1;
+    }
+
+    int64_t seconds() {
+        return millis() / 1000;
+    }
+
+    DEMO_TASK_STEP * start_task()
+    {
+        if (state == TaskStateEnum::AWAIT)
+        {
+            started_at_ss = seconds();
+            last_iteration_ss = seconds();
+            gone_ss = 0;
+            state = TaskStateEnum::RUNNED;
+        }
+
+        return do_task();
+    }
+
+    /* return current step */
+    DEMO_TASK_STEP * do_task()
+    {
+        int32_t ss_from_last_iteration = seconds() - last_iteration_ss;
+        last_iteration_ss = seconds();
+
+        if (state == TaskStateEnum::RUNNED)
+        {
+            gone_ss = started_at_ss - seconds();
+
+            for (int i = 0; i < steps->size(); i++)
+            {
+                if (steps->at(i).state == StepStateEnum::AWAIT && i == 0)
+                {
+                    steps->at(i).iteration_ss(ss_from_last_iteration);
+                    steps->at(i).state = StepStateEnum::RUNNED;
+                    return &steps->at(i);
+                }
+
+                if (steps->at(i).state == StepStateEnum::RUNNED)
+                {
+                    steps->at(i).iteration_ss(ss_from_last_iteration);
+
+                    if (steps->at(i).is_time_out())
+                    {
+                        steps->at(i).state = StepStateEnum::DONE;
+
+                        if (!is_last_step(i))
+                        {
+                            steps->at(i + 1).state = StepStateEnum::RUNNED;
+                            return &steps->at(i + 1);
+                        }
+                        else
+                        {
+                            state = TaskStateEnum::DONE;
+                            return &steps->at(i);
+                        }
+                    }
+                    else
+                        return &steps->at(i);
+                }
+            }
+        }
+    }
+};
+/* DEMO STRUCT END */
 
 /* DEMO VARS BEGIN*/
 uint32_t ms_last = 0,
@@ -15,8 +134,25 @@ uint32_t ms_last = 0,
 int32_t counter = 0;
 bool demo_flag = false;
 
-vector<UITaskItemData> list = vector<UITaskItemData>();
+vector<DEMO_TASK_STEP> my_demo_task_steps =
+{
+    DEMO_TASK_STEP(5, 10, 10),
+    DEMO_TASK_STEP(7, 15, 20),
+    DEMO_TASK_STEP(9, 20, 30),
+    DEMO_TASK_STEP(11, 25, 40),
+    DEMO_TASK_STEP(13, 30, 50),
+    DEMO_TASK_STEP(15, 35, 60),
+    DEMO_TASK_STEP(17, 40, 90),
+    DEMO_TASK_STEP(19, 45, 120),
+    DEMO_TASK_STEP(21, 50, 120),
+    DEMO_TASK_STEP(23, 55, 120)
+};
+
+DEMO_TASK my_demo_task(&my_demo_task_steps);
 /* DEMO VARS END */
+
+
+
 
 void init_ui_controls();
 
@@ -97,6 +233,11 @@ void loop()
 #if SSPS_MENU_USER == 1
         UI_menu_list_user->get_selected()->key_press(x);
 #endif
+
+#if SSPS_BLOWING_PANEL == 1
+        UI_blowing_control->get_selected()->key_press(x);
+        UI_blowing_control->get_selected(true)->key_press(x);
+#endif
     }
 }
 
@@ -117,12 +258,13 @@ void init_ui_controls()
         UI_service.screen
     );
 
-    list.clear();
     for (uint32_t i = 0; i < 10; i++)
     {
         uint32_t fan = random(0,30),
              tempc = random(10, 85),
              durat = random(10, 1000);
+
+
         list.push_back(UITaskItemData(("След шаг #" + to_string(i)).c_str(), fan, tempc, durat));
     }
     UI_task_roadmap_control->load_task_list(&list);
@@ -170,8 +312,17 @@ void init_ui_controls()
 
 #if SSPS_BLOWING_PANEL == 1
     UI_blowing_control = new UIBlowingControl(
-        {},
+        {
+            KeyModel(KeyMap::BOTTOM, []() { UI_blowing_control->navi_next(); }),
+            KeyModel(KeyMap::TOP, []() { UI_blowing_control->navi_prev(); }),
+            KeyModel(KeyMap::LEFT_TOP, []() { UI_blowing_control->navi_back(); })
+        },
         UI_service.screen
     );
+
+    Blow_var_1 = new UIBlowValListItem(UI_blowing_control, BlowVarTypeEnum::LITRES);
+    Blow_var_2 = new UIBlowValListItem(UI_blowing_control, BlowVarTypeEnum::LITRES);
+    Blow_var_3 = new UIBlowValListItem(UI_blowing_control, BlowVarTypeEnum::LITRES);
+    Blow_var_timer = new UIBlowValListItem(UI_blowing_control, BlowVarTypeEnum::TIMER);
 #endif
 }

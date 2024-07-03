@@ -8,7 +8,7 @@
 #include "../config/LGFX_SSPS3_V1.hpp"
 #include "./UIElement.hpp"
 
-#define INIT_BUFFER_IN_PSRAM    1
+#define INIT_BUFFER_IN_PSRAM    0
 
 #define LGFX_USE_V1
 #define SCREEN_WIDTH            480U
