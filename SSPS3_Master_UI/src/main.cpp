@@ -10,8 +10,10 @@ TwoWire * itcw;
 STM32_slave * STM32;
 
 /* DEMO VARS BEGIN*/
-uint32_t ms_last = 0;
-uint32_t counter = 0;
+uint32_t ms_last = 0,
+         ms_last_2 = 0;
+int32_t counter = 0;
+bool demo_flag = false;
 
 vector<UITaskItemData> list = vector<UITaskItemData>();
 /* DEMO VARS END */
@@ -25,6 +27,11 @@ void IRAM_ATTR interrupt_action() {
 void setup()
 {
     Serial.begin(115200);
+
+    if (!psramFound())
+        Serial.println("PSRAM not found");
+    else
+        Serial.println("PSRAM found and initialized");
 
     itcw = new TwoWire(0);
     itcw->begin(SDA, SCL, 400000);
@@ -43,6 +50,25 @@ void loop()
 {
     lv_task_handler();
     
+    if (millis() - ms_last_2 >= 5)
+    {
+        ms_last_2 = millis();
+
+        if (--counter <= 0)
+        {
+            counter = 5000;
+            demo_flag = !demo_flag;
+        }
+
+#if SSPS_BLOWING_PANEL == 1
+        UI_blowing_control->set_blow_value(
+            5000,
+            counter,
+            demo_flag ? BlowingType::LITER : BlowingType::TIMER
+        );
+#endif
+    }
+
     if (millis() - ms_last >= 1000)
     {
         ms_last = millis();

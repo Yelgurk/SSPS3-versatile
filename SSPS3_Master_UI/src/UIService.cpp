@@ -20,7 +20,15 @@ void UIService::init()
             lcd_flush_cb(display, area, data);
         }
     );
+
+#if INIT_BUFFER_IN_PSRAM == 0
     lv_display_set_buffers(disp, lv_buff_1, lv_buff_2, SCREEN_BUFFER, LV_DISPLAY_RENDER_MODE_PARTIAL);
+#else
+    lv_buff_1 = new PSRAMBuffer(SCREEN_BUFFER);
+    lv_buff_2 = new PSRAMBuffer(SCREEN_BUFFER);
+    lv_display_set_buffers(disp, lv_buff_1->getBuffer(), lv_buff_2->getBuffer(), SCREEN_BUFFER, LV_DISPLAY_RENDER_MODE_PARTIAL);
+#endif
+    
     lv_disp_set_default(disp);
 
     screen = lv_obj_create(NULL);

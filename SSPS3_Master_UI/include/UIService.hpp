@@ -8,13 +8,47 @@
 #include "../config/LGFX_SSPS3_V1.hpp"
 #include "./UIElement.hpp"
 
+#define INIT_BUFFER_IN_PSRAM    1
+
 #define LGFX_USE_V1
 #define SCREEN_WIDTH            480U
 #define SCREEN_HEIGHT           320U
-#define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 16 / 2    
 
-static uint8_t lv_buff_1[SCREEN_BUFFER];
-static uint8_t lv_buff_2[SCREEN_BUFFER];
+#if INIT_BUFFER_IN_PSRAM == 0
+    #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 16 / 2    
+    static uint8_t lv_buff_1[SCREEN_BUFFER];
+    static uint8_t lv_buff_2[SCREEN_BUFFER];
+#else
+    #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH)  
+    
+    class PSRAMBuffer
+    {
+    private:
+        uint8_t* buffer = nullptr;
+
+    public:
+        PSRAMBuffer(size_t size)
+        {
+            buffer = static_cast<uint8_t*>(ps_malloc(size));
+            if (!buffer)
+                Serial.println("Failed to allocate buffer in PSRAM");
+        }
+
+        ~PSRAMBuffer()
+        {
+            if (buffer)
+                free(buffer);
+        }
+
+        uint8_t* getBuffer() {
+            return buffer;
+        }
+    };
+ 
+    static PSRAMBuffer * lv_buff_1;
+    static PSRAMBuffer * lv_buff_2;
+#endif
+
 static LGFX lcd;
 
 static uint32_t arduino_tick_get_cb(void);
