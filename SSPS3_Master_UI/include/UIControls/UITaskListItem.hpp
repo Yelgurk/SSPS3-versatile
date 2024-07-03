@@ -46,15 +46,9 @@ class UITaskListItem : public UIElement
 {
 private:
     EditFuctionContainer var_edit_func;
-    UIAction setter_set_header;
-    UIAction setter_set_value;
 
 public:
-    UITaskListItem(
-        UIElement * parent_navi,
-        UIAction setter_set_header = NULL,
-        UIAction setter_set_value = NULL,
-        EditFuctionContainer var_edit_func = EditFuctionContainer())
+    UITaskListItem(UIElement * parent_navi)
     : UIElement
     {
         { EquipmentType::All },
@@ -65,41 +59,33 @@ public:
         PlaceControlIn::Control,
         parent_navi->get_screen(),
         parent_navi,
-        { StyleActivator::Unscrollable, StyleActivator::Rectangle, StyleActivator::Focus }
+        { StyleActivator::Unscrollable, StyleActivator::Rectangle, StyleActivator::Focus },
+        false,
+        0,
+        true
     }
     {
-        if (setter_set_header != NULL)
-        {
-            this->setter_set_header = setter_set_header;
-            add_ui_base_action(setter_set_header);
-        }
-
-        if (setter_set_value != NULL)
-        {
-            this->setter_set_value = setter_set_value;
-            add_ui_context_action(setter_set_value);
-        }
-
-        this->var_edit_func = var_edit_func;
-
-        if (var_edit_func.is_init())
-            set_key_press_actions({
-                KeyModel(KeyMap::L_STACK_4, [this]() { this->var_edit_func.var_inc_fan(); }),
-                KeyModel(KeyMap::L_STACK_3, [this]() { this->var_edit_func.var_dec_fan(); }),
-                KeyModel(KeyMap::R_STACK_4, [this]() { this->var_edit_func.var_inc_tempC(); }),
-                KeyModel(KeyMap::R_STACK_3, [this]() { this->var_edit_func.var_dec_tempC(); }),
-                KeyModel(KeyMap::R_STACK_2, [this]() { this->var_edit_func.var_inc_durat(); }),
-                KeyModel(KeyMap::R_STACK_1, [this]() { this->var_edit_func.var_inc_durat(); })
-            });
-
         lv_obj_set_width(get_container(), 420);
         lv_obj_set_height(get_container(), 30);
-        lv_obj_set_style_bg_opa(get_container(), 185, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(get_container(), 220, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, 0);
-        lv_obj_set_style_bg_color(get_container(), COLOR_BLUE, LV_PART_MAIN | LV_STATE_USER_1);
-        lv_obj_set_style_bg_color(get_container(), COLOR_YELLOW, LV_PART_MAIN | LV_STATE_USER_2);
-        lv_obj_set_style_bg_color(get_container(), COLOR_GREEN, LV_PART_MAIN | LV_STATE_USER_3);
-        lv_obj_set_style_bg_color(get_container(), COLOR_RED, LV_PART_MAIN | LV_STATE_USER_4);
+        lv_obj_set_style_bg_color(get_container(), COLOR_BLUE, LV_PART_MAIN | LV_STATE_EDITED);
+        lv_obj_set_style_bg_color(get_container(), COLOR_YELLOW, LV_PART_MAIN | LV_STATE_USER_1);
+        lv_obj_set_style_bg_color(get_container(), COLOR_GREEN, LV_PART_MAIN | LV_STATE_USER_2);
+        lv_obj_set_style_bg_color(get_container(), COLOR_RED, LV_PART_MAIN | LV_STATE_USER_3);
+
+        lv_obj_set_style_opa(get_container(), 255, 0);
+        lv_obj_set_style_opa(get_container(), 255, LV_STATE_EDITED);
+        lv_obj_set_style_opa(get_container(), 255, LV_STATE_USER_1);
+        lv_obj_set_style_opa(get_container(), 255, LV_STATE_USER_2);
+        lv_obj_set_style_opa(get_container(), 255, LV_STATE_USER_3);
+        lv_obj_set_style_opa(get_container(), 255, LV_STATE_USER_4);
+        lv_obj_set_style_bg_opa(get_container(), 220, 0);
+        lv_obj_set_style_bg_opa(get_container(), 220, LV_PART_MAIN | LV_STATE_EDITED);
+        lv_obj_set_style_bg_opa(get_container(), 220, LV_PART_MAIN | LV_STATE_USER_1);
+        lv_obj_set_style_bg_opa(get_container(), 220, LV_PART_MAIN | LV_STATE_USER_2);
+        lv_obj_set_style_bg_opa(get_container(), 220, LV_PART_MAIN | LV_STATE_USER_3);
+        lv_obj_set_style_bg_opa(get_container(), 220, LV_PART_MAIN | LV_STATE_USER_4);
 
         lv_obj_t * header = lv_label_create(get_container());
         lv_label_set_long_mode(header, LV_LABEL_LONG_SCROLL_CIRCULAR);
@@ -152,6 +138,20 @@ public:
         update_ui_context();
     }
 
+    void set_extra_button_logic(EditFuctionContainer var_edit_func)
+    {
+        this->var_edit_func = var_edit_func;
+
+        set_key_press_actions({
+            KeyModel(KeyMap::L_STACK_4, [this]() { this->var_edit_func.var_inc_fan(); this->update_ui_context(); }),
+            KeyModel(KeyMap::L_STACK_3, [this]() { this->var_edit_func.var_dec_fan(); this->update_ui_context(); }),
+            KeyModel(KeyMap::R_STACK_4, [this]() { this->var_edit_func.var_inc_tempC(); this->update_ui_context(); }),
+            KeyModel(KeyMap::R_STACK_3, [this]() { this->var_edit_func.var_dec_tempC(); this->update_ui_context(); }),
+            KeyModel(KeyMap::R_STACK_2, [this]() { this->var_edit_func.var_inc_durat(); this->update_ui_context(); }),
+            KeyModel(KeyMap::R_STACK_1, [this]() { this->var_edit_func.var_dec_durat(); this->update_ui_context(); })
+        });
+    }
+
     void set_step_name(string task_step_name)
     {
         lv_label_set_text(get_container_content("[header]"), task_step_name.c_str());
@@ -167,13 +167,20 @@ public:
         lv_label_set_text(get_container_content("[val2]"), to_string(val_tempC).c_str());
         lv_label_set_text(get_container_content("[val3]"), ((val_durat < 0 ? "-" : "") + string(buffer)).c_str());
 
-        lv_clear_states(get_container());
+        if (!lv_obj_has_state(get_container(), LV_STATE_EDITED) && state == StepStateEnum::RUNNED)
+            lv_obj_scroll_to_view(get_container(), LV_ANIM_ON);
+
+        lv_obj_set_state(get_container(), LV_STATE_EDITED, false);
+        lv_obj_set_state(get_container(), LV_STATE_USER_1, false);
+        lv_obj_set_state(get_container(), LV_STATE_USER_2, false);
+        lv_obj_set_state(get_container(), LV_STATE_USER_3, false);
+
         switch (state)
         {
-        case StepStateEnum::RUNNED: lv_obj_set_state(get_container(), LV_STATE_USER_1, true); break;
-        case StepStateEnum::PAUSE: lv_obj_set_state(get_container(), LV_STATE_USER_2, true); break;
-        case StepStateEnum::DONE: lv_obj_set_state(get_container(), LV_STATE_USER_3, true); break;
-        case StepStateEnum::ERROR: lv_obj_set_state(get_container(), LV_STATE_USER_4, true); break;
+        case StepStateEnum::RUNNED: lv_obj_set_state(get_container(), LV_STATE_EDITED, true); break;
+        case StepStateEnum::PAUSE: lv_obj_set_state(get_container(), LV_STATE_USER_1, true); break;
+        case StepStateEnum::DONE: lv_obj_set_state(get_container(), LV_STATE_USER_2, true); break;
+        case StepStateEnum::ERROR: lv_obj_set_state(get_container(), LV_STATE_USER_3, true); break;
         default: break;
         }
     }

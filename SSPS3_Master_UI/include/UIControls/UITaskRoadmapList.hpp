@@ -11,12 +11,23 @@ class UITaskRoadmapList : public UIElement
 private:
     vector<UITaskListItem*> _collection;
 
+    void clear_list()
+    {
+        for (uint16_t i = 0; i < _collection.size(); i++)
+        {
+            _collection.at(i)->delete_ui_element(false);
+            delete _collection.at(i);   
+        }
+        _collection.clear();
+
+        clear_ui_childs();
+        lv_obj_clean(this->get_navi_childs_presenter());
+    }
+
 public:
     UITaskRoadmapList(
         vector<KeyModel> key_press_actions,
-        lv_obj_t * lv_screen,
-        UIAction task_state_set_header,
-        UIAction task_state_set_values
+        lv_obj_t * lv_screen
     ) : UIElement {
         { EquipmentType::All },
         key_press_actions,
@@ -29,9 +40,6 @@ public:
         { StyleActivator::None }
     }
     {
-        add_ui_base_action(task_state_set_header);
-        add_ui_context_action(task_state_set_values);
-
         lv_obj_set_width(get_container(), 460);
         lv_obj_set_height(get_container(), 240);
         lv_obj_set_x(get_container(), 0);
@@ -255,36 +263,16 @@ public:
         remember_child_element("[state_duration]", lv_task_progress_state_duration);
         
         set_childs_presenter("[list]");
-
-        update_ui_base();
-        update_ui_context();
     }
 
-    void clear_list()
+    UITaskListItem * add_task_step(bool clear_childs = false)
     {
-        for (uint16_t i = 0; i < _collection.size(); i++)
-        {
-            _collection.at(i)->delete_ui_element(false);
-            delete _collection.at(i);   
-        }
-        _collection.clear();
+        if (clear_childs)
+            clear_list();
 
-        clear_ui_childs();
-        lv_obj_clean(this->get_navi_childs_presenter());
+        _collection.push_back(new UITaskListItem(this));
 
-        update_ui_base();
-        update_ui_context();
-    }
-
-    void bind_task_list_item(UITaskListItem* list_item)
-    {
-        _collection.push_back(list_item);
-    }
-
-    void bind_task_list_item(vector<UITaskListItem*> list_items)
-    {
-        for (uint8_t i = 0; i < list_items.size(); i++)
-            bind_task_list_item(list_items.at(i));
+        return _collection.back();
     }
 
     void set_task_header_name(string name)
@@ -313,6 +301,8 @@ public:
         case TaskStateEnum::ERROR: lv_obj_set_state(bar, LV_STATE_USER_4, true); break;
         default: break;
         }
+
+        lv_arc_set_value(bar, percentage_done * 100);
     }
 
     void update_task_steps_state()

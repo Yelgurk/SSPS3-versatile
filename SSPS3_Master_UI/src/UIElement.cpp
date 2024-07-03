@@ -11,7 +11,8 @@ UIElement::UIElement(
     UIElement * parent_navi,
     vector<StyleActivator> styles_activator,
     bool is_childs_changes_transparency,
-    int32_t focus_offset_y
+    int32_t focus_offset_y,
+    bool is_focus_extra_style_lvl
 )
 {
     this->relates_to = relates_to;
@@ -23,6 +24,7 @@ UIElement::UIElement(
     this->lv_screen = lv_screen;
     this->parent_navi = parent_navi;
     this->_focus_offset_y = focus_offset_y;
+    this->_is_focus_extra_style_lvl = is_focus_extra_style_lvl;
 
     _is_focusable = _is_container ? false : _is_focusable;
 
@@ -123,6 +125,13 @@ UIElement * UIElement::gui_set_focus_style(lv_obj_t * lv_obj)
         lv_obj_set_style_pad_all(lv_obj, -FOCUS_BORDER_WIDTH_PX, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_set_style_border_width(lv_obj, FOCUS_BORDER_WIDTH_PX, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_set_style_border_color(lv_obj, COLOR_BLUE, LV_PART_MAIN | LV_STATE_FOCUSED);
+
+        if (_is_focus_extra_style_lvl)
+        {
+            lv_obj_set_style_pad_all(lv_obj, -FOCUS_BORDER_WIDTH_PX, LV_PART_MAIN | LV_STATE_USER_4);
+            lv_obj_set_style_border_width(lv_obj, FOCUS_BORDER_WIDTH_PX, LV_PART_MAIN | LV_STATE_USER_4);
+            lv_obj_set_style_border_color(lv_obj, COLOR_BLUE, LV_PART_MAIN | LV_STATE_USER_4);
+        }
     }
     return this;
 }
@@ -363,12 +372,14 @@ UIElement * UIElement::remember_child_element(string key, lv_obj_t * child)
 UIElement * UIElement::add_ui_base_action(UIAction action)
 {
     ui_base_actions.push_back(action);
+    update_ui_base();
     return this;
 }
 
 UIElement * UIElement::add_ui_context_action(UIAction action)
 {
     ui_context_actions.push_back(action);
+    update_ui_context();
     return this;
 }
 
@@ -387,14 +398,14 @@ UIElement * UIElement::clear_ui_context_action()
 UIElement * UIElement::update_ui_base()
 {
     for (auto action : ui_base_actions)
-        if (action) action();
+        action();
     return this;
 }
 
 UIElement * UIElement::update_ui_context()
 {
     for (auto action : ui_context_actions)
-        if (action) action();
+        action();
     return this;
 }
 
@@ -427,6 +438,8 @@ UIElement * UIElement::lv_clear_states(lv_obj_t * lv_obj)
 UIElement * UIElement::set_focused(bool state)
 {
     lv_obj_set_state(container, LV_STATE_FOCUSED, state);
+    if (_is_focus_extra_style_lvl)
+        lv_obj_set_state(container, LV_STATE_USER_4, state);
     set_childs_transarent();
     return this;
 }
@@ -440,15 +453,21 @@ UIElement * UIElement::set_selected(bool state)
 
 UIElement * UIElement::set_transparent(bool state)
 {
-    lv_obj_set_state(container, LV_STATE_USER_1, state);
-    set_childs_hidden();
+    if (!_is_focus_extra_style_lvl)
+    {
+        lv_obj_set_state(container, LV_STATE_USER_1, state);
+        set_childs_hidden();
+    }
     return this;
 }
 
 UIElement * UIElement::set_hidden(bool state)
 {
-    lv_obj_set_state(container, LV_STATE_USER_2, state);
-    set_childs_hidden();
+    if (!_is_focus_extra_style_lvl)
+    {
+        lv_obj_set_state(container, LV_STATE_USER_2, state);
+        set_childs_hidden();
+    }
     return this;
 }
 

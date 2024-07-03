@@ -1,8 +1,8 @@
 #include "../include/main.hpp"
 
 #define SSPS_STATE_BAR      1
-#define SSPS_SCREEN_TASK    1
-#define SSPS_MENU_USER      0
+#define SSPS_SCREEN_TASK    0
+#define SSPS_MENU_USER      1
 #define SSPS_BLOWING_PANEL  0
 
 uint32_t ss_ss = 0;
@@ -12,6 +12,7 @@ STM32_slave * STM32;
 /* DEMO STRUCT BEGIN */
 struct DEMO_TASK_STEP
 {
+    string name;
     uint8_t fan,
             tempC;
     uint32_t duration;
@@ -19,8 +20,8 @@ struct DEMO_TASK_STEP
     StepStateEnum state = StepStateEnum::AWAIT;
     bool await_ok_button = false;
 
-    DEMO_TASK_STEP(uint8_t fan, uint8_t tempC, uint32_t duration)
-    : fan(fan), tempC(tempC), duration(duration)
+    DEMO_TASK_STEP(string name, uint8_t fan, uint8_t tempC, uint32_t duration)
+    : name(name), fan(fan), tempC(tempC), duration(duration)
     {}
 
     bool is_time_out() {
@@ -30,18 +31,24 @@ struct DEMO_TASK_STEP
     void iteration_ss(uint32_t ss) {
         gone_ss += ss;
     }
+
+    int32_t time_left_ss() {
+        return duration - gone_ss;
+    }
 };
 
 struct DEMO_TASK
 {
+    string name;
+
     int64_t started_at_ss;
     int64_t last_iteration_ss;
     int64_t gone_ss;
     TaskStateEnum state = TaskStateEnum::AWAIT;
     vector<DEMO_TASK_STEP> * steps;
 
-    DEMO_TASK(vector<DEMO_TASK_STEP> * steps)
-    : steps(steps)
+    DEMO_TASK(string name, vector<DEMO_TASK_STEP> * steps)
+    : name(name), steps(steps)
     {}
 
     double get_prog_percentage()
@@ -54,10 +61,10 @@ struct DEMO_TASK
             aim_ss += step.duration;
 
             if (step.state == StepStateEnum::RUNNED || step.state == StepStateEnum::DONE)
-                done_ss += gone_ss;
+                done_ss += (step.gone_ss > step.duration ? step.duration : step.gone_ss);
         }
 
-        return 100.0 / (double)aim_ss * gone_ss;
+        return 100.0 / (double)aim_ss * done_ss;
     }
 
     bool is_last_step(uint16_t index) {
@@ -86,10 +93,10 @@ struct DEMO_TASK
     {
         int32_t ss_from_last_iteration = seconds() - last_iteration_ss;
         last_iteration_ss = seconds();
-
+    
         if (state == TaskStateEnum::RUNNED)
         {
-            gone_ss = started_at_ss - seconds();
+            gone_ss = seconds() - started_at_ss;
 
             for (int i = 0; i < steps->size(); i++)
             {
@@ -124,6 +131,8 @@ struct DEMO_TASK
                 }
             }
         }
+
+        return nullptr;
     }
 };
 /* DEMO STRUCT END */
@@ -136,23 +145,19 @@ bool demo_flag = false;
 
 vector<DEMO_TASK_STEP> my_demo_task_steps =
 {
-    DEMO_TASK_STEP(5, 10, 10),
-    DEMO_TASK_STEP(7, 15, 20),
-    DEMO_TASK_STEP(9, 20, 30),
-    DEMO_TASK_STEP(11, 25, 40),
-    DEMO_TASK_STEP(13, 30, 50),
-    DEMO_TASK_STEP(15, 35, 60),
-    DEMO_TASK_STEP(17, 40, 90),
-    DEMO_TASK_STEP(19, 45, 120),
-    DEMO_TASK_STEP(21, 50, 120),
-    DEMO_TASK_STEP(23, 55, 120)
+    DEMO_TASK_STEP("Набор воды", 5, 10, 10),
+    DEMO_TASK_STEP("Нагрев", 7, 15, 20),
+    DEMO_TASK_STEP("Пастеризация", 9, 20, 30),
+    DEMO_TASK_STEP("Выдержка", 11, 25, 40),
+    DEMO_TASK_STEP("Охлаждение", 13, 30, 50),
+    DEMO_TASK_STEP("Выдержка", 15, 35, 60),
+    DEMO_TASK_STEP("Нагрев", 17, 40, 90),
+    DEMO_TASK_STEP("Выдержка", 19, 45, 120),
+    DEMO_TASK_STEP("Ожидание", 21, 50, 120)
 };
 
-DEMO_TASK my_demo_task(&my_demo_task_steps);
+DEMO_TASK my_demo_task("Пастеризация", &my_demo_task_steps);
 /* DEMO VARS END */
-
-
-
 
 void init_ui_controls();
 
@@ -180,15 +185,16 @@ void setup()
     lcd.setBrightness(255);
     
     init_ui_controls();
+
+    my_demo_task.start_task();
 }
 
 void loop()
 {
     lv_task_handler();
-    
+
     if (millis() - ms_last_2 >= 5)
     {
-        ms_last_2 = millis();
 
         if (--counter <= 0)
         {
@@ -217,6 +223,12 @@ void loop()
             random(0, 101),
             ChargeStateEnum::STABLE
         );
+#endif
+    
+#if SSPS_SCREEN_TASK == 1
+        my_demo_task.do_task();
+        UI_task_roadmap_control->update_task_steps_state();
+        UI_task_roadmap_control->update_ui_context();
 #endif
     }
 
@@ -252,22 +264,52 @@ void init_ui_controls()
 #if SSPS_SCREEN_TASK == 1
     UI_task_roadmap_control = new UITaskRoadmapList(
         {
-            KeyModel(KeyMap::TOP, []() { UI_task_roadmap_control->navi_prev(); }),
-            KeyModel(KeyMap::BOTTOM, []() { UI_task_roadmap_control->navi_next(); })
+            KeyModel(KeyMap::TOP, []()
+            {
+                UI_task_roadmap_control->navi_prev();
+                UI_task_roadmap_control->update_task_steps_state();
+            }),
+            KeyModel(KeyMap::BOTTOM, []()
+            {
+                UI_task_roadmap_control->navi_next();
+                UI_task_roadmap_control->update_task_steps_state();
+            })
         },
         UI_service.screen
     );
+    UI_task_roadmap_control->add_ui_base_action(
+        []() { UI_task_roadmap_control->set_task_header_name(my_demo_task.name); }
+    );
+    UI_task_roadmap_control->add_ui_context_action(
+        []()
+        {
+            UI_task_roadmap_control->set_task_state_values(
+                my_demo_task.get_prog_percentage(),
+                my_demo_task.gone_ss,
+                my_demo_task.state
+            );
+        }
+    );
+        
+    //set_extra_button_logic
 
-    for (uint32_t i = 0; i < 10; i++)
+    for (uint16_t i = 0; i < my_demo_task_steps.size(); i++)
     {
-        uint32_t fan = random(0,30),
-             tempc = random(10, 85),
-             durat = random(10, 1000);
+        DEMO_TASK_STEP* step = &my_demo_task_steps.at(i);
 
+        UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
+        ui_step->set_extra_button_logic({
+            [=](){ step->fan++;          },
+            [=](){ step->fan--;          },
+            [=](){ step->tempC++;        },
+            [=](){ step->tempC--;        },
+            [=](){ step->duration += 10; },
+            [=](){ step->duration -= 10; },
+        });
 
-        list.push_back(UITaskItemData(("След шаг #" + to_string(i)).c_str(), fan, tempc, durat));
+        ui_step->add_ui_base_action([ui_step, step]() { ui_step->set_step_name(step->name); });
+        ui_step->add_ui_context_action([ui_step, step]() { ui_step->set_step_values(step->fan, step->tempC, step->time_left_ss(), step->state); });
     }
-    UI_task_roadmap_control->load_task_list(&list);
 #endif
 
 #if SSPS_MENU_USER == 1

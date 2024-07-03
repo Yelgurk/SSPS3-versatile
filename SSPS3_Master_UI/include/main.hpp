@@ -39,6 +39,7 @@ UIDateTime * UI_date_time;
 UINotifyBar * UI_notify_bar;
 
 UITaskRoadmapList * UI_task_roadmap_control;
+vector<UITaskListItem> * UI_task_steps;
 
 UIMenuList * UI_menu_list_user;
 UIMenuListItem * UI_settings_user_datetime;
