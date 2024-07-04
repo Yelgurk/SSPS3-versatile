@@ -4,7 +4,7 @@ bool is_key_press = false;
 bool is_key_press_rel_await = false;
 uint8_t get_pressed_key()
 {
-    if (KeyPressed > KB_Size && KeyPressed < KB_Await)
+    if (KeyPressed >= KB_Size && KeyPressed < KB_Await)
         is_key_press_rel_await = false;
 
     if (is_key_press)

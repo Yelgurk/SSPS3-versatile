@@ -154,7 +154,8 @@ struct DEMO_TASK
 class BlowgunController
 {
 public:
-    bool timer_running = false;
+    bool timer_running;
+    bool is_active;
     using CallbackFunc = std::function<void(float, float, BlowingType, float)>;
 
 private:
@@ -165,8 +166,7 @@ private:
     uint32_t ms_gone = 0;
     float ml_per_ms = 0;
     float pump_power_lm = 52.f;
-
-    bool is_active;
+    bool trigger_must_be_reloaded = false;
     bool pump_on;
     uint32_t last_call_time;
     uint32_t last_blow_time;
@@ -192,9 +192,12 @@ public:
 
     void blowgun_trigger(bool do_gurgling, bool is_keypad_press, int8_t index = -1, DEMO_BLOW_VAR curr_value = DEMO_BLOW_VAR())
     {
+        if (!do_gurgling)
+            trigger_must_be_reloaded = false;
+
         uint32_t current_time = millis();
 
-        if (do_gurgling)
+        if (do_gurgling && !trigger_must_be_reloaded)
         {
             if (is_active && current_blow_index != index)
             {
@@ -237,9 +240,11 @@ public:
         }
     }
 
-    void blowgun_stop()
+    void blowgun_stop(bool need_in_reload = false)
     {
         stop_pump();
+        if (need_in_reload)
+            trigger_must_be_reloaded = true;
         timer_running = false;
         is_active = false;
         callback(0, 0, BlowingType::LITER, 0);
@@ -265,7 +270,7 @@ public:
             if (ms_gone >= ms_aim)
             {
                 callback(ms_aim, ms_gone, current_task.is_timer ? BlowingType::TIMER : BlowingType::LITER, ml_per_ms);
-                blowgun_stop();
+                blowgun_stop(true);
             }
         }
     }
@@ -550,7 +555,13 @@ void init_ui_controls()
         {
             KeyModel(KeyMap::BOTTOM, []() { UI_blowing_control->navi_next(); }),
             KeyModel(KeyMap::TOP, []() { UI_blowing_control->navi_prev(); }),
-            KeyModel(KeyMap::LEFT_TOP, []() { UI_blowing_control->navi_back(); }),
+            KeyModel(KeyMap::LEFT_TOP, []()
+            {
+                if (pumpController.is_active)
+                    pumpController.blowgun_stop();
+                else
+                    UI_blowing_control->navi_back();
+            }),
             KeyModel(KeyMap::RIGHT_BOT_REL, []() { pumpController.blowgun_trigger(false, true); })
         },
         UI_service.screen
