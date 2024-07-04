@@ -50,7 +50,4 @@ UIValueSetter * UI_Set2;
 UIValueSetter * UI_Set3;
 
 UIBlowingControl * UI_blowing_control;
-UIBlowValListItem * Blow_var_1;
-UIBlowValListItem * Blow_var_2;
-UIBlowValListItem * Blow_var_3;
-UIBlowValListItem * Blow_var_timer;
+vector<UIBlowValListItem*> Blow_vars;

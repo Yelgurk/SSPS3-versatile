@@ -22,7 +22,8 @@ I2C_Service * I2C;
 /* Keypad 4x4 var's */
 #define KB_Row                      4
 #define KB_Col                      4
-#define KB_Await                    (KB_Row * KB_Col)
+#define KB_Size                     (KB_Row * KB_Col)           
+#define KB_Await                    (KB_Row * KB_Col) * 2
 #define HOLD_begin_ms               1000
 #define HOLD_x                      1.2
 #define HOLD_min_ms                 50

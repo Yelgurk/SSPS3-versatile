@@ -36,7 +36,7 @@ public:
         create_support_icons(support_container, &img_flag, -45, 175, 176);
         
         lv_obj_t * info_label_1 = create_support_label(support_container, "Выбор", 12);
-        lv_obj_t * info_label_2 = create_support_label(support_container, "+ / -", 62);
+        lv_obj_t * info_label_2 = create_support_label(support_container, "- / +", 62);
         lv_obj_t * info_label_3 = create_support_label(support_container, "Отмена или\nНазад", 107);
         lv_obj_t * info_label_4 = create_support_label(support_container, "Старт\nраздачи", 172);
 

@@ -1,8 +1,12 @@
 #include "../include/main.hpp"
 
 bool is_key_press = false;
+bool is_key_press_rel_await = false;
 uint8_t get_pressed_key()
 {
+    if (KeyPressed > KB_Size && KeyPressed < KB_Await)
+        is_key_press_rel_await = false;
+
     if (is_key_press)
     {
         is_key_press = false;
@@ -95,7 +99,7 @@ void loop()
     if (changed > 0)
         CHANGE_INT_SIGNAL();
 
-    if (kpd.getKeys())
+    if (!is_key_press_rel_await && kpd.getKeys())
         for (int i = 0; i < LIST_MAX; i++)
             if (kpd.key[i].stateChanged)
                 switch (kpd.key[i].kstate)
@@ -108,13 +112,16 @@ void loop()
                     }; break;
 
                     case RELEASED: {
-                        KeyPressed = KeyPressed == getposition(keysInline, KB_Col * KB_Row, kpd.key[i].kchar) ? KB_Await : KeyPressed; 
+                        KeyPressed = KeyPressed == getposition(keysInline, KB_Col * KB_Row, kpd.key[i].kchar) ? KeyPressed + KB_Size : KeyPressed; //KB_Await : KeyPressed; 
                         is_key_press = true;
+
+                        if (KeyPressed >= KB_Size && KeyPressed < KB_Await)
+                            is_key_press_rel_await = true;
                         CHANGE_INT_SIGNAL();
                     }; break;
                 }
 
-    if ((KeyPressed < KB_Col * KB_Row) && millis() >= KeyHoldNext)
+    if ((KeyPressed < KB_Size) && millis() >= KeyHoldNext)
     {
         KeyHoldDelay /= HOLD_x;
         KeyHoldDelay = KeyHoldDelay < HOLD_min_ms ? HOLD_min_ms : KeyHoldDelay;

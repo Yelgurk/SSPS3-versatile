@@ -2,15 +2,25 @@
 
 #define SSPS_PLATFORMIO_INI_INFRASTRUCTURE  1
 #define SSPS_STATE_BAR      1
-#define SSPS_SCREEN_TASK    1
+#define SSPS_SCREEN_TASK    0
 #define SSPS_MENU_USER      0
-#define SSPS_BLOWING_PANEL  0
+#define SSPS_BLOWING_PANEL  1
 
 uint32_t ss_ss = 0;
 TwoWire * itcw;
 STM32_slave * STM32;
 
 /* DEMO STRUCT BEGIN */
+struct DEMO_BLOW_VAR
+{
+    uint16_t val = 5000;
+    bool is_timer = false;
+
+    DEMO_BLOW_VAR() {}
+    DEMO_BLOW_VAR(uint16_t val) : val(val) {}
+    DEMO_BLOW_VAR(bool is_timer, uint16_t val) : is_timer(is_timer), val(val) {}
+};
+
 struct DEMO_TASK_STEP
 {
     string name;
@@ -139,6 +149,139 @@ struct DEMO_TASK
         return nullptr;
     }
 };
+
+/* реализация класса раздачи жидкости */
+class BlowgunController
+{
+public:
+    bool timer_running = false;
+    using CallbackFunc = std::function<void(uint16_t, uint16_t, bool)>;
+
+private:
+    CallbackFunc callback;
+    DEMO_BLOW_VAR current_task;
+    DEMO_BLOW_VAR current_task_clone;
+    bool is_active;
+    bool pump_on;
+    uint32_t last_trigger_time;
+    uint32_t last_update_time;
+
+    void start_pump()
+    {
+        pump_on = true;
+        Serial.println("pump ON");
+    }
+
+    void stop_pump()
+    {
+        pump_on = false;
+        Serial.println("pump OFFFF");
+    }
+
+public:
+
+    BlowgunController(CallbackFunc callback) :
+    callback(callback),
+    is_active(false),
+    last_trigger_time(0), 
+    pump_on(false),
+    timer_running(false)
+    {}
+
+    void blowgun_trigger(bool do_gurgling, bool is_keypad_press, DEMO_BLOW_VAR curr_value = DEMO_BLOW_VAR())
+    {
+        uint32_t current_time = millis();
+
+        if (do_gurgling)
+        {
+            if ((is_keypad_press && current_time - last_trigger_time < 2000) || !is_keypad_press)
+            {
+                if (is_active)
+                {
+                    if (!timer_running)
+                    {
+                        timer_running = true;
+                        start_pump();
+                    }
+                }
+                else
+                {
+                    current_task = curr_value;
+                    current_task_clone = curr_value;
+
+                    start_pump();
+                    last_update_time = millis(); 
+                    is_active = true;
+                    timer_running = true;
+                }
+            }
+            last_trigger_time = current_time;
+        }
+        else
+        {
+            stop_pump();
+            timer_running = false;
+        }
+    }
+
+    void blowgun_stop()
+    {
+        stop_pump();
+        timer_running = false;
+        is_active = false;
+        callback(0, 0, false);
+    }
+
+    void do_blowing()
+    {
+        if (!is_active) return;
+
+        uint32_t current_time = millis();
+        if (current_time - last_trigger_time > 2000)
+        {
+            blowgun_stop();
+            return;
+        }
+
+        if (timer_running)
+        {
+            if (current_task.is_timer)
+            {
+                uint32_t elapsed_time = current_time - last_update_time;
+
+                if (elapsed_time >= 1000)
+                {
+                    current_task.val -= elapsed_time / 1000;
+                    last_update_time = current_time;
+
+                    if (current_task.val == 0)
+                        blowgun_stop();
+                }
+
+                callback(current_task_clone.val, current_task.val, true);
+            }
+            else
+            {
+                uint32_t elapsed_time = current_time - last_update_time;
+
+                uint16_t ml_to_dispense = 36000.0 / 60000.0 * (double)elapsed_time;
+
+                if (ml_to_dispense >= current_task.val)
+                {
+                    current_task.val = 0;
+                    blowgun_stop();
+                }
+                else
+                {
+                    current_task.val -= ml_to_dispense;
+                    last_update_time = current_time;
+                }
+
+                callback(current_task_clone.val, current_task.val, false);
+            }
+        }
+    }
+};
 /* DEMO STRUCT END */
 
 /* DEMO VARS BEGIN*/
@@ -174,6 +317,15 @@ vector<DEMO_TASK_STEP> my_demo_task_steps_2 =
 };
 
 DEMO_TASK my_demo_task = DEMO_TASK();//("Пастеризация", &my_demo_task_steps);
+
+vector<DEMO_BLOW_VAR> b_vars = {
+    DEMO_BLOW_VAR(5000),
+    DEMO_BLOW_VAR(5000),
+    DEMO_BLOW_VAR(5000),
+    DEMO_BLOW_VAR(true, 360)
+};
+
+BlowgunController pumpController = BlowgunController([](uint16_t val_aim, uint16_t val_curr, bool type) { UI_blowing_control->set_blow_value(val_aim, val_curr, type ? BlowingType::TIMER : BlowingType::LITER); });
 /* DEMO VARS END */
 
 void init_ui_controls();
@@ -206,30 +358,24 @@ void setup()
     
     init_ui_controls();
 
+#if SSPS_SCREEN_TASK == 1 
     my_demo_task.start_task("Пастеризация", &my_demo_task_steps);
     UI_task_roadmap_control->update_ui_base();
     UI_task_roadmap_control->update_ui_context();
+#endif
 }
 
 void loop()
 {
     lv_task_handler();
 
-    if (millis() - ms_last_2 >= 5)
+
+
+    if (millis() - ms_last_2 >= 250)
     {
-
-        if (--counter <= 0)
-        {
-            counter = 5000;
-            demo_flag = !demo_flag;
-        }
-
+        ms_last_2 = millis();
 #if SSPS_BLOWING_PANEL == 1
-        UI_blowing_control->set_blow_value(
-            5000,
-            counter,
-            demo_flag ? BlowingType::LITER : BlowingType::TIMER
-        );
+        pumpController.do_blowing();
 #endif
     }
 
@@ -284,7 +430,7 @@ void loop()
     {
         interrupted_by_slave = false;
         uint8_t x = STM32->get_kb();
-
+        
     #if SSPS_SCREEN_TASK == 1
         UI_task_roadmap_control->get_selected()->key_press(x);
         UI_task_roadmap_control->get_selected(true)->key_press(x);
@@ -302,6 +448,10 @@ void loop()
 
 #endif
 }
+
+
+
+
 
 void init_ui_controls()
 {
@@ -408,14 +558,23 @@ void init_ui_controls()
         {
             KeyModel(KeyMap::BOTTOM, []() { UI_blowing_control->navi_next(); }),
             KeyModel(KeyMap::TOP, []() { UI_blowing_control->navi_prev(); }),
-            KeyModel(KeyMap::LEFT_TOP, []() { UI_blowing_control->navi_back(); })
+            KeyModel(KeyMap::LEFT_TOP, []() { UI_blowing_control->navi_back(); }),
+            KeyModel(KeyMap::RIGHT_BOT_REL, []() { pumpController.blowgun_trigger(false, true); })
         },
         UI_service.screen
     );
 
-    Blow_var_1 = new UIBlowValListItem(UI_blowing_control, BlowVarTypeEnum::LITRES);
-    Blow_var_2 = new UIBlowValListItem(UI_blowing_control, BlowVarTypeEnum::LITRES);
-    Blow_var_3 = new UIBlowValListItem(UI_blowing_control, BlowVarTypeEnum::LITRES);
-    Blow_var_timer = new UIBlowValListItem(UI_blowing_control, BlowVarTypeEnum::TIMER);
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        Blow_vars.push_back(new UIBlowValListItem(UI_blowing_control, i < 3 ? BlowVarTypeEnum::LITRES : BlowVarTypeEnum::TIMER));
+        UIBlowValListItem * blow_ptr = Blow_vars.back();
+
+        blow_ptr->add_ui_context_action([=]() { blow_ptr->set_value(b_vars.at(i).val, i != 3 ? " л." : ""); });
+        blow_ptr->set_extra_button_logic({
+            [i]() { b_vars.at(i).val += (i != 3 ? 250 : 5); },
+            [i]() { b_vars.at(i).val -= (i != 3 ? 250 : 5); },
+            [i]() { pumpController.blowgun_trigger(true, true, b_vars.at(i)); }
+        });
+    }
 #endif
 }

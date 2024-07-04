@@ -5,17 +5,41 @@
 
 enum class BlowVarTypeEnum : uint8_t { NONE, LITRES, TIMER };
 
+struct BlowValueSetterContainer
+{
+private:
+    bool _is_init = false;
+
+public:
+    UIAction var_inc;
+    UIAction var_dec;
+    UIAction blow_run;
+
+    BlowValueSetterContainer() {}
+
+    BlowValueSetterContainer(
+        UIAction var_inc,
+        UIAction var_dec,
+        UIAction blow_run):
+    var_inc(var_inc),
+    var_dec(var_dec),
+    blow_run(blow_run)
+    {
+        _is_init = true;
+    }
+
+    bool is_init() {
+        return _is_init;
+    }
+};
+
 class UIBlowValListItem : public UIElement
 {
 private:
     const int16_t width = 210;
     const int16_t height = 50;
     BlowVarTypeEnum var_type = BlowVarTypeEnum::NONE;
-
-    UIAction var_inc;
-    UIAction var_dec;
-    UIAction setter_set_value;
-    UIAction task_start;
+    BlowValueSetterContainer var_edit_func;
 
 public:
     UIBlowValListItem(
@@ -42,35 +66,6 @@ public:
     {
         this->var_type = type;
 
-        if (setter_set_value != NULL)
-        {
-            this->setter_set_value = setter_set_value;
-            add_ui_context_action(setter_set_value);
-        }
-        if (var_inc != NULL)
-            this->var_inc = var_inc;
-        if (var_dec != NULL)
-            this->var_dec = var_dec;
-        if (task_start != NULL)
-            this->task_start = task_start;
-
-        set_key_press_actions({
-            KeyModel(KeyMap::LEFT,
-            [this]() {
-                if (this->var_inc) this->var_inc();
-                if (this->setter_set_value) this->setter_set_value();
-            }),
-            KeyModel(KeyMap::RIGHT,
-            [this]() {
-                if (this->var_dec) this->var_dec();
-                if (this->setter_set_value) this->setter_set_value();
-            }),
-            KeyModel(KeyMap::RIGHT,
-            [this]() {
-                if (this->task_start) this->task_start();
-            })
-        });
-
         lv_obj_set_width(get_container(), width);
         lv_obj_set_height(get_container(), height);
         lv_obj_set_style_bg_opa(get_container(), 185, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -96,6 +91,17 @@ public:
 
         remember_child_element("[label_value]", value_presenter);
         update_ui_context();
+    }
+
+    void set_extra_button_logic(BlowValueSetterContainer var_edit_func)
+    {
+        this->var_edit_func = var_edit_func;
+
+        set_key_press_actions({
+            KeyModel(KeyMap::RIGHT, [this]() { this->var_edit_func.var_inc(); this->update_ui_context(); }),
+            KeyModel(KeyMap::LEFT, [this]() { this->var_edit_func.var_dec(); this->update_ui_context(); }),
+            KeyModel(KeyMap::RIGHT_BOT, [this]() { this->var_edit_func.blow_run(); })
+        });
     }
 
     void set_value(int32_t value, string post_fix = "")
