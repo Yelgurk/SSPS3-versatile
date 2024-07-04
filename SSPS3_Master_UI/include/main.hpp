@@ -9,6 +9,7 @@
 #include "UIControls/UIMachineStateBar.hpp"
 #include "UIControls/UIMenuList.hpp"
 #include "UIControls/UIMenuListItem.hpp"
+#include "UIControls/UINotificationBar.hpp"
 #include "UIControls/UINotifyBar.hpp"
 #include "UIControls/UIObject.hpp"
 #include "UIControls/UIScreen.hpp"
@@ -37,6 +38,8 @@ UIService UI_service;
 UIMachineStateBar * UI_machine_state_bar;
 UIDateTime * UI_date_time;
 UINotifyBar * UI_notify_bar;
+
+UINotificationBar * UI_notification_bar; /* uhjgioygbuiyguikgyggy */
 
 UITaskRoadmapList * UI_task_roadmap_control;
 vector<UITaskListItem> * UI_task_steps;
