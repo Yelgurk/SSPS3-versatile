@@ -13,6 +13,8 @@ private:
 
     void clear_list()
     {
+        this->navi_back();
+
         for (uint16_t i = 0; i < _collection.size(); i++)
         {
             _collection.at(i)->delete_ui_element(false);
@@ -271,6 +273,9 @@ public:
             clear_list();
 
         _collection.push_back(new UITaskListItem(this));
+
+        if (clear_childs)
+            this->focus_on_first_child(false);
 
         return _collection.back();
     }

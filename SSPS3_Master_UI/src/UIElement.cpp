@@ -435,6 +435,68 @@ UIElement * UIElement::lv_clear_states(lv_obj_t * lv_obj)
     return this;
 }
 
+void UIElement::focus_on_first_child(bool clear_prev_navi_focus_style)
+{
+    bool first_focus_iteration = true;
+
+    if (navi_childs.size() > 0)
+    {
+        if (navi_pointer == nullptr)
+            navi_pointer = navi_childs.back();
+
+        if (clear_prev_navi_focus_style && navi_pointer != nullptr)
+            navi_pointer->lv_clear_states();
+
+        auto it = std::find(
+            navi_childs.begin(),
+            navi_childs.end(),
+            navi_pointer
+        );
+
+        if (it != navi_childs.end())
+        {
+            ++it;
+            while (it != navi_childs.end())
+            {
+                if ((*it)->_is_focusable)
+                {
+                    navi_pointer = *it;
+                    break;
+                }
+                ++it;
+            }
+        }
+
+        if (it == navi_childs.end())
+        {
+            it = std::find_if(
+                navi_childs.begin(),
+                navi_childs.end(),
+                [](UIElement* elem) { return elem->_is_focusable; }
+            );
+            if (it != navi_childs.end())
+                navi_pointer = *it;
+            else
+                navi_pointer = nullptr;
+        }
+    }
+    else
+        navi_pointer = nullptr;
+
+    if (navi_pointer != nullptr)
+    {
+        navi_pointer->set_focused(true);
+        if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration)
+        {
+            lv_area_t child_pos;
+            lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
+            lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1 + _focus_offset_y, LV_ANIM_ON);
+        }
+        else
+            lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
+    }
+}
+
 UIElement * UIElement::set_focused(bool state)
 {
     lv_obj_set_state(container, LV_STATE_FOCUSED, state);
@@ -474,6 +536,10 @@ UIElement * UIElement::set_hidden(bool state)
 UIElement * UIElement::get_parent()
 {
     return this->parent_navi;
+}
+
+UIElement * UIElement::get_navi_el() {
+    return this->navi_pointer; 
 }
 
 UIElement * UIElement::get_selected(bool get_focused)

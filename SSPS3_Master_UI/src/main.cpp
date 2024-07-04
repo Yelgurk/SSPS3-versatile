@@ -1,8 +1,9 @@
 #include "../include/main.hpp"
 
+#define SSPS_PLATFORMIO_INI_INFRASTRUCTURE  1
 #define SSPS_STATE_BAR      1
-#define SSPS_SCREEN_TASK    0
-#define SSPS_MENU_USER      1
+#define SSPS_SCREEN_TASK    1
+#define SSPS_MENU_USER      0
 #define SSPS_BLOWING_PANEL  0
 
 uint32_t ss_ss = 0;
@@ -47,9 +48,9 @@ struct DEMO_TASK
     TaskStateEnum state = TaskStateEnum::AWAIT;
     vector<DEMO_TASK_STEP> * steps;
 
-    DEMO_TASK(string name, vector<DEMO_TASK_STEP> * steps)
-    : name(name), steps(steps)
-    {}
+    //DEMO_TASK(string name, vector<DEMO_TASK_STEP> * steps)
+    //: name(name), steps(steps)
+    //{}
 
     double get_prog_percentage()
     {
@@ -64,7 +65,7 @@ struct DEMO_TASK
                 done_ss += (step.gone_ss > step.duration ? step.duration : step.gone_ss);
         }
 
-        return 100.0 / (double)aim_ss * done_ss;
+        return aim_ss <= 0 ? 0 : 100.0 / (double)aim_ss * done_ss;
     }
 
     bool is_last_step(uint16_t index) {
@@ -75,10 +76,13 @@ struct DEMO_TASK
         return millis() / 1000;
     }
 
-    DEMO_TASK_STEP * start_task()
+    DEMO_TASK_STEP * start_task(string name, vector<DEMO_TASK_STEP> * steps)
     {
-        if (state == TaskStateEnum::AWAIT)
+        if (state == TaskStateEnum::AWAIT || state == TaskStateEnum::DONE)
         {
+            this->name = name;
+            this->steps = steps;
+
             started_at_ss = seconds();
             last_iteration_ss = seconds();
             gone_ss = 0;
@@ -156,7 +160,20 @@ vector<DEMO_TASK_STEP> my_demo_task_steps =
     DEMO_TASK_STEP("Ожидание", 21, 50, 120)
 };
 
-DEMO_TASK my_demo_task("Пастеризация", &my_demo_task_steps);
+vector<DEMO_TASK_STEP> my_demo_task_steps_2 =
+{
+    DEMO_TASK_STEP("Выдержка", 19, 45, 120),
+    DEMO_TASK_STEP("Нагрев", 17, 40, 90),
+    DEMO_TASK_STEP("Ожидание", 21, 50, 120),
+    DEMO_TASK_STEP("Набор воды", 5, 10, 10),
+    DEMO_TASK_STEP("Нагрев", 7, 15, 20),
+    DEMO_TASK_STEP("Пастеризация", 9, 20, 30),
+    DEMO_TASK_STEP("Выдержка", 11, 25, 40),
+    DEMO_TASK_STEP("Охлаждение", 13, 30, 50),
+    DEMO_TASK_STEP("Выдержка", 15, 35, 60)
+};
+
+DEMO_TASK my_demo_task = DEMO_TASK();//("Пастеризация", &my_demo_task_steps);
 /* DEMO VARS END */
 
 void init_ui_controls();
@@ -176,17 +193,22 @@ void setup()
 
     itcw = new TwoWire(0);
     itcw->begin(SDA, SCL, 400000);
+
+#if SSPS_PLATFORMIO_INI_INFRASTRUCTURE == 1
     STM32 = new STM32_slave(STM_I2C_ADDR);
 
     pinMode(INT, INPUT_PULLDOWN);
     attachInterrupt(digitalPinToInterrupt(INT), interrupt_action, CHANGE);
+#endif
 
     UI_service.init();
     lcd.setBrightness(255);
     
     init_ui_controls();
 
-    my_demo_task.start_task();
+    my_demo_task.start_task("Пастеризация", &my_demo_task_steps);
+    UI_task_roadmap_control->update_ui_base();
+    UI_task_roadmap_control->update_ui_context();
 }
 
 void loop()
@@ -226,31 +248,59 @@ void loop()
 #endif
     
 #if SSPS_SCREEN_TASK == 1
-        my_demo_task.do_task();
+        if (my_demo_task.do_task() == nullptr)
+        {
+            my_demo_task.start_task("Пастер 2", &my_demo_task_steps_2);
+
+            for (uint16_t i = 0; i < my_demo_task_steps_2.size(); i++)
+            {
+                DEMO_TASK_STEP* step = &my_demo_task_steps_2.at(i);
+        
+                UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
+                ui_step->set_extra_button_logic({
+                    [=](){ step->fan++;          },
+                    [=](){ step->fan--;          },
+                    [=](){ step->tempC++;        },
+                    [=](){ step->tempC--;        },
+                    [=](){ step->duration += 10; },
+                    [=](){ step->duration -= 10; },
+                });
+        
+                ui_step->add_ui_base_action([ui_step, step]() { ui_step->set_step_name(step->name); });
+                ui_step->add_ui_context_action([ui_step, step]() { ui_step->set_step_values(step->fan, step->tempC, step->time_left_ss(), step->state); });
+            }
+
+            UI_task_roadmap_control->update_ui_base();
+            UI_task_roadmap_control->update_ui_context();
+        }
+
         UI_task_roadmap_control->update_task_steps_state();
         UI_task_roadmap_control->update_ui_context();
 #endif
     }
 
+#if SSPS_PLATFORMIO_INI_INFRASTRUCTURE == 1
     if (interrupted_by_slave)
     {
         interrupted_by_slave = false;
         uint8_t x = STM32->get_kb();
 
-#if SSPS_SCREEN_TASK == 1
+    #if SSPS_SCREEN_TASK == 1
         UI_task_roadmap_control->get_selected()->key_press(x);
         UI_task_roadmap_control->get_selected(true)->key_press(x);
-#endif
+    #endif
 
-#if SSPS_MENU_USER == 1
+    #if SSPS_MENU_USER == 1
         UI_menu_list_user->get_selected()->key_press(x);
-#endif
+    #endif
 
-#if SSPS_BLOWING_PANEL == 1
+    #if SSPS_BLOWING_PANEL == 1
         UI_blowing_control->get_selected()->key_press(x);
         UI_blowing_control->get_selected(true)->key_press(x);
-#endif
+    #endif
     }
+
+#endif
 }
 
 void init_ui_controls()
@@ -278,16 +328,17 @@ void init_ui_controls()
         UI_service.screen
     );
     UI_task_roadmap_control->add_ui_base_action(
-        []() { UI_task_roadmap_control->set_task_header_name(my_demo_task.name); }
+        []() { if (my_demo_task.state != TaskStateEnum::AWAIT) UI_task_roadmap_control->set_task_header_name(my_demo_task.name); }
     );
     UI_task_roadmap_control->add_ui_context_action(
         []()
         {
-            UI_task_roadmap_control->set_task_state_values(
-                my_demo_task.get_prog_percentage(),
-                my_demo_task.gone_ss,
-                my_demo_task.state
-            );
+            if (my_demo_task.state != TaskStateEnum::AWAIT)
+                UI_task_roadmap_control->set_task_state_values(
+                    my_demo_task.get_prog_percentage(),
+                    my_demo_task.gone_ss,
+                    my_demo_task.state
+                );
         }
     );
         

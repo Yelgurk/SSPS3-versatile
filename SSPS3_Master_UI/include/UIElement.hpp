@@ -134,12 +134,14 @@ public:
     UIElement * update_ui_base();
     UIElement * update_ui_context();
     UIElement * lv_clear_states(lv_obj_t * lv_obj = nullptr);
+    void focus_on_first_child(bool clear_prev_navi_focus_style = true);
     UIElement * set_focused(bool state);
     UIElement * set_selected(bool state);
     UIElement * set_transparent(bool state);
     UIElement * set_hidden(bool state);
     UIElement * get_parent();
     UIElement * get_selected(bool get_focused = false);
+    UIElement * get_navi_el();
     int16_t get_focused_index();
     UIElement * set_childs_hidden();
     UIElement * set_childs_transarent();

@@ -145,10 +145,10 @@ public:
         set_key_press_actions({
             KeyModel(KeyMap::L_STACK_4, [this]() { this->var_edit_func.var_inc_fan(); this->update_ui_context(); }),
             KeyModel(KeyMap::L_STACK_3, [this]() { this->var_edit_func.var_dec_fan(); this->update_ui_context(); }),
-            KeyModel(KeyMap::R_STACK_4, [this]() { this->var_edit_func.var_inc_tempC(); this->update_ui_context(); }),
-            KeyModel(KeyMap::R_STACK_3, [this]() { this->var_edit_func.var_dec_tempC(); this->update_ui_context(); }),
-            KeyModel(KeyMap::R_STACK_2, [this]() { this->var_edit_func.var_inc_durat(); this->update_ui_context(); }),
-            KeyModel(KeyMap::R_STACK_1, [this]() { this->var_edit_func.var_dec_durat(); this->update_ui_context(); })
+            KeyModel(KeyMap::R_STACK_4, [this]() { this->var_edit_func.var_inc_durat(); this->update_ui_context(); }),
+            KeyModel(KeyMap::R_STACK_3, [this]() { this->var_edit_func.var_dec_durat(); this->update_ui_context(); }),
+            KeyModel(KeyMap::R_STACK_2, [this]() { this->var_edit_func.var_inc_tempC(); this->update_ui_context(); }),
+            KeyModel(KeyMap::R_STACK_1, [this]() { this->var_edit_func.var_dec_tempC(); this->update_ui_context(); })
         });
     }
 
