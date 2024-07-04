@@ -155,67 +155,80 @@ class BlowgunController
 {
 public:
     bool timer_running = false;
-    using CallbackFunc = std::function<void(uint16_t, uint16_t, bool)>;
+    using CallbackFunc = std::function<void(float, float, BlowingType, float)>;
 
 private:
-    CallbackFunc callback;
     DEMO_BLOW_VAR current_task;
-    DEMO_BLOW_VAR current_task_clone;
+    CallbackFunc callback;
+    int8_t current_blow_index = -1;
+    uint32_t ms_aim = 0;
+    uint32_t ms_gone = 0;
+    float ml_per_ms = 0;
+    float pump_power_lm = 52.f;
+
     bool is_active;
     bool pump_on;
-    uint32_t last_trigger_time;
-    uint32_t last_update_time;
+    uint32_t last_call_time;
+    uint32_t last_blow_time;
 
     void start_pump()
     {
         pump_on = true;
-        Serial.println("pump ON");
     }
 
     void stop_pump()
     {
         pump_on = false;
-        Serial.println("pump OFFFF");
     }
 
 public:
-
     BlowgunController(CallbackFunc callback) :
     callback(callback),
     is_active(false),
-    last_trigger_time(0), 
+    last_call_time(0), 
     pump_on(false),
     timer_running(false)
     {}
 
-    void blowgun_trigger(bool do_gurgling, bool is_keypad_press, DEMO_BLOW_VAR curr_value = DEMO_BLOW_VAR())
+    void blowgun_trigger(bool do_gurgling, bool is_keypad_press, int8_t index = -1, DEMO_BLOW_VAR curr_value = DEMO_BLOW_VAR())
     {
         uint32_t current_time = millis();
 
         if (do_gurgling)
         {
-            if ((is_keypad_press && current_time - last_trigger_time < 2000) || !is_keypad_press)
+            if (is_active && current_blow_index != index)
             {
-                if (is_active)
-                {
-                    if (!timer_running)
-                    {
-                        timer_running = true;
-                        start_pump();
-                    }
-                }
-                else
+                stop_pump();
+                timer_running = false;
+                return;
+            }
+
+            if (!is_active && is_keypad_press)
+                callback(curr_value.val * 1000, 0.f, curr_value.is_timer ? BlowingType::TIMER : BlowingType::LITER, 0.001f);
+
+            if ((!timer_running || !is_active) && ((is_keypad_press && current_time - last_call_time < 2000) || !is_keypad_press))
+            {
+                if (!is_active)
                 {
                     current_task = curr_value;
-                    current_task_clone = curr_value;
-
-                    start_pump();
-                    last_update_time = millis(); 
+                    current_blow_index = index;
                     is_active = true;
-                    timer_running = true;
+
+                    ml_per_ms = pump_power_lm * 1000.f / 60.f / 1000.f;
+
+                    if (!current_task.is_timer)
+                        ms_aim = (curr_value.val / (pump_power_lm * 1000)) * (60 * 1000);
+                    else
+                        ms_aim = curr_value.val * 1000;
+                    ms_gone = 0;
                 }
-            }
-            last_trigger_time = current_time;
+
+                last_blow_time = current_time;
+                timer_running = true;
+                start_pump();
+            } 
+
+            last_call_time = current_time;
         }
         else
         {
@@ -229,7 +242,7 @@ public:
         stop_pump();
         timer_running = false;
         is_active = false;
-        callback(0, 0, false);
+        callback(0, 0, BlowingType::LITER, 0);
     }
 
     void do_blowing()
@@ -237,7 +250,7 @@ public:
         if (!is_active) return;
 
         uint32_t current_time = millis();
-        if (current_time - last_trigger_time > 2000)
+        if (current_time - last_call_time > 2000)
         {
             blowgun_stop();
             return;
@@ -245,39 +258,14 @@ public:
 
         if (timer_running)
         {
-            if (current_task.is_timer)
+            ms_gone += current_time - last_blow_time;
+            last_blow_time = current_time;
+            callback(ms_aim, ms_gone, current_task.is_timer ? BlowingType::TIMER : BlowingType::LITER, ml_per_ms);
+
+            if (ms_gone >= ms_aim)
             {
-                uint32_t elapsed_time = current_time - last_update_time;
-
-                if (elapsed_time >= 1000)
-                {
-                    current_task.val -= elapsed_time / 1000;
-                    last_update_time = current_time;
-
-                    if (current_task.val == 0)
-                        blowgun_stop();
-                }
-
-                callback(current_task_clone.val, current_task.val, true);
-            }
-            else
-            {
-                uint32_t elapsed_time = current_time - last_update_time;
-
-                uint16_t ml_to_dispense = 36000.0 / 60000.0 * (double)elapsed_time;
-
-                if (ml_to_dispense >= current_task.val)
-                {
-                    current_task.val = 0;
-                    blowgun_stop();
-                }
-                else
-                {
-                    current_task.val -= ml_to_dispense;
-                    last_update_time = current_time;
-                }
-
-                callback(current_task_clone.val, current_task.val, false);
+                callback(ms_aim, ms_gone, current_task.is_timer ? BlowingType::TIMER : BlowingType::LITER, ml_per_ms);
+                blowgun_stop();
             }
         }
     }
@@ -325,7 +313,12 @@ vector<DEMO_BLOW_VAR> b_vars = {
     DEMO_BLOW_VAR(true, 360)
 };
 
-BlowgunController pumpController = BlowgunController([](uint16_t val_aim, uint16_t val_curr, bool type) { UI_blowing_control->set_blow_value(val_aim, val_curr, type ? BlowingType::TIMER : BlowingType::LITER); });
+BlowgunController pumpController = BlowgunController(
+    [](float ms_aim, float ms_gone, BlowingType type, float ml_per_ms) 
+    {
+        UI_blowing_control->set_blow_value(ms_aim, ms_gone, type, ml_per_ms);
+    }
+);
 /* DEMO VARS END */
 
 void init_ui_controls();
@@ -369,14 +362,13 @@ void loop()
 {
     lv_task_handler();
 
-
+    #if SSPS_BLOWING_PANEL == 1
+        pumpController.do_blowing();
+    #endif
 
     if (millis() - ms_last_2 >= 250)
     {
         ms_last_2 = millis();
-#if SSPS_BLOWING_PANEL == 1
-        pumpController.do_blowing();
-#endif
     }
 
     if (millis() - ms_last >= 1000)
@@ -573,7 +565,7 @@ void init_ui_controls()
         blow_ptr->set_extra_button_logic({
             [i]() { b_vars.at(i).val += (i != 3 ? 250 : 5); },
             [i]() { b_vars.at(i).val -= (i != 3 ? 250 : 5); },
-            [i]() { pumpController.blowgun_trigger(true, true, b_vars.at(i)); }
+            [i]() { pumpController.blowgun_trigger(true, true, i, b_vars.at(i)); }
         });
     }
 #endif

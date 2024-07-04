@@ -90,21 +90,26 @@ public:
         set_childs_presenter("[blow_selector]");
     }
 
-    void set_blow_value(double max_val, double curr_value, BlowingType type, bool reversed_indicator = true)
+    void set_blow_value(float ms_aim, float ms_gone, BlowingType type, float ml_per_ms, bool reversed_indicator = true)
     {
         static uint32_t indicator_value = 0;
         static char buffer[50];
 
         if (type == BlowingType::LITER)
-            sprintf(buffer, "%.3f л.", curr_value / 1000.0);
+            sprintf(buffer, "%.3f л.", (ml_per_ms * (ms_aim - ms_gone)) / 1000.f);
         else
         if (type == BlowingType::TIMER)
-            sprintf(buffer, "%02d:%02d", (uint32_t)curr_value / 60, (uint32_t)curr_value % 60);
+        {
+            int32_t total_ss = ms_aim / 1000.f;
+            int32_t gone_ss = ms_gone / 1000.f;
+            int32_t left_ss = total_ss - gone_ss;
+            sprintf(buffer, "%02d:%02d", left_ss / 60, left_ss % 60);
+        }
 
-        if (reversed_indicator)
-            indicator_value = static_cast<uint32_t>(240.0 / max_val * curr_value);
+        if (!reversed_indicator)
+            indicator_value = 240.f / ms_aim * ms_gone;
         else
-            indicator_value = static_cast<uint32_t>(240.0 - (240.0 / max_val * curr_value));
+            indicator_value = 240.f - (240.f / ms_aim * ms_gone);
 
         lv_obj_set_height(get_container_content("[blow_proc_bar]"), indicator_value);
         lv_label_set_text(get_container_content("[blow_proc_var]"), buffer);
