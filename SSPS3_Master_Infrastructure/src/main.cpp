@@ -3,23 +3,32 @@
 #ifndef SSPS3_APPLICATION_SOLUTION
 #ifndef SSPS3_UI_DEV_SOLUTION
 
+#include "DS3231.h"
+
 TwoWire * itcw;
 STM32_slave * STM32;
+DS3231 * rtc;
+bool century = false;
+bool h12Flag;
+bool pmFlag;
 
 void setup()
 {
     Serial.begin(115200);
 
     pinMode(INT, INPUT);
-    attachInterrupt(INT, [](){ interrupted_by_slave = true; }, RISING);
+    attachInterrupt(INT, [](){ interrupted_by_slave = true; }, CHANGE);
 
     itcw = new TwoWire(0);
     itcw->begin(SDA, SCL, 400000);
 
     STM32 = new STM32_slave(STM_I2C_ADDR);
+
+    rtc = new DS3231(*itcw);
 }
 
 uint32_t ms_old = 0,
+         ms_old_2 = 0,
          ms_curr = 0;
 
 void loop()
@@ -30,8 +39,14 @@ void loop()
 
         print(true);
 
-        for (uint8_t i = 0; i < 8; i++)
+        for (uint8_t i = 0; i < 4; i++)
             STM32->set(COMM_SET::RELAY, i, OptIn_state[i]);
+    }
+
+    
+    if (millis() - ms_old_2 > 10)
+    {
+        STM32->set(COMM_SET::DAC, 0, (millis() / 10) % 4096);
     }
 
     if ((ms_curr = millis()) - ms_old > 1000)
@@ -73,7 +88,21 @@ void print(bool only_digital)
         Serial.print(" ");
         Serial.print(STM32->get(COMM_GET::ANIN, 2));
         Serial.print(" ");
-        Serial.println(STM32->get(COMM_GET::ANIN, 3));
+        Serial.print(STM32->get(COMM_GET::ANIN, 3));
+
+        Serial.print(" | ");
+
+        Serial.print(rtc->getYear(), DEC);
+        Serial.print("-");
+        Serial.print(rtc->getMonth(century), DEC);
+        Serial.print("-");
+        Serial.print(rtc->getDate(), DEC);
+        Serial.print(" ");
+        Serial.print(rtc->getHour(h12Flag, pmFlag), DEC); //24-hr
+        Serial.print(":");
+        Serial.print(rtc->getMinute(), DEC);
+        Serial.print(":");
+        Serial.println(rtc->getSecond(), DEC);
     }
     else
         Serial.println();

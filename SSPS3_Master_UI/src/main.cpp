@@ -361,6 +361,14 @@ void setup()
     UI_task_roadmap_control->update_ui_base();
     UI_task_roadmap_control->update_ui_context();
 #endif
+
+#if SSPS_STATE_BAR == 1
+    UI_notification_bar->push_info(NotifyType::OK);
+    UI_notification_bar->push_info(NotifyType::INFO);
+    UI_notification_bar->push_info(NotifyType::WARNING);
+    UI_notification_bar->push_info(NotifyType::ERROR);
+    UI_notification_bar->display();
+#endif
 }
 
 void loop()
@@ -388,6 +396,8 @@ void loop()
             random(0, 101),
             ChargeStateEnum::STABLE
         );
+
+
 #endif
     
 #if SSPS_SCREEN_TASK == 1
@@ -456,6 +466,7 @@ void init_ui_controls()
     UI_date_time = new UIDateTime(UI_service.screen);
     UI_machine_state_bar = new UIMachineStateBar(UI_service.screen);
     UI_notify_bar = new UINotifyBar(UI_service.screen);
+    UI_notification_bar = new UINotificationBar(UI_service.screen);
 #endif
 
 #if SSPS_SCREEN_TASK == 1

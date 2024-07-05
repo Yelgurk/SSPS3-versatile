@@ -23,8 +23,10 @@ class LGFX : public lgfx::LGFX_Device
 {
 //lgfx::Panel_ILI9481     _panel_instance;
 //lgfx::Panel_ILI9486     _panel_instance;
+
 //lgfx::Panel_ILI9488     _panel_instance;
 lgfx::Panel_ST7796      _panel_instance;
+
 //lgfx::Panel_ST7789      _panel_instance;
 
 lgfx::Bus_Parallel8 _bus_instance;

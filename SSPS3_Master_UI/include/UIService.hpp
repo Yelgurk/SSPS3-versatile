@@ -15,7 +15,7 @@
 #define SCREEN_HEIGHT           320U
 
 #if INIT_BUFFER_IN_PSRAM == 0
-    #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 16 / 2    
+    #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 24 / 2    
     static uint8_t lv_buff_1[SCREEN_BUFFER];
     static uint8_t lv_buff_2[SCREEN_BUFFER];
 #else
