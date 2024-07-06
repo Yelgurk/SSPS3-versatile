@@ -2,9 +2,9 @@
 
 #define SSPS_PLATFORMIO_INI_INFRASTRUCTURE  1
 #define SSPS_STATE_BAR      1
-#define SSPS_SCREEN_TASK    0
+#define SSPS_SCREEN_TASK    1
 #define SSPS_MENU_USER      0
-#define SSPS_BLOWING_PANEL  1
+#define SSPS_BLOWING_PANEL  0
 
 uint32_t ss_ss = 0;
 TwoWire * itcw;
@@ -363,10 +363,10 @@ void setup()
 #endif
 
 #if SSPS_STATE_BAR == 1
-    UI_notification_bar->push_info(NotifyType::OK);
-    UI_notification_bar->push_info(NotifyType::INFO);
-    UI_notification_bar->push_info(NotifyType::WARNING);
-    UI_notification_bar->push_info(NotifyType::ERROR);
+    UI_notification_bar->push_info(SystemNotification::OK_TASK_DONE);
+    UI_notification_bar->push_info(SystemNotification::INFO_BLOWING_RESET_2_SS_AWAIT);
+    UI_notification_bar->push_info(SystemNotification::WARNING_380V_NO_POWER);
+    UI_notification_bar->push_info(SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN);
     UI_notification_bar->display();
 #endif
 }
@@ -396,8 +396,6 @@ void loop()
             random(0, 101),
             ChargeStateEnum::STABLE
         );
-
-
 #endif
     
 #if SSPS_SCREEN_TASK == 1
@@ -450,6 +448,10 @@ void loop()
     #if SSPS_BLOWING_PANEL == 1
         UI_blowing_control->get_selected()->key_press(x);
         UI_blowing_control->get_selected(true)->key_press(x);
+    #endif
+
+    #if SSPS_STATE_BAR == 1
+        UI_notification_bar->key_press(x);
     #endif
     }
 

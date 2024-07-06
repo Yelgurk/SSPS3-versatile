@@ -68,8 +68,8 @@ public:
         remember_child_element("[context_count]", lv_context_text);
         remember_child_element("[context_icon]", lv_setter_icon);
 
-        //control_set_values_notify_bar(NotifyIconEnum::OK, 0);
-        control_set_values_notify_bar(NotifyIconEnum::INFO, 1);
+        control_set_values_notify_bar(NotifyIconEnum::OK, 0);
+        //control_set_values_notify_bar(NotifyIconEnum::INFO, 1);
         //control_set_values_notify_bar(NotifyIconEnum::WARNING, 2);
         //control_set_values_notify_bar(NotifyIconEnum::ERROR, 3);
     }
