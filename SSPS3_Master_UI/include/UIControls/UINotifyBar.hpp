@@ -3,7 +3,7 @@
 
 #include "../UIElement.hpp"
 
-enum class NotifyIconEnum : uint8_t { OK, INFO, WARNING, ERROR };
+enum class NotifyIconEnum : uint8_t { OK, INFO, WARNING, ERROR, LOGO };
 
 class UINotifyBar : public UIElement
 {
@@ -42,6 +42,7 @@ public:
         lv_obj_set_style_opa(lv_context_text, 255, LV_PART_MAIN | LV_STATE_USER_1);
         lv_obj_set_style_opa(lv_context_text, 255, LV_PART_MAIN | LV_STATE_USER_2);
         lv_obj_set_style_opa(lv_context_text, 255, LV_PART_MAIN | LV_STATE_USER_3);
+        lv_obj_set_style_opa(lv_context_text, 0, LV_PART_MAIN | LV_STATE_USER_4);
 
         lv_obj_t * lv_setter_icon = lv_image_create(get_container());
         lv_image_set_src(lv_setter_icon, &img_checkmark);
@@ -55,23 +56,27 @@ public:
         lv_obj_set_style_align(lv_setter_icon, LV_ALIGN_TOP_MID, LV_PART_MAIN | LV_STATE_USER_1);
         lv_obj_set_style_align(lv_setter_icon, LV_ALIGN_TOP_MID, LV_PART_MAIN | LV_STATE_USER_2);
         lv_obj_set_style_align(lv_setter_icon, LV_ALIGN_TOP_MID, LV_PART_MAIN | LV_STATE_USER_3);
+        lv_obj_set_style_align(lv_setter_icon, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_USER_4);
 
         lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, 0);
         lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, LV_PART_MAIN | LV_STATE_USER_1);
         lv_obj_set_style_bg_color(get_container(), COLOR_YELLOW_SMOKE, LV_PART_MAIN | LV_STATE_USER_2);
         lv_obj_set_style_bg_color(get_container(), COLOR_PINK, LV_PART_MAIN | LV_STATE_USER_3);
+        lv_obj_set_style_bg_color(get_container(), COLOR_WHITE, LV_PART_MAIN | LV_STATE_USER_4);
         lv_obj_set_style_opa(get_container(), 255, 0);
         lv_obj_set_style_opa(get_container(), 255, LV_STATE_USER_1);
         lv_obj_set_style_opa(get_container(), 255, LV_STATE_USER_2);
         lv_obj_set_style_opa(get_container(), 255, LV_STATE_USER_3);
+        lv_obj_set_style_opa(get_container(), 255, LV_STATE_USER_4);
 
         remember_child_element("[context_count]", lv_context_text);
         remember_child_element("[context_icon]", lv_setter_icon);
 
-        control_set_values_notify_bar(NotifyIconEnum::OK, 0);
+        //control_set_values_notify_bar(NotifyIconEnum::OK, 0);
         //control_set_values_notify_bar(NotifyIconEnum::INFO, 1);
         //control_set_values_notify_bar(NotifyIconEnum::WARNING, 2);
         //control_set_values_notify_bar(NotifyIconEnum::ERROR, 3);
+        control_set_values_notify_bar(NotifyIconEnum::LOGO, 0);
     }
 
     void control_set_values_notify_bar(NotifyIconEnum notify_importance, uint8_t count)
@@ -105,10 +110,14 @@ private:
             lv_image_set_src(get_container_content("[context_icon]"), &img_warning); break;
             }; break;
 
-            
-        default: {
+        case NotifyIconEnum::ERROR: {
             obj_state = LV_STATE_USER_3;
             lv_image_set_src(get_container_content("[context_icon]"), &img_error); break;
+            }; break;
+
+        default: {
+            obj_state = LV_STATE_USER_4;
+            lv_image_set_src(get_container_content("[context_icon]"), &img_logo); break;
             }; break;
         }
 

@@ -51,16 +51,18 @@ struct DEMO_TASK_STEP
 struct DEMO_TASK
 {
     string name;
+    boolean is_active = false;
+    boolean is_pause_rt_task_triggered = false;
+    TaskStateEnum state = TaskStateEnum::AWAIT;
 
     int64_t started_at_ss;
     int64_t last_iteration_ss;
     int64_t gone_ss;
-    TaskStateEnum state = TaskStateEnum::AWAIT;
-    vector<DEMO_TASK_STEP> * steps;
 
-    //DEMO_TASK(string name, vector<DEMO_TASK_STEP> * steps)
-    //: name(name), steps(steps)
-    //{}
+    vector<DEMO_TASK_STEP> * steps;
+    DEMO_TASK_STEP * current_step = nullptr;
+    DEMO_TASK_STEP * next_step = nullptr;
+
 
     double get_prog_percentage()
     {
@@ -70,9 +72,7 @@ struct DEMO_TASK
         for (auto step : *steps)
         {
             aim_ss += step.duration;
-
-            if (step.state == StepStateEnum::RUNNED || step.state == StepStateEnum::DONE)
-                done_ss += (step.gone_ss > step.duration ? step.duration : step.gone_ss);
+            done_ss += (step.gone_ss > step.duration ? step.duration : step.gone_ss);
         }
 
         return aim_ss <= 0 ? 0 : 100.0 / (double)aim_ss * done_ss;
@@ -82,21 +82,27 @@ struct DEMO_TASK
         return index == steps->size() - 1;
     }
 
+    bool is_last_step(DEMO_TASK_STEP * step) {
+        return &steps->at(steps->size() - 1) == step;
+    }
+
     int64_t seconds() {
         return millis() / 1000;
     }
 
     DEMO_TASK_STEP * start_task(string name, vector<DEMO_TASK_STEP> * steps)
     {
-        if (state == TaskStateEnum::AWAIT || state == TaskStateEnum::DONE)
+        if (!is_active)
         {
             this->name = name;
             this->steps = steps;
 
-            started_at_ss = seconds();
-            last_iteration_ss = seconds();
+            last_iteration_ss = started_at_ss = seconds();
+            current_step = next_step = nullptr;
             gone_ss = 0;
             state = TaskStateEnum::RUNNED;
+            is_active = true;
+            is_pause_rt_task_triggered = false;
         }
 
         return do_task();
@@ -105,48 +111,108 @@ struct DEMO_TASK
     /* return current step */
     DEMO_TASK_STEP * do_task()
     {
-        int32_t ss_from_last_iteration = seconds() - last_iteration_ss;
-        last_iteration_ss = seconds();
+        uint32_t curr_ss = seconds();
+        int32_t ss_from_last_iteration = curr_ss - last_iteration_ss;
+        last_iteration_ss = curr_ss;
     
-        if (state == TaskStateEnum::RUNNED)
+        if (is_active)
         {
-            gone_ss = seconds() - started_at_ss;
-
             for (int i = 0; i < steps->size(); i++)
             {
-                if (steps->at(i).state == StepStateEnum::AWAIT && i == 0)
-                {
-                    steps->at(i).iteration_ss(ss_from_last_iteration);
+                if ( i == 0 && steps->at(i).state == StepStateEnum::AWAIT)
                     steps->at(i).state = StepStateEnum::RUNNED;
-                    return &steps->at(i);
-                }
 
-                if (steps->at(i).state == StepStateEnum::RUNNED)
+                if (i < (int)(steps->size() - 1) && steps->at(i + 1).state == StepStateEnum::AWAIT)
                 {
-                    steps->at(i).iteration_ss(ss_from_last_iteration);
-
-                    if (steps->at(i).is_time_out())
-                    {
-                        steps->at(i).state = StepStateEnum::DONE;
-
-                        if (!is_last_step(i))
-                        {
-                            steps->at(i + 1).state = StepStateEnum::RUNNED;
-                            return &steps->at(i + 1);
-                        }
-                        else
-                        {
-                            state = TaskStateEnum::DONE;
-                            return &steps->at(i);
-                        }
-                    }
-                    else
-                        return &steps->at(i);
+                    current_step = &steps->at(i);
+                    next_step = &steps->at(i + 1);
+                    break;
                 }
+
+                if (i >= steps->size() - 1)
+                {
+                    current_step = &steps->at(steps->size() - 1);
+                    next_step = &steps->at(steps->size() - 1);
+                    break;
+                }
+            }
+
+            if (state == TaskStateEnum::RUNNED && ss_from_last_iteration > 0)
+            {
+                current_step->iteration_ss(ss_from_last_iteration);
+                current_step->state = StepStateEnum::RUNNED;
+                is_pause_rt_task_triggered = false;
+
+                if (current_step->is_time_out())
+                {
+                    current_step->state = StepStateEnum::DONE;
+
+                    if (!is_last_step(current_step))
+                        next_step->state = StepStateEnum::RUNNED;
+                    else
+                    {
+                        state = TaskStateEnum::DONE;
+                        is_active = false;
+                    }
+                }
+
+                gone_ss = curr_ss - started_at_ss;
+            }
+            else if (state == TaskStateEnum::PAUSE)
+            {
+                if (!is_pause_rt_task_triggered)
+                {
+                    is_pause_rt_task_triggered = true;
+                    current_step->state = StepStateEnum::PAUSE;
+                    
+                    /* тут код для управления всеми элементами оборудования для состояния паузы | лямбда? */
+                }
+                else if (ss_from_last_iteration > 0)
+                {
+                    current_step->state = StepStateEnum::PAUSE;
+                    /* тут код для управления всеми элементами оборудования для состояния паузы | лямбда? */
+                }
+            }
+            else if (state == TaskStateEnum::ERROR)
+            {
+                current_step->state = StepStateEnum::ERROR;
+                is_active = false;
+
+                /* тут код для управления всеми элементами оборудования для состояния завершения задачи | лямбда? */
             }
         }
 
-        return nullptr;
+        return current_step;
+    }
+
+    void resume_task()
+    {
+        if (get_task_state() == TaskStateEnum::PAUSE)
+            set_task_state(TaskStateEnum::RUNNED);
+    }
+
+    void pause_task()
+    {
+        if (get_task_state() == TaskStateEnum::RUNNED)
+            set_task_state(TaskStateEnum::PAUSE);
+        else if (get_task_state() == TaskStateEnum::PAUSE)
+            set_task_state(TaskStateEnum::RUNNED);
+    }
+
+    void end_task()
+    {
+        set_task_state(TaskStateEnum::ERROR);
+    }
+
+private:
+    void set_task_state(TaskStateEnum task_new_state)
+    {
+        if (this->is_active)
+            this->state = task_new_state;
+    }
+
+    TaskStateEnum get_task_state() {
+        return this->state;
     }
 };
 
@@ -399,7 +465,7 @@ void loop()
 #endif
     
 #if SSPS_SCREEN_TASK == 1
-        if (my_demo_task.do_task() == nullptr)
+        if (!my_demo_task.is_active)
         {
             my_demo_task.start_task("Пастер 2", &my_demo_task_steps_2);
 
@@ -425,6 +491,7 @@ void loop()
             UI_task_roadmap_control->update_ui_context();
         }
 
+        my_demo_task.do_task();
         UI_task_roadmap_control->update_task_steps_state();
         UI_task_roadmap_control->update_ui_context();
 #endif
@@ -482,6 +549,18 @@ void init_ui_controls()
             KeyModel(KeyMap::BOTTOM, []()
             {
                 UI_task_roadmap_control->navi_next();
+                UI_task_roadmap_control->update_task_steps_state();
+            }),
+            KeyModel(KeyMap::RIGHT_BOT, []()
+            {
+                my_demo_task.pause_task();
+                UI_task_roadmap_control->update_ui_context();
+                UI_task_roadmap_control->update_task_steps_state();
+            }),
+            KeyModel(KeyMap::L_STACK_1, []()
+            {
+                my_demo_task.end_task();
+                UI_task_roadmap_control->update_ui_context();
                 UI_task_roadmap_control->update_task_steps_state();
             })
         },
