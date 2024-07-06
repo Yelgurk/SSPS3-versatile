@@ -1,9 +1,10 @@
+#ifndef SSPS3_APPLICATION_SOLUTION
 #include "../include/main.hpp"
 
 #define SSPS_PLATFORMIO_INI_INFRASTRUCTURE  1
 #define SSPS_STATE_BAR      1
-#define SSPS_SCREEN_TASK    1
-#define SSPS_MENU_USER      0
+#define SSPS_SCREEN_TASK    0
+#define SSPS_MENU_USER      1
 #define SSPS_BLOWING_PANEL  0
 
 uint32_t ss_ss = 0;
@@ -52,7 +53,6 @@ struct DEMO_TASK
 {
     string name;
     boolean is_active = false;
-    boolean is_pause_rt_task_triggered = false;
     TaskStateEnum state = TaskStateEnum::AWAIT;
 
     int64_t started_at_ss;
@@ -102,7 +102,6 @@ struct DEMO_TASK
             gone_ss = 0;
             state = TaskStateEnum::RUNNED;
             is_active = true;
-            is_pause_rt_task_triggered = false;
         }
 
         return do_task();
@@ -137,11 +136,10 @@ struct DEMO_TASK
                 }
             }
 
-            if (state == TaskStateEnum::RUNNED && ss_from_last_iteration > 0)
+            if (state == TaskStateEnum::RUNNED)
             {
                 current_step->iteration_ss(ss_from_last_iteration);
                 current_step->state = StepStateEnum::RUNNED;
-                is_pause_rt_task_triggered = false;
 
                 if (current_step->is_time_out())
                 {
@@ -160,25 +158,22 @@ struct DEMO_TASK
             }
             else if (state == TaskStateEnum::PAUSE)
             {
-                if (!is_pause_rt_task_triggered)
-                {
-                    is_pause_rt_task_triggered = true;
-                    current_step->state = StepStateEnum::PAUSE;
-                    
-                    /* тут код для управления всеми элементами оборудования для состояния паузы | лямбда? */
-                }
-                else if (ss_from_last_iteration > 0)
-                {
-                    current_step->state = StepStateEnum::PAUSE;
-                    /* тут код для управления всеми элементами оборудования для состояния паузы | лямбда? */
-                }
+                current_step->state = StepStateEnum::PAUSE;
+
+                /*
+                return дефолт экземпляра DEMO_TASK_STEP у которого стоит всё по 0, т.к. управление будет согласно
+                значениям сугубо по возвращенному в DEMO_TASK_STEP
+                */
             }
             else if (state == TaskStateEnum::ERROR)
             {
                 current_step->state = StepStateEnum::ERROR;
                 is_active = false;
 
-                /* тут код для управления всеми элементами оборудования для состояния завершения задачи | лямбда? */
+                /*
+                return дефолт экземпляра DEMO_TASK_STEP у которого стоит всё по 0, т.к. управление будет согласно
+                значениям сугубо по возвращенному в DEMO_TASK_STEP
+                */
             }
         }
 
@@ -402,6 +397,8 @@ void setup()
 {
     Serial.begin(115200);
 
+    *demo_setter_value = 0;
+
     if (!psramFound())
         Serial.println("PSRAM not found");
     else
@@ -510,6 +507,8 @@ void loop()
 
     #if SSPS_MENU_USER == 1
         UI_menu_list_user->get_selected()->key_press(x);
+        if (UI_menu_list_user->is_selected_on_child())
+            UI_menu_list_user->get_selected(true)->key_press(x);
     #endif
 
     #if SSPS_BLOWING_PANEL == 1
@@ -622,22 +621,26 @@ void init_ui_controls()
 
     UI_Set1 = new UIValueSetter(
         UI_settings_user_pasteurizer_template_1,
-        LV_ALIGN_TOP_LEFT, 0,
-        0, 10, 40, true,
+        40, true,
         "", &img_fan
     );
+    UI_Set1->set_position(0, 10, 40);
+    UI_Set1->set_extra_button_logic({
+        []() { ++*demo_setter_value; },
+        []() { --*demo_setter_value; },
+        []() { Serial.println(*demo_setter_value); }
+    });
+    UI_Set1->add_ui_context_action([]() { UI_Set1->set_value(*demo_setter_value); });
 
     UI_Set2 = new UIValueSetter(
         UI_settings_user_pasteurizer_template_1,
-        LV_ALIGN_TOP_LEFT, 1,
-        40, 10, 40, false,
+        1, 40, 10, 40, false,
         "", &img_tempC
     );
 
     UI_Set3 = new UIValueSetter(
         UI_settings_user_pasteurizer_template_1,
-        LV_ALIGN_TOP_LEFT, 1,
-        40, 50, 40, false,
+        1, 40, 50, 40, false,
         "час"
     );
 #endif
@@ -673,3 +676,4 @@ void init_ui_controls()
     }
 #endif
 }
+#endif

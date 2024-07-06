@@ -81,7 +81,6 @@ private:
     bool _is_selectable = false;
     bool _is_container = false;
     bool _is_childs_changes_transparency = false;
-    int32_t _focus_offset_y = 0;
     bool _is_focus_extra_style_lvl = false;
 
     bool exists_in_the_collection(vector<StyleActivator> * activator, StyleActivator found);
@@ -96,6 +95,7 @@ private:
     UIElement * gui_set_transp_and_hide_style(lv_obj_t * lv_obj);
 
 protected:
+    int32_t _focus_offset_y = 0;
     lv_obj_t * get_container();
     lv_obj_t * get_navi_childs_presenter();
     
@@ -121,6 +121,7 @@ public:
     lv_obj_t * get_container_content(string key);
     lv_obj_t * get_screen();
     bool is_container();
+    bool is_selected_on_child();
     bool key_press(uint8_t key);
     bool key_press(KeyMap key);
     UIElement * navi_next();

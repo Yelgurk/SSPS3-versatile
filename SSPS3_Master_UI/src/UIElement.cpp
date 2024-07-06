@@ -152,6 +152,10 @@ UIElement * UIElement::gui_set_transp_and_hide_style(lv_obj_t * lv_obj)
     return this;
 }
 
+bool UIElement::is_selected_on_child() {
+    return selected != nullptr;
+}
+
 bool UIElement::key_press(uint8_t key)
 {
     if (key < static_cast<uint8_t>(KeyMap::_END))

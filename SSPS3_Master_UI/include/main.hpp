@@ -1,6 +1,10 @@
+#ifndef SSPS3_APPLICATION_SOLUTION
+
 #include "UIService.hpp"
 #include "../../SSPS3_Master_Infrastructure/include/main.hpp"
 #include "../resource/lv_resources.hpp"
+
+
 
 #include "UIControls/UIBlowingControl.hpp"
 #include "UIControls/UIBlowValListItem.hpp"
@@ -17,7 +21,7 @@
 #include "UIControls/UITaskRoadmapList.hpp"
 #include "UIControls/UIValueSetter.hpp"
 
-#ifndef SSPS3_APPLICATION_SOLUTION
+
 
 #define SDA                         48
 #define SCL                         47
@@ -31,7 +35,7 @@ void print();
 
 uint8_t OptIn_state[8] = { 0 };
 
-#endif
+
 
 UIService UI_service;
 
@@ -54,3 +58,6 @@ UIValueSetter * UI_Set3;
 
 UIBlowingControl * UI_blowing_control;
 vector<UIBlowValListItem*> Blow_vars;
+
+uint8_t * demo_setter_value = new uint8_t;
+#endif
