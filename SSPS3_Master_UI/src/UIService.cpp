@@ -38,8 +38,8 @@ UIService::UIService()
 
     this->init_screens();
     this->UI_blowing_control->hide_ui_hierarchy();
-    this->UI_menu_list_user->hide_ui_hierarchy();
-    //this->UI_task_roadmap_control->hide_ui_hierarchy();
+    //this->UI_menu_list_user->hide_ui_hierarchy();
+    this->UI_task_roadmap_control->hide_ui_hierarchy();
 }
 
 void UIService::init_screens()
@@ -81,7 +81,29 @@ void UIService::init_screens()
 
     UI_task_roadmap_control->add_ui_base_action([this]() {
         if (Program_control->state != TaskStateEnum::AWAIT)
-            UI_task_roadmap_control->set_task_header_name(Program_control->name);
+        {
+            switch (Program_control->aim)
+            {
+            case ProgramAimEnum::TMP_PASTEUR:       UI_task_roadmap_control->set_task_header_name("Пастеризация"); break;
+            case ProgramAimEnum::TMP_HEAT:          UI_task_roadmap_control->set_task_header_name("Подогрев"); break;
+            case ProgramAimEnum::TMP_CHILL:         UI_task_roadmap_control->set_task_header_name("Охлаждение"); break;
+            case ProgramAimEnum::TMP_WATCHDOG_1:    UI_task_roadmap_control->set_task_header_name("Будильник 1"); break;
+            case ProgramAimEnum::TMP_WATCHDOG_2:    UI_task_roadmap_control->set_task_header_name("Будильник 2"); break;
+            case ProgramAimEnum::TMP_WATCHDOG_3:    UI_task_roadmap_control->set_task_header_name("Будильник 3"); break;
+            case ProgramAimEnum::CHM_MAIN_1:        UI_task_roadmap_control->set_task_header_name("Программа 1"); break;
+            case ProgramAimEnum::CHM_MAIN_2:        UI_task_roadmap_control->set_task_header_name("Программа 2"); break;
+            case ProgramAimEnum::CHM_MAIN_3:        UI_task_roadmap_control->set_task_header_name("Программа 3"); break;
+            case ProgramAimEnum::CHM_TEMPL_1:       UI_task_roadmap_control->set_task_header_name("Шаблон 1"); break;
+            case ProgramAimEnum::CHM_TEMPL_2:       UI_task_roadmap_control->set_task_header_name("Шаблон 2"); break;
+            case ProgramAimEnum::CHM_TEMPL_3:       UI_task_roadmap_control->set_task_header_name("Шаблон 3"); break;
+            case ProgramAimEnum::CHM_TEMPL_4:       UI_task_roadmap_control->set_task_header_name("Шаблон 4"); break;
+            case ProgramAimEnum::CHM_TEMPL_5:       UI_task_roadmap_control->set_task_header_name("Шаблон 5"); break;
+            case ProgramAimEnum::CHM_TEMPL_6:       UI_task_roadmap_control->set_task_header_name("Шаблон 6"); break;
+            
+            default:
+                break;
+            }
+        }
     });
 
     UI_task_roadmap_control->add_ui_context_action(
@@ -98,7 +120,7 @@ void UIService::init_screens()
 
     if (!Program_control->is_active)
     {
-        Program_control->start_task("Пастеризация", &my_demo_task_steps);
+        Program_control->start_task(ProgramAimEnum::TMP_PASTEUR, &my_demo_task_steps);
 
         for (uint16_t i = 0; i < my_demo_task_steps.size(); i++)
         {
@@ -106,15 +128,29 @@ void UIService::init_screens()
 
             UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
             ui_step->set_extra_button_logic({
-                [=](){ step->fan++;          },
-                [=](){ step->fan--;          },
-                [=](){ step->tempC++;        },
-                [=](){ step->tempC--;        },
-                [=](){ step->duration += 10; },
-                [=](){ step->duration -= 10; },
+                [=](){ step->fan++;             },
+                [=](){ step->fan--;             },
+                [=](){ step->tempC++;           },
+                [=](){ step->tempC--;           },
+                [=](){ step->duration_ss += 10; },
+                [=](){ step->duration_ss -= 10; },
             });
 
-            ui_step->add_ui_base_action([ui_step, step]() { ui_step->set_step_name(step->name); });
+            ui_step->add_ui_base_action([ui_step, step]()
+            {
+                switch (step->aim)
+                {
+                case ProgramStepAimEnum::PASTEUR:   ui_step->set_step_name("Пастеризация"); break;
+                case ProgramStepAimEnum::CHILLING:  ui_step->set_step_name("Охлаждение"); break;
+                case ProgramStepAimEnum::CUTTING:   ui_step->set_step_name("Резка"); break;
+                case ProgramStepAimEnum::MIXING:    ui_step->set_step_name("Замешивание"); break;
+                case ProgramStepAimEnum::HEATING:   ui_step->set_step_name("Нагрев"); break;
+                case ProgramStepAimEnum::DRYING:    ui_step->set_step_name("Сушка"); break;
+                
+                default:
+                    break;
+                }
+            });
             ui_step->add_ui_context_action([ui_step, step]() { ui_step->set_step_values(step->fan, step->tempC, step->time_left_ss(), step->state); });
         } 
 

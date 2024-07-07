@@ -82,7 +82,6 @@ static void lcd_flush_cb(lv_display_t* display, const lv_area_t* area, unsigned 
     lv_display_flush_ready(display);
 }
 
-extern FRAM_DB * FRAM_db;
 extern ProgramControl * Program_control;
 extern BlowingControl * Blowing_control;
 
@@ -124,15 +123,15 @@ public:
 
     vector<ProgramStep> my_demo_task_steps =
     {
-        ProgramStep("Набор воды", 5, 10, 10),
-        ProgramStep("Нагрев", 7, 15, 20),
-        ProgramStep("Пастеризация", 9, 20, 30),
-        ProgramStep("Выдержка", 11, 25, 40),
-        ProgramStep("Охлаждение", 13, 30, 50),
-        ProgramStep("Выдержка", 15, 35, 60),
-        ProgramStep("Нагрев", 17, 40, 90),
-        ProgramStep("Выдержка", 19, 45, 120),
-        ProgramStep("Ожидание", 21, 50, 120)
+        ProgramStep(ProgramStepAimEnum::PASTEUR, 5, 10, 10, true, false),
+        ProgramStep(ProgramStepAimEnum::CHILLING, 7, 15, 20, true, false),
+        ProgramStep(ProgramStepAimEnum::CUTTING, 9, 20, 30, true, false),
+        ProgramStep(ProgramStepAimEnum::MIXING, 11, 25, 40, true, false),
+        ProgramStep(ProgramStepAimEnum::HEATING, 13, 30, 50, true, false),
+        ProgramStep(ProgramStepAimEnum::DRYING, 15, 35, 60, true, false),
+        ProgramStep(ProgramStepAimEnum::PASTEUR, 17, 40, 90, true, false),
+        ProgramStep(ProgramStepAimEnum::CHILLING, 19, 45, 120, true, false),
+        ProgramStep(ProgramStepAimEnum::CUTTING, 21, 50, 120, true, false)
     };
     /* DEMO END */
 

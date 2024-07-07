@@ -30,18 +30,19 @@ private:
 
 public:
     template<typename T>
-    static FRAMObject<T>& allocate(T default_value, size_t size) {
-        return Storage::allocate(default_value, size);
+    static FRAMObject<T>& allocate(T default_value, uint32_t new_addr, size_t size) {
+        return Storage::allocate(default_value, new_addr, size);
     }
 
     template<typename T>
-    static FRAMObject<T>& allocate(T default_value, std::string name) {
-        return Storage::allocate(default_value, sizeof(T), name);
+    static FRAMObject<T>& allocate(T default_value, uint32_t new_addr, std::string name) {
+        return Storage::allocate(default_value, new_addr, sizeof(T), name);
     }
 
     template<typename T>
-    static FRAMObject<T>& allocate(T default_value, size_t size = sizeof(T), std::string name = "_")
+    static FRAMObject<T>& allocate(T default_value, uint32_t new_addr = 0, size_t size = sizeof(T), std::string name = "_")
     {
+        currentAddress = new_addr > currentAddress ? new_addr : currentAddress;
         uint16_t address = currentAddress;
         currentAddress += (size + 1);
 

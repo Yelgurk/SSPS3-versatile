@@ -5,26 +5,27 @@ double ProgramControl::get_prog_percentage()
     int32_t aim_ss = 0,
             done_ss = 0;
 
-    for (auto step : *steps)
+    for (auto _steps : *steps)
     {
-        aim_ss += step.duration;
-        done_ss += (step.gone_ss > step.duration ? step.duration : step.gone_ss);
+        aim_ss += _steps.duration_ss;
+        done_ss += (_steps.gone_ss > _steps.duration_ss ? _steps.duration_ss : _steps.gone_ss);
     }
 
     return aim_ss <= 0 ? 0 : 100.0 / (double)aim_ss * done_ss;
 }
 
-ProgramStep * ProgramControl::start_task(string name, vector<ProgramStep> * steps)
+ProgramStep * ProgramControl::start_task(ProgramAimEnum aim, vector<ProgramStep> * _steps)
 {
     if (!is_active)
     {
-        this->name = name;
-        this->steps = steps;
+        this->aim = aim;
+        steps = _steps;
 
-        last_iteration_ss = started_at_ss = seconds();
+        started_at.get_rt();
+        last_iteration.get_rt();
+
         current_step = next_step = nullptr;
 
-        gone_ss = 0;
         state = TaskStateEnum::RUNNED;
         is_active = true;
     }
@@ -32,11 +33,25 @@ ProgramStep * ProgramControl::start_task(string name, vector<ProgramStep> * step
     return do_task();
 }
 
+uint32_t ProgramControl::sum_gone_ss()
+{
+    static uint32_t total_gone_ss = 0;
+    total_gone_ss = 0;
+
+    for (const auto& step : *steps)
+        total_gone_ss += step.gone_ss;
+
+    return total_gone_ss;
+}
+
 ProgramStep * ProgramControl::do_task()
 {
-    uint32_t curr_ss = seconds();
-    int32_t ss_from_last_iteration = curr_ss - last_iteration_ss;
-    last_iteration_ss = curr_ss;
+    static S_DateTime curr_dt = S_DateTime();
+    curr_dt.get_rt();
+
+    int32_t ss_from_last_iteration = curr_dt.difference_in_seconds(last_iteration);
+    last_iteration.set_date(*curr_dt.get_date());
+    last_iteration.set_time(*curr_dt.get_time());
 
     if (is_active)
     {
@@ -76,7 +91,7 @@ ProgramStep * ProgramControl::do_task()
                 }
             }
 
-            gone_ss = curr_ss - started_at_ss;
+            gone_ss = sum_gone_ss();
         }
         else if (state == TaskStateEnum::PAUSE)
         {

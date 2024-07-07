@@ -85,13 +85,13 @@ public:
         return this;
     }
 
-    S_DateTime * set_date(const S_Date& d)
+    S_DateTime * set_date(S_Date d)
     {
         date = d;
         return this;
     }
 
-    S_DateTime * set_time(const S_Time& t)
+    S_DateTime * set_time(S_Time t)
     {
         time = t;
         time.set_time_changed_cb(

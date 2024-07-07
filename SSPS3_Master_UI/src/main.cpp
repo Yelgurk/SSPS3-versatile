@@ -2,7 +2,6 @@
 
 TwoWire         * itcw;
 STM32_slave     * STM32;
-FRAM_DB         * FRAM_db;
 ProgramControl  * Program_control;
 BlowingControl  * Blowing_control;
 UIService       * UI_service; 
@@ -23,7 +22,6 @@ void setup()
     itcw->begin(SDA, SCL, 400000);
 
     STM32           = new STM32_slave(STM_I2C_ADDR);
-    FRAM_db         = new FRAM_DB();
     Program_control = new ProgramControl();
     Blowing_control = new BlowingControl();
     UI_service      = new UIService();
@@ -46,11 +44,8 @@ void setup()
 
     rt_task_manager.add_task("do_program_task", []() {
         Program_control->do_task();
-        if (Program_control->is_active)
-        {
-            UI_service->UI_task_roadmap_control->update_task_steps_state();
-            UI_service->UI_task_roadmap_control->update_ui_context();
-        }
+        UI_service->UI_task_roadmap_control->update_task_steps_state();
+        UI_service->UI_task_roadmap_control->update_ui_context();
     }, 500);
 }
 
@@ -71,13 +66,13 @@ void loop()
         //UI_service->UI_task_roadmap_control->get_selected(true)->key_press(x);
 
         // user settings control
-        //UI_service->UI_menu_list_user->get_selected()->key_press(x);
-        //if (UI_service->UI_menu_list_user->is_selected_on_child())
-        //    UI_service->UI_menu_list_user->get_selected(true)->key_press(x);
+        UI_service->UI_menu_list_user->get_selected()->key_press(x);
+        if (UI_service->UI_menu_list_user->is_selected_on_child())
+            UI_service->UI_menu_list_user->get_selected(true)->key_press(x);
 
         // blowing control
-        UI_service->UI_blowing_control->get_selected()->key_press(x);
-        UI_service->UI_blowing_control->get_selected(true)->key_press(x);
+        //UI_service->UI_blowing_control->get_selected()->key_press(x);
+        //UI_service->UI_blowing_control->get_selected(true)->key_press(x);
     }
 
     lv_task_handler();
