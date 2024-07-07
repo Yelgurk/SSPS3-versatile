@@ -42,7 +42,7 @@ void setup()
             random(0, 101),
             ChargeStateEnum::STABLE
         );
-    }, 250);
+    }, 500);
 
     rt_task_manager.add_task("do_program_task", []() {
         Program_control->do_task();
@@ -52,41 +52,10 @@ void setup()
             UI_service->UI_task_roadmap_control->update_ui_context();
         }
     }, 500);
-
-    /*
-    сделать обдумать, как загружать новые программы по примеру ниже
-
-    if (!my_demo_task.is_active)
-    {
-        my_demo_task.start_task("Пастер 2", &my_demo_task_steps_2);
-
-        for (uint16_t i = 0; i < my_demo_task_steps_2.size(); i++)
-        {
-            DEMO_TASK_STEP* step = &my_demo_task_steps_2.at(i);
-    
-            UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
-            ui_step->set_extra_button_logic({
-                [=](){ step->fan++;          },
-                [=](){ step->fan--;          },
-                [=](){ step->tempC++;        },
-                [=](){ step->tempC--;        },
-                [=](){ step->duration += 10; },
-                [=](){ step->duration -= 10; },
-            });
-    
-            ui_step->add_ui_base_action([ui_step, step]() { ui_step->set_step_name(step->name); });
-            ui_step->add_ui_context_action([ui_step, step]() { ui_step->set_step_values(step->fan, step->tempC, step->time_left_ss(), step->state); });
-        }
-        UI_task_roadmap_control->update_ui_base();
-        UI_task_roadmap_control->update_ui_context();
-    }
-    */
 }
 
 void loop()
 {
-    lv_task_handler();
-
     Blowing_control->do_blowing();
     rt_task_manager.run();
 
@@ -94,25 +63,22 @@ void loop()
     {
         interrupted_by_slave = false;
         uint8_t x = STM32->get_kb();
-        
-        /*
 
+        UI_service->UI_notification_bar->key_press(x);
+        
         // task control
-        UI_task_roadmap_control->get_selected()->key_press(x);
-        UI_task_roadmap_control->get_selected(true)->key_press(x);
+        //UI_service->UI_task_roadmap_control->get_selected()->key_press(x);
+        //UI_service->UI_task_roadmap_control->get_selected(true)->key_press(x);
 
         // user settings control
-        UI_menu_list_user->get_selected()->key_press(x);
-        if (UI_menu_list_user->is_selected_on_child())
-            UI_menu_list_user->get_selected(true)->key_press(x);
+        //UI_service->UI_menu_list_user->get_selected()->key_press(x);
+        //if (UI_service->UI_menu_list_user->is_selected_on_child())
+        //    UI_service->UI_menu_list_user->get_selected(true)->key_press(x);
 
         // blowing control
-        UI_blowing_control->get_selected()->key_press(x);
-        UI_blowing_control->get_selected(true)->key_press(x);
-
-        // notification control
-        UI_notification_bar->key_press(x);
-        
-        */
+        UI_service->UI_blowing_control->get_selected()->key_press(x);
+        UI_service->UI_blowing_control->get_selected(true)->key_press(x);
     }
+
+    lv_task_handler();
 }

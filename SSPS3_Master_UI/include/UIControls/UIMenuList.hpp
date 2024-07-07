@@ -40,10 +40,10 @@ public:
         lv_obj_set_style_shadow_offset_x(get_container(), 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_offset_y(get_container(), 5, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-        lv_obj_t * info_for_user = lv_label_create(lv_screen);
-        lv_obj_align(info_for_user, LV_ALIGN_CENTER, 85, 30);
-        lv_obj_set_style_text_font(info_for_user, &OpenSans_regular_24px, LV_PART_MAIN | LV_STATE_DEFAULT);    
-        lv_label_set_text(info_for_user, "Выберите пункт в меню");
+        //lv_obj_t * info_for_user = lv_label_create(lv_screen);
+        //lv_obj_align(info_for_user, LV_ALIGN_CENTER, 85, 30);
+        //lv_obj_set_style_text_font(info_for_user, &OpenSans_regular_24px, LV_PART_MAIN | LV_STATE_DEFAULT);    
+        //lv_label_set_text(info_for_user, "Выберите пункт в меню");
 
         lv_obj_t * lv_list = lv_list_create(get_container());
         lv_obj_set_width(lv_list, width);

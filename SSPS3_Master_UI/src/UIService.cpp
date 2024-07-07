@@ -35,6 +35,11 @@ UIService::UIService()
     lv_obj_set_height(screen, SCREEN_HEIGHT);
 
     lv_disp_load_scr(screen);
+
+    this->init_screens();
+    this->UI_blowing_control->hide_ui_hierarchy();
+    this->UI_menu_list_user->hide_ui_hierarchy();
+    //this->UI_task_roadmap_control->hide_ui_hierarchy();
 }
 
 void UIService::init_screens()
@@ -60,13 +65,13 @@ void UIService::init_screens()
             }),
             KeyModel(KeyMap::RIGHT_BOT, [this]()
             {
-                my_demo_task.pause_task();
+                Program_control->pause_task();
                 UI_task_roadmap_control->update_ui_context();
                 UI_task_roadmap_control->update_task_steps_state();
             }),
             KeyModel(KeyMap::L_STACK_1, [this]()
             {
-                my_demo_task.end_task();
+                Program_control->end_task();
                 UI_task_roadmap_control->update_ui_context();
                 UI_task_roadmap_control->update_task_steps_state();
             })
@@ -74,21 +79,48 @@ void UIService::init_screens()
         this->screen
     );
 
-    UI_task_roadmap_control->add_ui_base_action(
-        [this]() { if (my_demo_task.state != TaskStateEnum::AWAIT) UI_task_roadmap_control->set_task_header_name(my_demo_task.name); }
-    );
+    UI_task_roadmap_control->add_ui_base_action([this]() {
+        if (Program_control->state != TaskStateEnum::AWAIT)
+            UI_task_roadmap_control->set_task_header_name(Program_control->name);
+    });
 
     UI_task_roadmap_control->add_ui_context_action(
         [this]()
         {
-            if (my_demo_task.state != TaskStateEnum::AWAIT)
+            if (Program_control->state != TaskStateEnum::AWAIT)
                 UI_task_roadmap_control->set_task_state_values(
-                    my_demo_task.get_prog_percentage(),
-                    my_demo_task.gone_ss,
-                    my_demo_task.state
+                    Program_control->get_prog_percentage(),
+                    Program_control->gone_ss,
+                    Program_control->state
                 );
         }
     );
+
+    if (!Program_control->is_active)
+    {
+        Program_control->start_task("Пастеризация", &my_demo_task_steps);
+
+        for (uint16_t i = 0; i < my_demo_task_steps.size(); i++)
+        {
+            ProgramStep* step = &my_demo_task_steps.at(i);
+
+            UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
+            ui_step->set_extra_button_logic({
+                [=](){ step->fan++;          },
+                [=](){ step->fan--;          },
+                [=](){ step->tempC++;        },
+                [=](){ step->tempC--;        },
+                [=](){ step->duration += 10; },
+                [=](){ step->duration -= 10; },
+            });
+
+            ui_step->add_ui_base_action([ui_step, step]() { ui_step->set_step_name(step->name); });
+            ui_step->add_ui_context_action([ui_step, step]() { ui_step->set_step_values(step->fan, step->tempC, step->time_left_ss(), step->state); });
+        } 
+
+        UI_task_roadmap_control->update_ui_base();
+        UI_task_roadmap_control->update_ui_context();
+    }
 
     /*
     *
@@ -111,25 +143,33 @@ void UIService::init_screens()
         DEMO_TASK_STEP("Ожидание", 21, 50, 120)
     };
 
-    //set_extra_button_logic
+    //обдумать, как загружать новые программы по примеру ниже
 
-    for (uint16_t i = 0; i < my_demo_task_steps.size(); i++)
+    if (!my_demo_task.is_active)
     {
-        DEMO_TASK_STEP* step = &my_demo_task_steps.at(i);
+        my_demo_task.start_task("Пастеризация", &my_demo_task_steps);
 
-        UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
-        ui_step->set_extra_button_logic({
-            [=](){ step->fan++;          },
-            [=](){ step->fan--;          },
-            [=](){ step->tempC++;        },
-            [=](){ step->tempC--;        },
-            [=](){ step->duration += 10; },
-            [=](){ step->duration -= 10; },
-        });
+        for (uint16_t i = 0; i < my_demo_task_steps.size(); i++)
+        {
+            DEMO_TASK_STEP* step = &my_demo_task_steps.at(i);
 
-        ui_step->add_ui_base_action([ui_step, step]() { ui_step->set_step_name(step->name); });
-        ui_step->add_ui_context_action([ui_step, step]() { ui_step->set_step_values(step->fan, step->tempC, step->time_left_ss(), step->state); });
-    } 
+            UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
+            ui_step->set_extra_button_logic({
+                [=](){ step->fan++;          },
+                [=](){ step->fan--;          },
+                [=](){ step->tempC++;        },
+                [=](){ step->tempC--;        },
+                [=](){ step->duration += 10; },
+                [=](){ step->duration -= 10; },
+            });
+
+            ui_step->add_ui_base_action([ui_step, step]() { ui_step->set_step_name(step->name); });
+            ui_step->add_ui_context_action([ui_step, step]() { ui_step->set_step_values(step->fan, step->tempC, step->time_left_ss(), step->state); });
+        } 
+
+        UI_task_roadmap_control->update_ui_base();
+        UI_task_roadmap_control->update_ui_context();
+    }
     * 
     * 
     * 
@@ -147,12 +187,12 @@ void UIService::init_screens()
             KeyModel(KeyMap::TOP, [this]() { UI_blowing_control->navi_prev(); }),
             KeyModel(KeyMap::LEFT_TOP, [this]()
             {
-                if (pumpController.is_active)
-                    pumpController.blowgun_stop();
+                if (Blowing_control->is_active)
+                    Blowing_control->blowgun_stop();
                 else
                     UI_blowing_control->navi_back();
             }),
-            KeyModel(KeyMap::RIGHT_BOT_REL, [this]() { pumpController.blowgun_trigger(false, true); })
+            KeyModel(KeyMap::RIGHT_BOT_REL, [this]() { Blowing_control->blowgun_trigger(false, true); })
         },
         this->screen
     );
@@ -177,13 +217,7 @@ void UIService::init_blowing_controls()
 {
     /*
     b_vars - были тестовые данные для обкатки контрола раздачи. будет во FRAM 
-    
-    vector<DEMO_BLOW_VAR> b_vars = {
-    DEMO_BLOW_VAR(5000),
-    DEMO_BLOW_VAR(5000),
-    DEMO_BLOW_VAR(5000),
-    DEMO_BLOW_VAR(true, 360)
-    };
+    в UIService проинициализирован demo-вектор vector<BlowgunValue> b_vars для тестов с var в RAM, пока не во FRAM
     */
 
     for (uint8_t i = 0; i < 4; i++)
@@ -193,9 +227,9 @@ void UIService::init_blowing_controls()
 
         blow_ptr->add_ui_context_action([=]() { blow_ptr->set_value(b_vars.at(i).val, i != 3 ? " л." : ""); });
         blow_ptr->set_extra_button_logic({
-            [i]() { b_vars.at(i).val += (i != 3 ? 250 : 5); },
-            [i]() { b_vars.at(i).val -= (i != 3 ? 250 : 5); },
-            [i]() { pumpController.blowgun_trigger(true, true, i, b_vars.at(i)); }
+            [=]() { b_vars.at(i).val += (i != 3 ? 250 : 5); },
+            [=]() { b_vars.at(i).val -= (i != 3 ? 250 : 5); },
+            [=]() { Blowing_control->blowgun_trigger(true, true, i, b_vars.at(i)); }
         });
     }
 }
@@ -209,6 +243,11 @@ void UIService::init_settings_user_controls()
     UI_settings_user_pasteurizer_template_1->set_page_header("Установка времени", 0);
     UI_settings_user_pasteurizer_template_1->set_page_header("Установка времени 2", 1);
 
+    /*
+    demo_setter_value - были тестовые данные для обкатки контрола изменения параметров. будет во FRAM 
+    в UIService проинициализирован uint8_t * demo_setter_value для тестов работы контрола
+    */
+
     UI_Set1 = new UIValueSetter(
         UI_settings_user_pasteurizer_template_1,
         40, true,
@@ -216,9 +255,9 @@ void UIService::init_settings_user_controls()
     );
     UI_Set1->set_position(0, 10, 40);
     UI_Set1->set_extra_button_logic({
-        []() { ++*demo_setter_value; },
-        []() { --*demo_setter_value; },
-        []() { Serial.println(*demo_setter_value); }
+        [this]() { ++*demo_setter_value; },
+        [this]() { --*demo_setter_value; },
+        [this]() { Serial.println(*demo_setter_value); }
     });
     UI_Set1->add_ui_context_action([this]() { UI_Set1->set_value(*demo_setter_value); });
 

@@ -23,10 +23,14 @@
 #include "UIControls/UITaskRoadmapList.hpp"
 #include "UIControls/UIValueSetter.hpp"
 
+#include "BlowingControl.hpp"
+#include "ProgramControl.hpp"
+#include "FRAM_DB.hpp"
+
 #define LGFX_USE_V1
 #define SCREEN_WIDTH            480U
 #define SCREEN_HEIGHT           320U
-#define INIT_BUFFER_IN_PSRAM    0
+#define INIT_BUFFER_IN_PSRAM    1
 
 #if INIT_BUFFER_IN_PSRAM == 0
     #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 24 / 2    
@@ -63,6 +67,12 @@
     static PSRAMBuffer * lv_buff_2;
 #endif
 
+static LGFX lcd;
+
+static uint32_t arduino_tick_get_cb(void) {
+    return millis();
+}
+
 static void lcd_flush_cb(lv_display_t* display, const lv_area_t* area, unsigned char* data)
 {
     uint32_t w = lv_area_get_width(area);
@@ -71,12 +81,6 @@ static void lcd_flush_cb(lv_display_t* display, const lv_area_t* area, unsigned 
     lcd.pushImage(area->x1, area->y1, w, h, (uint16_t*)data);
     lv_display_flush_ready(display);
 }
-
-static uint32_t arduino_tick_get_cb(void) {
-    return millis();
-}
-
-static LGFX lcd;
 
 extern FRAM_DB * FRAM_db;
 extern ProgramControl * Program_control;
@@ -107,6 +111,30 @@ public:
     lv_obj_t* screen;
     
     UIService();
+
+    /* DEMO BEGIN */
+    uint8_t * demo_setter_value = new uint8_t;
+    
+    vector<BlowgunValue> b_vars = {
+    BlowgunValue(5000),
+    BlowgunValue(5000),
+    BlowgunValue(5000),
+    BlowgunValue(true, 360)
+    };
+
+    vector<ProgramStep> my_demo_task_steps =
+    {
+        ProgramStep("Набор воды", 5, 10, 10),
+        ProgramStep("Нагрев", 7, 15, 20),
+        ProgramStep("Пастеризация", 9, 20, 30),
+        ProgramStep("Выдержка", 11, 25, 40),
+        ProgramStep("Охлаждение", 13, 30, 50),
+        ProgramStep("Выдержка", 15, 35, 60),
+        ProgramStep("Нагрев", 17, 40, 90),
+        ProgramStep("Выдержка", 19, 45, 120),
+        ProgramStep("Ожидание", 21, 50, 120)
+    };
+    /* DEMO END */
 
 private:
     void init_screens();

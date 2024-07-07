@@ -40,18 +40,28 @@ struct SystemNotificationContainer
     SystemNotificationContainer(SystemNotification info) : info(info) {}
 };
 
+class UINotificationBar;
+
+static UINotificationBar* instance = nullptr;
+static bool animation_in_action = false;
+
 class UINotificationBar : public UIElement
 {
 private:
     vector<SystemNotificationContainer> notifications;
     uint16_t index = 0;
-    static bool animation_in_action;
 
     lv_anim_t a;
-    static void anim_callback(void* anim, int32_t v);
-    static void anim_ready(lv_anim_t* anim);
 
-    static UINotificationBar* instance;
+    static void anim_callback(void* obj, int32_t  v) {
+        lv_obj_set_y((lv_obj_t*)obj, v);
+    }
+
+    static void anim_ready(lv_anim_t* anim)
+    {
+        animation_in_action = false;
+        instance->show_next();
+    }
 
     void show_next()
     {
@@ -200,19 +210,5 @@ public:
             show_next();
     }
 };
-
-UINotificationBar* UINotificationBar::instance = nullptr;
-bool UINotificationBar::animation_in_action = false;
-
-void UINotificationBar::anim_callback(void* obj, int32_t  v)
-{
-    lv_obj_set_y((lv_obj_t*)obj, v);
-}
-
-void UINotificationBar::anim_ready(lv_anim_t* anim)
-{
-    animation_in_action = false;
-    instance->show_next();
-}
 
 #endif

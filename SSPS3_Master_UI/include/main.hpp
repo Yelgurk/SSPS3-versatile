@@ -19,7 +19,7 @@ extern ProgramControl * Program_control;
 extern BlowingControl * Blowing_control;
 extern UIService * UI_service;
 
-static RtTaskManager rt_task_manager = RtTaskManager();
+static RtTaskManager rt_task_manager;
 
 void IRAM_ATTR interrupt_action() {
     interrupted_by_slave = true;

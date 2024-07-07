@@ -23,10 +23,12 @@ public:
         { StyleActivator::None }
     }
     {
-        lv_obj_set_style_opa(get_container(), 0, 0);
+        lv_obj_set_size(get_container(), 480, 250);
+        lv_obj_align(get_container(), LV_ALIGN_BOTTOM_MID, 0, 0);
+        lv_obj_set_style_bg_opa(get_container(), 0, 0);
         
         /* USER SUPPORT CONTAINER */
-        lv_obj_t * support_container = lv_obj_create(lv_screen);
+        lv_obj_t * support_container = lv_obj_create(get_container());
         accept_cascade(support_container, 145, 0);
         create_support_icons(support_container, &img_arrow_up, -52, 2);
         create_support_icons(support_container, &img_arrow_down, -38, -2);
@@ -41,7 +43,7 @@ public:
         lv_obj_t * info_label_4 = create_support_label(support_container, "Старт\nраздачи", 172);
 
         /* BLOWING VAL SELECTOR CONTAINER */
-        lv_obj_t * blow_val_list_container = lv_obj_create(lv_screen);
+        lv_obj_t * blow_val_list_container = lv_obj_create(get_container());
         accept_cascade(blow_val_list_container, 210, 155);
 
         lv_obj_t * blow_selector_header =  lv_label_create(blow_val_list_container);
@@ -68,7 +70,7 @@ public:
         lv_obj_align(blow_val_list_splitter, LV_ALIGN_TOP_MID, 0, 40);
 
         /* BLOWING STATE "BAR" CONTAINER */
-        lv_obj_t * blow_state_presenter = lv_obj_create(lv_screen);
+        lv_obj_t * blow_state_presenter = lv_obj_create(get_container());
         accept_cascade(blow_state_presenter, 85, 375);
         lv_obj_set_style_bg_color(blow_state_presenter, COLOR_DUST_BLUE, LV_PART_MAIN | LV_STATE_DEFAULT);
 
@@ -127,7 +129,7 @@ private:
         lv_obj_set_style_clip_corner(container, true, 0);
         lv_obj_set_height(container, 240);
         lv_obj_set_width(container, width);
-        lv_obj_align(container, LV_ALIGN_LEFT_MID, offset_x + 10, 30);
+        lv_obj_align(container, LV_ALIGN_TOP_LEFT, offset_x + 10, 0);
 
         lv_obj_set_style_border_width(container, 0, 0);
         lv_obj_set_style_shadow_color(container, lv_color_hex(0x9B9B9B), LV_PART_MAIN | LV_STATE_DEFAULT);

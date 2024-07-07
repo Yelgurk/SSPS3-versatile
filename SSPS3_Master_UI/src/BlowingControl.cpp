@@ -1,6 +1,6 @@
 #include "../include/BlowingControl.hpp"
 
-void BlowgunControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int8_t index = -1, BlowgunValue curr_value = BlowgunValue())
+void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int8_t index, BlowgunValue curr_value)
 {
     if (!do_gurgling)
         trigger_must_be_reloaded = false;
@@ -51,7 +51,7 @@ void BlowgunControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int
     }
 }
 
-void BlowgunControl::blowgun_stop(bool need_in_reload = false)
+void BlowingControl::blowgun_stop(bool need_in_reload)
 {
     stop_pump();
 
@@ -63,7 +63,7 @@ void BlowgunControl::blowgun_stop(bool need_in_reload = false)
     callback(0, 0, BlowingType::LITER, 0);
 }
 
-void BlowgunControl::do_blowing()
+void BlowingControl::do_blowing()
 {
     if (!is_active) return;
 
@@ -90,12 +90,12 @@ void BlowgunControl::do_blowing()
     }
 }
 
-void BlowgunControl::start_pump()
+void BlowingControl::start_pump()
 {
     pump_on = true;
 }
 
-void BlowgunControl::stop_pump()
+void BlowingControl::stop_pump()
 {
     pump_on = false;
 }

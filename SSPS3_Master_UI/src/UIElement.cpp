@@ -624,3 +624,31 @@ void UIElement::delete_ui_element(bool is_dynamic_alloc)
     if (is_dynamic_alloc)
         delete this;
 }
+
+UIElement * UIElement::hide_ui_hierarchy()
+{
+    if (get_container() != get_navi_childs_presenter())
+    {
+        lv_obj_set_style_opa(get_navi_childs_presenter(), 0, 0);
+        lv_obj_add_flag(get_navi_childs_presenter(), LV_OBJ_FLAG_HIDDEN);
+    }
+
+    lv_obj_set_style_opa(get_container(), 0, 0);
+    lv_obj_add_flag(get_container(), LV_OBJ_FLAG_HIDDEN);
+    
+    return this;
+}
+
+UIElement * UIElement::show_ui_hierarchy()
+{
+    if (get_container() != get_navi_childs_presenter())
+    {
+        lv_obj_set_style_opa(get_navi_childs_presenter(), 255, 0);
+        lv_obj_remove_flag(get_navi_childs_presenter(), LV_OBJ_FLAG_HIDDEN);
+    }
+
+    lv_obj_set_style_opa(get_container(), 255, 0);
+    lv_obj_remove_flag(get_container(), LV_OBJ_FLAG_HIDDEN);
+    
+    return this;
+}

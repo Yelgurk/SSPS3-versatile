@@ -6,19 +6,35 @@
 #ifndef RtTaskManager_hpp
 #define RtTaskManager_hpp
 
+using Task = std::function<void()>;
+
+struct TaskInfo
+{
+    Task task;
+    int64_t interval;
+    int64_t last_run;
+    bool active;
+
+    TaskInfo() : interval(0), last_run(0), active(false) {}
+
+    TaskInfo(Task task, int64_t interval, int64_t last_run, bool active)
+    : task(task), interval(interval), last_run(last_run), active(active)
+    {}
+};
+
 class RtTaskManager
 {
-public:
-    using Task = std::function<void()>;
+private:
+    std::map<string, TaskInfo> tasks;
 
-    void add_task(const String& name, Task task, int32_t interval)
-    {
-        tasks[name] = {task, interval, millis(), true};
+public:
+    void add_task(const string& name, Task task, int64_t interval) {
+        tasks.insert({name, TaskInfo(task, interval, millis(), true)});
     }
 
-    std::vector<String> get_tasks() const
+    std::vector<string> get_tasks() const
     {
-        std::vector<String> task_names;
+        std::vector<string> task_names;
         for (const auto& task : tasks)
         {
             task_names.push_back(task.first);
@@ -26,7 +42,7 @@ public:
         return task_names;
     }
 
-    void stop_task(const String& name)
+    void stop_task(const string& name)
     {
         if (tasks.find(name) != tasks.end())
         {
@@ -34,7 +50,7 @@ public:
         }
     }
 
-    void resume_task(const String& name)
+    void resume_task(const string& name)
     {
         if (tasks.find(name) != tasks.end())
         {
@@ -43,7 +59,7 @@ public:
         }
     }
 
-    void remove_task(const String& name)
+    void remove_task(const string& name)
     {
         tasks.erase(name);
     }
@@ -60,17 +76,6 @@ public:
             }
         }
     }
-
-private:
-    struct TaskInfo
-    {
-        Task task;
-        int32_t interval;
-        int32_t last_run;
-        bool active;
-    };
-
-    std::map<String, TaskInfo> tasks;
 };
 
 #endif

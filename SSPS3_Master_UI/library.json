@@ -1,9 +1,0 @@
-{
-    "name": "DDD UI layer",
-    "description": "solution contains STM32 slave with I/O and UI controls design",
-    "build": {
-        "unflags": "-std=gnu++11",
-        "flags": "-std=gnu++17"
-    },
-    "version": "1.0.0"
-}

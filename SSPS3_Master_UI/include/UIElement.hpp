@@ -149,6 +149,8 @@ public:
     UIElement * set_childs_visible();
     void clear_ui_childs();
     void delete_ui_element(bool is_dynamic_alloc);
+    UIElement * hide_ui_hierarchy();
+    UIElement * show_ui_hierarchy();
 };
 
 #endif
