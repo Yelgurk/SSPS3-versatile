@@ -9,8 +9,6 @@
 #include <memory>
 #include <any>
 
-#define FRAM_I2C_ADDRESS 0x50
-
 extern TwoWire * itcw;
 extern uint8_t FRAM_address;
 
@@ -19,7 +17,7 @@ class FRAM
 public:
     static void fill(uint16_t addr, const uint8_t& filler, size_t size)
     {
-        itcw->beginTransmission(FRAM_I2C_ADDRESS);
+        itcw->beginTransmission(FRAM_address);
         itcw->write((addr >> 8) & 0xFF);
         itcw->write(addr & 0xFF);
         for (size_t i = 0; i < size; ++i)
@@ -29,7 +27,7 @@ public:
 
     static void write(uint16_t addr, const uint8_t* data, size_t size)
     {
-        itcw->beginTransmission(FRAM_I2C_ADDRESS);
+        itcw->beginTransmission(FRAM_address);
         itcw->write((addr >> 8) & 0xFF);
         itcw->write(addr & 0xFF);
         for (size_t i = 0; i < size; ++i)
@@ -39,12 +37,12 @@ public:
 
     static void read(uint16_t addr, uint8_t* data, size_t size)
     {
-        itcw->beginTransmission(FRAM_I2C_ADDRESS);
+        itcw->beginTransmission(FRAM_address);
         itcw->write((addr >> 8) & 0xFF);
         itcw->write(addr & 0xFF);
         itcw->endTransmission();
 
-        itcw->requestFrom(FRAM_I2C_ADDRESS, size);
+        itcw->requestFrom(FRAM_address, size);
         for (size_t i = 0; i < size; ++i)
             if (itcw->available())
                 *(data + i) = itcw->read();

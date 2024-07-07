@@ -1,8 +1,3 @@
-#pragma once
-#ifndef main_hpp
-#define main_hpp
-
-#include <Arduino.h>
 #include "DateTime/S_DateTime.hpp"
 #include "FRAM/FRAM_Storage.hpp"
 
@@ -10,6 +5,12 @@
 #define FRAM_ALLOC_ADDR(type, addr) FRAM_allocator::getAddr(sizeof(type), addr)
 
 #ifndef SSPS3_APPLICATION_SOLUTION
+#define UNLOCK_DOMAIN_MAIN_CPP
+
+#ifndef main_hpp
+#define main_hpp
+
+#include <Arduino.h>
 
 using namespace std;
 

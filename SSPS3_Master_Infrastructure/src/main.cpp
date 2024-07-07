@@ -1,7 +1,6 @@
 #include "../include/main.hpp"
 
-#ifndef SSPS3_APPLICATION_SOLUTION
-#ifndef SSPS3_UI_DEV_SOLUTION
+#ifdef UNLOCK_INFRASTRUCTURE_MAIN_CPP
 
 #include "DS3231.h"
 
@@ -108,5 +107,4 @@ void print(bool only_digital)
         Serial.println();
 }
 
-#endif
 #endif

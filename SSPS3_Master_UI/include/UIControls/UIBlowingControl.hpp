@@ -88,6 +88,8 @@ public:
         remember_child_element("[blow_proc_var]", blow_process_label);
         remember_child_element("[blow_selector]", blow_val_list);
         set_childs_presenter("[blow_selector]");
+
+        set_blow_value(0, 0, BlowingType::LITER, 0);
     }
 
     void set_blow_value(float ms_aim, float ms_gone, BlowingType type, float ml_per_ms, bool reversed_indicator = true)

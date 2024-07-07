@@ -1,8 +1,10 @@
-#include <Arduino.h>
 #include "./STM32_slave.hpp"
 
+volatile bool interrupted_by_slave = false;
+
 #ifndef SSPS3_APPLICATION_SOLUTION
-#ifndef SSPS3_UI_DEV_SOLUTION
+#define UNLOCK_INFRASTRUCTURE_MAIN_CPP
+#include <Arduino.h>
 
 #define SDA                         48
 #define SCL                         47
@@ -17,6 +19,3 @@ void print(bool only_digital = false);
 uint8_t OptIn_state[8] = { 0 };
 
 #endif
-#endif
-
-volatile bool interrupted_by_slave = false;

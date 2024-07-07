@@ -3,16 +3,30 @@
 #ifndef UIService_hpp
 #define UIService_hpp
 
-#include <Arduino.h>
-#include <lvgl.h>
 #include "../config/LGFX_SSPS3_V1.hpp"
-#include "./UIElement.hpp"
+#include <lvgl.h>
+#include <Arduino.h>
 
-#define INIT_BUFFER_IN_PSRAM    0
+#include "UIElement.hpp"
+#include "UIControls/UIBlowingControl.hpp"
+#include "UIControls/UIBlowValListItem.hpp"
+#include "UIControls/UIDateTime.hpp"
+#include "UIControls/UIFlowGunProgressBar.hpp"
+#include "UIControls/UIMachineStateBar.hpp"
+#include "UIControls/UIMenuList.hpp"
+#include "UIControls/UIMenuListItem.hpp"
+#include "UIControls/UINotificationBar.hpp"
+#include "UIControls/UINotifyBar.hpp"
+#include "UIControls/UIObject.hpp"
+#include "UIControls/UIScreen.hpp"
+#include "UIControls/UITaskListItem.hpp"
+#include "UIControls/UITaskRoadmapList.hpp"
+#include "UIControls/UIValueSetter.hpp"
 
 #define LGFX_USE_V1
 #define SCREEN_WIDTH            480U
 #define SCREEN_HEIGHT           320U
+#define INIT_BUFFER_IN_PSRAM    0
 
 #if INIT_BUFFER_IN_PSRAM == 0
     #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 24 / 2    
@@ -49,10 +63,6 @@
     static PSRAMBuffer * lv_buff_2;
 #endif
 
-static LGFX lcd;
-
-static uint32_t arduino_tick_get_cb(void);
-
 static void lcd_flush_cb(lv_display_t* display, const lv_area_t* area, unsigned char* data)
 {
     uint32_t w = lv_area_get_width(area);
@@ -62,12 +72,46 @@ static void lcd_flush_cb(lv_display_t* display, const lv_area_t* area, unsigned 
     lv_display_flush_ready(display);
 }
 
+static uint32_t arduino_tick_get_cb(void) {
+    return millis();
+}
+
+static LGFX lcd;
+
+extern FRAM_DB * FRAM_db;
+extern ProgramControl * Program_control;
+extern BlowingControl * Blowing_control;
+
 class UIService
 {
 public:
+    UIMachineStateBar * UI_machine_state_bar;
+    UIDateTime * UI_date_time;
+    UINotifyBar * UI_notify_bar;
+    UINotificationBar * UI_notification_bar;
+
+    UITaskRoadmapList * UI_task_roadmap_control;
+    vector<UITaskListItem> * UI_task_steps;
+
+    UIMenuList * UI_menu_list_user;
+    UIMenuListItem * UI_settings_user_datetime;
+    UIMenuListItem * UI_settings_user_pump;
+    UIMenuListItem * UI_settings_user_pasteurizer_template_1;
+    UIValueSetter * UI_Set1;
+    UIValueSetter * UI_Set2;
+    UIValueSetter * UI_Set3;
+
+    UIBlowingControl * UI_blowing_control;
+    vector<UIBlowValListItem*> Blow_vars;
+
     lv_obj_t* screen;
     
-    void init();
+    UIService();
+
+private:
+    void init_screens();
+    void init_blowing_controls();
+    void init_settings_user_controls();
 };
 
 #endif

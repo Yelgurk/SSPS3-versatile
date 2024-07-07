@@ -1,6 +1,6 @@
-#ifndef SSPS3_APPLICATION_SOLUTION
-
 #include "../include/main.hpp"
+
+#ifdef UNLOCK_DOMAIN_MAIN_CPP
 
 #define DEMO_DT         0
 #define DEMO_FRAM_MEM   1
