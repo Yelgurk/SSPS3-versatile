@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include "Filter.hpp"
 
-class ExponentialFilter : public Filter
+class ExponentialSmoothing : public Filter
 {
 private:
     float alpha;
@@ -13,7 +13,7 @@ private:
     bool initialized;
 
 public:
-    ExponentialFilter(float alpha) : alpha(alpha), filtered_value(0), initialized(false)
+    ExponentialSmoothing(float alpha) : alpha(alpha), filtered_value(0), initialized(false)
     {}
 
     void add_value(uint16_t value) override

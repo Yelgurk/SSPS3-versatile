@@ -1,5 +1,15 @@
 #include "../include/main.hpp"
 
+FilterValue * filter_tempC_product;
+FilterValue * filter_tempC_wJacket;
+FilterValue * filter_24v_batt;
+
+AsynchronousMotorWatchdog   * async_motor_wd;
+ChillingWatchdog            * chilling_wd;
+HeatingWatchdog             * heating_wd;
+V380SupplyWatchdog          * v380_supply_wd;
+WaterJacketDrainWatchdog    * wJacket_drain_wd;
+
 TwoWire         * itcw;
 DS3231          * rtc;
 STM32_slave     * STM32;
@@ -16,6 +26,16 @@ void setup()
         Serial.println("PSRAM not found");
     else
         Serial.println("PSRAM found and initialized");
+
+    filter_tempC_product    = new FilterValue(&exp_filter_tempC_product);
+    filter_tempC_wJacket    = new FilterValue(&exp_filter_tempC_wJacket);
+    filter_24v_batt         = new FilterValue(&exp_filter_24v_batt);
+
+    async_motor_wd      = new AsynchronousMotorWatchdog();
+    chilling_wd         = new ChillingWatchdog();
+    heating_wd          = new HeatingWatchdog();
+    v380_supply_wd      = new V380SupplyWatchdog();
+    wJacket_drain_wd    = new WaterJacketDrainWatchdog();
 
     pinMode(INT, INPUT_PULLDOWN);
     attachInterrupt(digitalPinToInterrupt(INT), interrupt_action, CHANGE);
@@ -47,6 +67,12 @@ void setup()
         }
     );
 
+    rt_task_manager.add_task("update_filters_task", [](){
+        filter_tempC_product->add_value(AnIn_state[ADC_TEMPC_PRODUCT]);
+        filter_tempC_wJacket->add_value(AnIn_state[ADC_TEMPC_WJACKET]);
+        filter_24v_batt     ->add_value(AnIn_state[ADC_VOLTAGE_BATT]);
+    }, 500);
+
     rt_task_manager.add_task("update_state_bar_task", [](){
         UI_service->UI_machine_state_bar->control_set_values_state_bar(
             random(0, 31),
@@ -55,7 +81,9 @@ void setup()
             random(0, 101),
             ChargeStateEnum::STABLE
         );
-        
+    }, 250);
+
+    rt_task_manager.add_task("update_dt_rt_task", [](){
         dt_rt->get_rt();
         UI_service->UI_date_time->control_set_values_date_time(
             dt_rt->get_time()->get_hours(),
@@ -65,7 +93,7 @@ void setup()
             dt_rt->get_date()->get_month(),
             dt_rt->get_date()->get_year()
         );
-    }, 500);
+    }, 1000);
 
     rt_task_manager.add_task("do_program_task", []() {
         Program_control->do_task();

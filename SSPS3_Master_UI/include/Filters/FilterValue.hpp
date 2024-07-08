@@ -3,7 +3,9 @@
 #define FilterValue_hpp
 
 #include <Arduino.h>
-#include "Filter.hpp"
+#include "F_ExponentialSmoothing.hpp"
+#include "F_MedianFilter.hpp"
+#include "F_MovingAverage.hpp"
 
 class FilterValue
 {
