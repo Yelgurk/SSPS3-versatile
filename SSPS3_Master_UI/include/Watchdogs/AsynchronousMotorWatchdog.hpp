@@ -6,24 +6,24 @@
 #include <functional>
 #include <cmath>
 
+#define ADC_MAX             (uint16_t)4095
+#define MCU_MAX_VOLTAGE     10.f
+
 using namespace std;
 
 class AsynchronousMotorWatchdog
 {
 private:
     function<void(bool)> turn_motor_func;
-    function<void(uint16_t)> set_motor_speed_func;
+    function<void(uint16_t, uint8_t)> set_motor_speed_func;
     uint8_t max_rot_per_min;
     float max_out_voltage;
     float voltage_scale;
 
-    static const uint16_t ADC_MAX = 4095;
-    static const float MCU_MAX_VOLTAGE = 10.0;
-
 public:
     AsynchronousMotorWatchdog(
         std::function<void(bool)> turn_motor_func, 
-        std::function<void(uint16_t)> set_motor_speed_func, 
+        std::function<void(uint16_t, uint8_t)> set_motor_speed_func, 
         uint8_t max_rot_per_min, 
         float max_out_voltage
     ) :
@@ -46,7 +46,7 @@ public:
             (static_cast<float>(rot_per_min) / max_rot_per_min)
             * voltage_scale
             * ADC_MAX
-        )));
+        )), rot_per_min);
     }
 };
 

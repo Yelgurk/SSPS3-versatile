@@ -18,19 +18,7 @@ static auto& mem_TDS_3 = Storage::allocate<TaskDataStruct>(defaultTaskData);
 static auto& mem_String = Storage::allocate<std::string>("err");
 */
 
-#define BATT_VOLTAGE_TO_12BIT(voltage)          (uint16_t)((float)voltage * 69.7674f)
-#define BATT_12BIT_TO_PERCENTAGE(mup, mdn, vl)  (uint8_t)(100.f / ((float)mup - (float)mdn) * ((float)mdn - max((float)vl, (float)mdn)));
 
-static float get_tempC_from_12bit(uint16_t adc_4ma, uint16_t adc_20ma, uint16_t temp_4ma, uint16_t temp_20ma, uint16_t adc_value)
-{
-    if (adc_value <= adc_4ma)
-        return temp_4ma;
-    else if (adc_value >= adc_20ma)
-        return temp_20ma;
-
-    float temperature = temp_4ma + (float(adc_value - adc_4ma) / float(adc_20ma - adc_4ma)) * (temp_20ma - temp_4ma);
-    return temperature;
-}
 
 #define ALLOC_SYS_VAR_BEGIN     0
 #define ALLOC_SENS_VAR_BEGIN    500

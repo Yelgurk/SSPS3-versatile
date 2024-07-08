@@ -112,12 +112,17 @@ struct __attribute__((packed)) ProgramControl
             set_task_state(TaskStateEnum::RUNNED);
     }
 
-    void pause_task()
+    void pause_task(bool permanent_pause = false)
     {
-        if (get_task_state() == TaskStateEnum::RUNNED)
+        if (!permanent_pause)
+        {
+            if (get_task_state() == TaskStateEnum::RUNNED)
+                set_task_state(TaskStateEnum::PAUSE);
+            else if (get_task_state() == TaskStateEnum::PAUSE)
+                set_task_state(TaskStateEnum::RUNNED);
+        }
+        else
             set_task_state(TaskStateEnum::PAUSE);
-        else if (get_task_state() == TaskStateEnum::PAUSE)
-            set_task_state(TaskStateEnum::RUNNED);
     }
 
     void end_task()

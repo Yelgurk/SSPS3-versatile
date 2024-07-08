@@ -39,6 +39,15 @@
 #define REL_WJACKET_VALVE   5
 #define REL_BLOWGUN_PUMP    4
 
+/* ADC limits */
+#define BATT_MULT_TO_12BIT  69.7674f
+#define MIN_BATT_VOLTAGE    22.8f
+#define MAX_BATT_VOLTAGE    25.f
+#define MIN_ADC_4ma         373
+#define MAX_ADC_20ma        1865
+#define MIN_ADC_TEMPC       -50
+#define MAX_ADC_TEMPC       150
+
 /* RTC */
 bool century = false;
 bool h12Flag;
@@ -57,12 +66,6 @@ extern FilterValue * filter_tempC_product;
 extern FilterValue * filter_tempC_wJacket;
 extern FilterValue * filter_24v_batt;
 
-extern AsynchronousMotorWatchdog    * async_motor_wd;
-extern ChillingWatchdog             * chilling_wd;
-extern HeatingWatchdog              * heating_wd;
-extern V380SupplyWatchdog           * v380_supply_wd;
-extern WaterJacketDrainWatchdog     * wJacket_drain_wd;
-
 extern TwoWire * itcw;
 extern DS3231 * rtc;
 extern STM32_slave * STM32;
@@ -70,6 +73,18 @@ extern ProgramControl * Program_control;
 extern BlowingControl * Blowing_control;
 extern UIService * UI_service;
 extern S_DateTime * dt_rt;
+
+extern AsynchronousMotorWatchdog    * async_motor_wd;
+extern ChillingWatchdog             * chilling_wd;
+extern HeatingWatchdog              * heating_wd;
+extern V380SupplyWatchdog           * v380_supply_wd;
+extern WaterJacketDrainWatchdog     * wJacket_drain_wd;
+
+/* STM32 output states */
+uint8_t rt_out_speed_async_m = 0;
+bool rt_out_state_async_m = false;
+bool rt_out_state_heaters = false;
+bool rt_out_state_wJacket = false;
 
 /* STM32 input values and functions */
 uint8_t     Pressed_key = static_cast<uint8_t>(KeyMap::_END);
