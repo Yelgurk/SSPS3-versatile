@@ -38,8 +38,8 @@ UIService::UIService()
 
     this->init_screens();
     this->UI_blowing_control->hide_ui_hierarchy();
-    //this->UI_menu_list_user->hide_ui_hierarchy();
-    this->UI_task_roadmap_control->hide_ui_hierarchy();
+    this->UI_menu_list_user->hide_ui_hierarchy();
+    //this->UI_task_roadmap_control->hide_ui_hierarchy();
 }
 
 void UIService::init_screens()
@@ -140,12 +140,13 @@ void UIService::init_screens()
             {
                 switch (step->aim)
                 {
-                case ProgramStepAimEnum::PASTEUR:   ui_step->set_step_name("Пастеризация"); break;
-                case ProgramStepAimEnum::CHILLING:  ui_step->set_step_name("Охлаждение"); break;
-                case ProgramStepAimEnum::CUTTING:   ui_step->set_step_name("Резка"); break;
-                case ProgramStepAimEnum::MIXING:    ui_step->set_step_name("Замешивание"); break;
-                case ProgramStepAimEnum::HEATING:   ui_step->set_step_name("Нагрев"); break;
-                case ProgramStepAimEnum::DRYING:    ui_step->set_step_name("Сушка"); break;
+                case ProgramStepAimEnum::WATER_JACKET:  ui_step->set_step_name("Набор воды"); break;
+                case ProgramStepAimEnum::PASTEUR:       ui_step->set_step_name("Пастеризация"); break;
+                case ProgramStepAimEnum::CHILLING:      ui_step->set_step_name("Охлаждение"); break;
+                case ProgramStepAimEnum::CUTTING:       ui_step->set_step_name("Резка"); break;
+                case ProgramStepAimEnum::MIXING:        ui_step->set_step_name("Замешивание"); break;
+                case ProgramStepAimEnum::HEATING:       ui_step->set_step_name("Нагрев"); break;
+                case ProgramStepAimEnum::DRYING:        ui_step->set_step_name("Сушка"); break;
                 
                 default:
                     break;

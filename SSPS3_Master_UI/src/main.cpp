@@ -1,10 +1,12 @@
 #include "../include/main.hpp"
 
 TwoWire         * itcw;
+DS3231          * rtc;
 STM32_slave     * STM32;
 ProgramControl  * Program_control;
 BlowingControl  * Blowing_control;
 UIService       * UI_service; 
+S_DateTime      * dt_rt;
 
 void setup()
 {
@@ -20,6 +22,19 @@ void setup()
 
     itcw = new TwoWire(0);
     itcw->begin(SDA, SCL, 400000);
+
+    rtc             = new DS3231(*itcw);
+    dt_rt = new S_DateTime(0, 0, 0, 0, 0, 0, []() {
+        return make_tuple(
+            (uint8_t)rtc->getHour(h12Flag, pmFlag),
+            (uint8_t)rtc->getMinute(),
+            (uint8_t)rtc->getSecond(),
+            (uint8_t)rtc->getDate(),
+            (uint8_t)rtc->getMonth(century),
+            (uint8_t)rtc->getYear()
+        );
+    });
+    dt_rt->get_rt();
 
     STM32           = new STM32_slave(STM_I2C_ADDR);
     Program_control = new ProgramControl();
@@ -40,6 +55,16 @@ void setup()
             random(0, 101),
             ChargeStateEnum::STABLE
         );
+        
+        dt_rt->get_rt();
+        UI_service->UI_date_time->control_set_values_date_time(
+            dt_rt->get_time()->get_hours(),
+            dt_rt->get_time()->get_minutes(),
+            dt_rt->get_time()->get_seconds(),
+            dt_rt->get_date()->get_day(),
+            dt_rt->get_date()->get_month(),
+            dt_rt->get_date()->get_year()
+        );
     }, 500);
 
     rt_task_manager.add_task("do_program_task", []() {
@@ -57,22 +82,22 @@ void loop()
     if (interrupted_by_slave)
     {
         interrupted_by_slave = false;
-        uint8_t x = STM32->get_kb();
+        read_input_signals();
 
-        UI_service->UI_notification_bar->key_press(x);
+        UI_service->UI_notification_bar->key_press(Pressed_key);
         
         // task control
-        //UI_service->UI_task_roadmap_control->get_selected()->key_press(x);
-        //UI_service->UI_task_roadmap_control->get_selected(true)->key_press(x);
+        //UI_service->UI_task_roadmap_control->get_selected()->key_press(Pressed_key);
+        //UI_service->UI_task_roadmap_control->get_selected(true)->key_press(Pressed_key);
 
         // user settings control
-        UI_service->UI_menu_list_user->get_selected()->key_press(x);
+        UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
         if (UI_service->UI_menu_list_user->is_selected_on_child())
-            UI_service->UI_menu_list_user->get_selected(true)->key_press(x);
+            UI_service->UI_menu_list_user->get_selected(true)->key_press(Pressed_key);
 
         // blowing control
-        //UI_service->UI_blowing_control->get_selected()->key_press(x);
-        //UI_service->UI_blowing_control->get_selected(true)->key_press(x);
+        //UI_service->UI_blowing_control->get_selected()->key_press(Pressed_key);
+        //UI_service->UI_blowing_control->get_selected(true)->key_press(Pressed_key);
     }
 
     lv_task_handler();

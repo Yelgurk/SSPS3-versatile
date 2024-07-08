@@ -22,12 +22,11 @@ std::unique_ptr<T> make_unique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+static uint16_t currentAddress = 0;
+static FramMap addressMap = FramMap();
+
 class Storage
 {
-private:
-    static uint16_t currentAddress;
-    static FramMap addressMap;
-
 public:
     template<typename T>
     static FRAMObject<T>& allocate(T default_value, uint32_t new_addr, size_t size) {
@@ -63,8 +62,5 @@ public:
             return nullptr;
     }
 };
-
-uint16_t Storage::currentAddress = 0;
-FramMap Storage::addressMap = FramMap();
 
 #endif

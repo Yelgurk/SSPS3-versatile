@@ -2,6 +2,7 @@
 
 volatile bool interrupted_by_slave = false;
 
+	
 #ifndef SSPS3_APPLICATION_SOLUTION
 #define UNLOCK_INFRASTRUCTURE_MAIN_CPP
 #include <Arduino.h>

@@ -7,8 +7,11 @@
 #include "../../SSPS3_Master_Domain/include/DateTime/S_DateTime.hpp"
 #include "../include/UIControls/UITaskRoadmapList.hpp"
 
+extern S_DateTime * dt_rt;
+
 enum class ProgramStepAimEnum : uint8_t
 {
+    WATER_JACKET,
     PASTEUR,
     CHILLING,
     CUTTING,

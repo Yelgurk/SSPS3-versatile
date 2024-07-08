@@ -21,8 +21,13 @@ ProgramStep * ProgramControl::start_task(ProgramAimEnum aim, vector<ProgramStep>
         this->aim = aim;
         steps = _steps;
 
-        started_at.get_rt();
-        last_iteration.get_rt();
+        dt_rt->get_rt();
+        
+        started_at.set_date(*dt_rt->get_date());
+        started_at.set_time(*dt_rt->get_time());
+
+        last_iteration.set_date(*dt_rt->get_date());
+        last_iteration.set_time(*dt_rt->get_time());
 
         current_step = next_step = nullptr;
 
@@ -46,12 +51,11 @@ uint32_t ProgramControl::sum_gone_ss()
 
 ProgramStep * ProgramControl::do_task()
 {
-    static S_DateTime curr_dt = S_DateTime();
-    curr_dt.get_rt();
+    dt_rt->get_rt();
 
-    int32_t ss_from_last_iteration = curr_dt.difference_in_seconds(last_iteration);
-    last_iteration.set_date(*curr_dt.get_date());
-    last_iteration.set_time(*curr_dt.get_time());
+    int32_t ss_from_last_iteration = dt_rt->difference_in_seconds(last_iteration);
+    last_iteration.set_date(*dt_rt->get_date());
+    last_iteration.set_time(*dt_rt->get_time());
 
     if (is_active)
     {

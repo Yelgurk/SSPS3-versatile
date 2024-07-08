@@ -11,33 +11,39 @@
 using namespace std;
 using DTLambdaType = function<tuple<uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t>()>;
 
+static DTLambdaType get_rt_ds3231;
+
 struct __attribute__((packed)) S_DateTime
 {
 private:
     S_Date date;
     S_Time time;
 
-    static DTLambdaType get_rt_ds3231;
-    static uint8_t hours, minutes, seconds, days, months, years;
+    uint8_t rt_hours = 0,
+            rt_minutes = 0,
+            rt_seconds = 0,
+            rt_days = 0,
+            rt_months = 0,
+            rt_years = 0;
 
-    void _set_rt_lambda(DTLambdaType get_rt_ds3231)
+    void _set_rt_lambda(DTLambdaType get_rt)
     {
-        if (get_rt_ds3231 != NULL && !S_DateTime::get_rt_ds3231)
-            S_DateTime::get_rt_ds3231 = get_rt_ds3231;
+        if (get_rt != NULL)
+            get_rt_ds3231 = get_rt;
     }
 
     void _set_rt()
     {
-        if (S_DateTime::get_rt_ds3231)
+        if (get_rt_ds3231)
         {
-            tie(hours, minutes, seconds, days, months, years) = S_DateTime::get_rt_ds3231();
+            tie(rt_hours, rt_minutes, rt_seconds, rt_days, rt_months, rt_years) = get_rt_ds3231();
 
-            time.set_hours(hours);
-            time.set_minutes(minutes);
-            time.set_seconds(seconds);
-            date.set_day(days);
-            date.set_month(months);
-            date.set_year(((uint16_t)years) + 2000);
+            time.set_hours(rt_hours);
+            time.set_minutes(rt_minutes);
+            time.set_seconds(rt_seconds);
+            date.set_day(rt_days);
+            date.set_month(rt_months);
+            date.set_year(((uint16_t)rt_years) + 2000);
         }
     }
 
@@ -204,13 +210,5 @@ public:
         return difference_in_hours(other) / 24;
     }
 };
-
-DTLambdaType S_DateTime::get_rt_ds3231 = NULL;
-uint8_t S_DateTime::hours = 0;
-uint8_t S_DateTime::minutes = 0;
-uint8_t S_DateTime::seconds = 0;
-uint8_t S_DateTime::days = 0;
-uint8_t S_DateTime::months = 0;
-uint8_t S_DateTime::years = 0;
 
 #endif
