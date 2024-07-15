@@ -118,7 +118,7 @@ void UIService::init_screens()
         }
     );
 
-    if (!Program_control->is_active)
+    if (!Program_control->is_runned)
     {
         Program_control->start_task(ProgramAimEnum::TMP_PASTEUR, &my_demo_task_steps);
 
@@ -182,7 +182,7 @@ void UIService::init_screens()
 
     //обдумать, как загружать новые программы по примеру ниже
 
-    if (!my_demo_task.is_active)
+    if (!my_demo_task.is_runned)
     {
         my_demo_task.start_task("Пастеризация", &my_demo_task_steps);
 
@@ -224,7 +224,7 @@ void UIService::init_screens()
             KeyModel(KeyMap::TOP, [this]() { UI_blowing_control->navi_prev(); }),
             KeyModel(KeyMap::LEFT_TOP, [this]()
             {
-                if (Blowing_control->is_active)
+                if (Blowing_control->is_runned)
                     Blowing_control->blowgun_stop();
                 else
                     UI_blowing_control->navi_back();
@@ -292,11 +292,11 @@ void UIService::init_settings_user_controls()
     );
     UI_Set1->set_position(0, 10, 40);
     UI_Set1->set_extra_button_logic({
-        [this]() { var_tmp_default_tempC_heat.set(var_tmp_default_tempC_heat.get() + 1); },//++*demo_setter_value; },
-        [this]() { var_tmp_default_tempC_heat.set(var_tmp_default_tempC_heat.get() - 1); },
-        [this]() { Serial.println(var_tmp_default_tempC_heat.get_addr()); }
+        [this]() { prog_runned_steps.at(0)->ptr()->tempC++; prog_runned_steps.at(0)->accept(); },//++*demo_setter_value; },
+        [this]() { prog_runned_steps.at(0)->ptr()->tempC--; prog_runned_steps.at(0)->accept(); },
+        [this]() { Serial.println(prog_runned_steps.at(0)->get().tempC); }
     });
-    UI_Set1->add_ui_context_action([this]() { UI_Set1->set_value(var_tmp_default_tempC_heat.get()); });
+    UI_Set1->add_ui_context_action([this]() { UI_Set1->set_value(prog_runned_steps.at(0)->get().tempC); });
 
     UI_Set2 = new UIValueSetter(
         UI_settings_user_pasteurizer_template_1,

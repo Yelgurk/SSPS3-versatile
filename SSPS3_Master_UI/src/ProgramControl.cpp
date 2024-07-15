@@ -16,7 +16,7 @@ double ProgramControl::get_prog_percentage()
 
 ProgramStep * ProgramControl::start_task(ProgramAimEnum aim, vector<ProgramStep> * _steps)
 {
-    if (!is_active)
+    if (!is_runned)
     {
         this->aim = aim;
         steps = _steps;
@@ -32,7 +32,7 @@ ProgramStep * ProgramControl::start_task(ProgramAimEnum aim, vector<ProgramStep>
         current_step = next_step = nullptr;
 
         state = TaskStateEnum::RUNNED;
-        is_active = true;
+        is_runned = true;
     }
 
     return do_task();
@@ -57,7 +57,7 @@ ProgramStep * ProgramControl::do_task()
     last_iteration.set_date(*dt_rt->get_date());
     last_iteration.set_time(*dt_rt->get_time());
 
-    if (is_active)
+    if (is_runned)
     {
         for (int i = 0; i < steps->size(); i++)
         {
@@ -91,7 +91,7 @@ ProgramStep * ProgramControl::do_task()
                 else
                 {
                     state = TaskStateEnum::DONE;
-                    is_active = false;
+                    is_runned = false;
                 }
             }
 
@@ -108,7 +108,7 @@ ProgramStep * ProgramControl::do_task()
         else if (state == TaskStateEnum::ERROR)
         {
             current_step->state = StepStateEnum::ERROR;
-            is_active = false;
+            is_runned = false;
             /*
             return дефолт экземпляра ProgramStep у которого стоит всё по 0, т.к. управление будет согласно
             значениям сугубо по возвращенному в ProgramStep

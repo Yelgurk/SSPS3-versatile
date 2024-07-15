@@ -123,15 +123,15 @@ public:
 
     vector<ProgramStep> my_demo_task_steps =
     {
-        ProgramStep(ProgramStepAimEnum::PASTEUR, 5, 10, 10, true, false),
-        ProgramStep(ProgramStepAimEnum::CHILLING, 7, 15, 20, true, false),
-        ProgramStep(ProgramStepAimEnum::CUTTING, 9, 20, 30, true, false),
-        ProgramStep(ProgramStepAimEnum::MIXING, 11, 25, 40, true, false),
-        ProgramStep(ProgramStepAimEnum::HEATING, 13, 30, 50, true, false),
-        ProgramStep(ProgramStepAimEnum::DRYING, 15, 35, 60, true, false),
-        ProgramStep(ProgramStepAimEnum::PASTEUR, 17, 40, 90, true, false),
-        ProgramStep(ProgramStepAimEnum::CHILLING, 19, 45, 120, true, false),
-        ProgramStep(ProgramStepAimEnum::CUTTING, 21, 50, 120, true, false)
+        ProgramStep(ProgramStepAimEnum::PASTEUR, 5, 10, 10, false, false, true),
+        ProgramStep(ProgramStepAimEnum::CHILLING, 7, 15, 20, false, false, true),
+        ProgramStep(ProgramStepAimEnum::CUTTING, 9, 20, 30, false, false, true),
+        ProgramStep(ProgramStepAimEnum::MIXING, 11, 25, 40, false, false, true),
+        ProgramStep(ProgramStepAimEnum::HEATING, 13, 30, 50, false, false, true),
+        ProgramStep(ProgramStepAimEnum::DRYING, 15, 35, 60, false, false, true),
+        ProgramStep(ProgramStepAimEnum::PASTEUR, 17, 40, 90, false, false, true),
+        ProgramStep(ProgramStepAimEnum::CHILLING, 19, 45, 120, false, false, true),
+        ProgramStep(ProgramStepAimEnum::CUTTING, 21, 50, 120, false, false, true)
     };
     /* DEMO END */
 

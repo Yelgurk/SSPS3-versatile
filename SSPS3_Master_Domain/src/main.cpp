@@ -42,7 +42,23 @@ void setup()
 
     delay(5000);
 
+    Serial.println(millis());
+    uint32_t temp_buff = mem_Timer4.get();
+    uint32_t test_ms = millis();
+    uint32_t i;
+    for (i = 0; millis() - test_ms <= 1000; i++)
+    {
+        mem_Timer4.get();
+        mem_Timer4.set(i);
+        mem_Timer4.get();
+    }
+    mem_Timer4.set(temp_buff);
+    
+    Serial.println(millis());
+    Serial.println((std::string("done: ") + to_string(i) + " times").c_str());
 
+    delay(5000);
+    
 #if DEMO_DT == 1
     S_Date date(28, 2, 2024); // Valid leap year date
     S_Time time(14, 30, 0);   // 14:30:00

@@ -77,6 +77,15 @@ public:
         memcpy(_buffer, &value, var_size);
         _buffer[var_size] = FRAM::calculateCRC(_buffer, var_size);
         FRAM::write(address, _buffer, full_size);
+        memcpy(&_value, _buffer, var_size);
+    }
+
+    void accept() {
+        set(_value);
+    }
+
+    void cancel() {
+        crc_calc_fram();
     }
 
     T get()
@@ -90,7 +99,22 @@ public:
         {
             //unset();
             reset();
-            return _default_value;
+            return _value;
+        }
+    }
+
+    T* ptr()
+    {
+        if (crc_state())
+        {
+            memcpy(&_value, _buffer, var_size);
+            return &_value;
+        }
+        else
+        {
+            //unset();
+            reset();
+            return &_value;
         }
     }
 

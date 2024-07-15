@@ -20,7 +20,7 @@ class BlowingControl
 {
 public:
     bool timer_running;
-    bool is_active;
+    bool is_runned;
     using CallbackFunc = std::function<void(float, float, BlowingType, float)>;
 
 private:
@@ -43,7 +43,7 @@ private:
 
 public:
     BlowingControl() :
-    is_active(false),
+    is_runned(false),
     last_call_time(0), 
     pump_on(false),
     timer_running(false)

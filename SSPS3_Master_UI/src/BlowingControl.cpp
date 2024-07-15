@@ -9,23 +9,23 @@ void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int
     
     if (do_gurgling && !trigger_must_be_reloaded)
     {
-        if (is_active && current_blow_index != index)
+        if (is_runned && current_blow_index != index)
         {
             stop_pump();
             timer_running = false;
             return;
         }
 
-        if (!is_active && is_keypad_press)
+        if (!is_runned && is_keypad_press)
             callback(curr_value.val * 1000, 0.f, curr_value.is_timer ? BlowingType::TIMER : BlowingType::LITER, 0.001f);
 
-        if ((!timer_running || !is_active) && ((is_keypad_press && current_time - last_call_time < 2000) || !is_keypad_press))
+        if ((!timer_running || !is_runned) && ((is_keypad_press && current_time - last_call_time < 2000) || !is_keypad_press))
         {
-            if (!is_active)
+            if (!is_runned)
             {
                 selected_blowing_value = curr_value;
                 current_blow_index = index;
-                is_active = true;
+                is_runned = true;
 
                 ml_per_ms = pump_power_lm * 1000.f / 60.f / 1000.f;
 
@@ -59,13 +59,13 @@ void BlowingControl::blowgun_stop(bool need_in_reload)
         trigger_must_be_reloaded = true;
 
     timer_running = false;
-    is_active = false;
+    is_runned = false;
     callback(0, 0, BlowingType::LITER, 0);
 }
 
 void BlowingControl::do_blowing()
 {
-    if (!is_active) return;
+    if (!is_runned) return;
 
     uint32_t current_time = millis();
 

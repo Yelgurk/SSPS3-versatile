@@ -51,10 +51,9 @@ void setup()
     itcw = new TwoWire(0);
     itcw->begin(SDA, SCL, 400000);
 
-    //init_fram_db_values();
-
     rtc             = new DS3231(*itcw);
-    dt_rt = new S_DateTime(0, 0, 0, 0, 0, 0, []() {
+    dt_rt = new S_DateTime(0, 0, 0, 0, 0, 0);
+    dt_rt->set_rt_lambda([]() {
         return make_tuple(
             (uint8_t)rtc->getHour(h12Flag, pmFlag),
             (uint8_t)rtc->getMinute(),

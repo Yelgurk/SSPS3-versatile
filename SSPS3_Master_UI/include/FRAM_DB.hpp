@@ -4,11 +4,14 @@
 #define FRAM_DB_HPP
 
 #include <Arduino.h>
+#include <vector>
 #include "ProgramControl.hpp"
 #include "BlowingControl.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_Storage.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_Object.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_RW.hpp"
+
+using namespace std;
 
 /*
 static auto& mem_Timer1 = Storage::allocate<bool>(false);
@@ -19,6 +22,9 @@ static auto& mem_DT = Storage::allocate<S_DateTime>(defaultDT);
 static auto& mem_TDS_3 = Storage::allocate<TaskDataStruct>(defaultTaskData);
 static auto& mem_String = Storage::allocate<std::string>("err");
 */
+
+/* Prog conf defines */
+#define PROG_RUNNED_STEPS_NCT_MAX   24
 
 /* IO index in arr */
 #define DIN_BLOWGUN_SENS    7
@@ -47,28 +53,25 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 #define MIN_ADC_TEMPC       -50
 #define MAX_ADC_TEMPC       150
 
-
+/* FRAM addr */
 #define ALLOC_SYS_VAR_BEGIN     0
-#define ALLOC_SENS_VAR_BEGIN    500
+#define ALLOC_SENS_VAR_BEGIN    200
 #define ALLOC_CONF_VAR_BEGIN    1000
 #define ALLOC_USER_VAR_BEGIN    2000
 
-struct __attribute__((packed)) CheesemakerProgramTemplate
-{
-    
-    
-    CheesemakerProgramTemplate() {}     
-};
-
 // Объявляем переменные как extern
+extern FRAMObject<S_DateTime>& var_last_rt;
 extern FRAMObject<uint8_t>& var_type_of_equipment_enum;
 extern FRAMObject<bool>& var_is_blowgun_by_rf;
+extern FRAMObject<bool>& var_is_asyncM_rpm_float;
+
 extern FRAMObject<uint16_t>& var_sensor_voltage_min_12bit;
 extern FRAMObject<uint16_t>& var_sensor_voltage_max_12bit;
 extern FRAMObject<uint16_t>& var_sensor_tempC_limit_4ma_12bit;
 extern FRAMObject<uint16_t>& var_sensor_tempC_limit_20ma_12bit;
 extern FRAMObject<int16_t>& var_sensor_tempC_limit_4ma_degrees_C;
 extern FRAMObject<int16_t>& var_sensor_tempC_limit_20ma_degrees_C;
+
 extern FRAMObject<uint8_t>& var_wJacket_tempC_limit_max;
 extern FRAMObject<uint8_t>& var_blowing_await_ss;
 extern FRAMObject<float>& var_blowing_pump_power_lm;
@@ -76,52 +79,77 @@ extern FRAMObject<uint16_t>& var_blowing_limit_ml_max;
 extern FRAMObject<uint16_t>& var_blowing_limit_ml_min;
 extern FRAMObject<uint16_t>& var_blowing_limit_ss_max;
 extern FRAMObject<uint16_t>& var_blowing_limit_ss_min;
+
 extern FRAMObject<uint8_t>& var_prog_wJacket_drain_max_ss;
 extern FRAMObject<uint16_t>& var_prog_on_pause_max_await_ss;
-extern FRAMObject<uint16_t>& var_prog_await_spite_of_cancelation_ss;
+extern FRAMObject<uint16_t>& var_prog_await_spite_of_already_runned_ss;
+
 extern FRAMObject<uint8_t>& var_prog_limit_heat_tempC_max;
 extern FRAMObject<uint8_t>& var_prog_limit_heat_tempC_min;
 extern FRAMObject<uint8_t>& var_prog_limit_chill_tempC_max;
 extern FRAMObject<uint8_t>& var_prog_limit_chill_tempC_min;
+extern FRAMObject<uint8_t>& var_prog_limit_asyncM_rpm_max;
+extern FRAMObject<uint8_t>& var_prog_limit_asyncM_rpm_min;
 extern FRAMObject<uint16_t>& var_prog_any_step_max_durat_ss;
 extern FRAMObject<uint16_t>& var_prog_any_step_min_durat_ss;
 extern FRAMObject<uint8_t>& var_prog_heaters_toggle_delay_ss;
 extern FRAMObject<uint8_t>& var_prog_wJacket_toggle_delay_ss;
-extern FRAMObject<uint8_t>& var_tmp_default_tempC_pasteur;
-extern FRAMObject<uint8_t>& var_tmp_default_tempC_chill;
-extern FRAMObject<uint8_t>& var_tmp_default_tempC_heat;
-extern FRAMObject<uint16_t>& var_tmp_default_durat_ss_pasteur;
-extern FRAMObject<uint16_t>& var_tmp_default_durat_ss_chill;
-extern FRAMObject<uint16_t>& var_tmp_default_durat_ss_heat;
-extern FRAMObject<bool>& var_tmp_default_heat_untill_user_stop;
-extern FRAMObject<uint8_t>& var_tmp_heatProg_tempC_heat;
-extern FRAMObject<uint16_t>& var_tmp_heatProg_durat_ss_heat;
-extern FRAMObject<bool>& var_tmp_heatProg_heat_untill_user_stop;
-extern FRAMObject<uint8_t>& var_tmp_chillProg_tempC_chill;
-extern FRAMObject<uint16_t>& var_tmp_chillProg_durat_ss_chill;
-extern FRAMObject<uint8_t>& var_tmp_watchdog_1_tempC_pasteur;
-extern FRAMObject<uint8_t>& var_tmp_watchdog_1_tempC_chill;
-extern FRAMObject<uint8_t>& var_tmp_watchdog_1_tempC_heat;
-extern FRAMObject<uint16_t>& var_tmp_watchdog_1_durat_ss_pasteur;
-extern FRAMObject<uint16_t>& var_tmp_watchdog_1_durat_ss_chill;
-extern FRAMObject<uint16_t>& var_tmp_watchdog_1_durat_ss_heat;
-extern FRAMObject<bool>& var_tmp_watchdog_1_heat_untill_user_stop;
-extern FRAMObject<bool>& var_tmp_watchdog_1_is_active;
-extern FRAMObject<uint8_t>& var_tmp_watchdog_2_tempC_pasteur;
-extern FRAMObject<uint8_t>& var_tmp_watchdog_2_tempC_chill;
-extern FRAMObject<uint8_t>& var_tmp_watchdog_2_tempC_heat;
-extern FRAMObject<uint16_t>& var_tmp_watchdog_2_durat_ss_pasteur;
-extern FRAMObject<uint16_t>& var_tmp_watchdog_2_durat_ss_chill;
-extern FRAMObject<uint16_t>& var_tmp_watchdog_2_durat_ss_heat;
-extern FRAMObject<bool>& var_tmp_watchdog_2_heat_untill_user_stop;
-extern FRAMObject<bool>& var_tmp_watchdog_2_is_active;
-extern FRAMObject<uint8_t>& var_tmp_watchdog_3_tempC_pasteur;
-extern FRAMObject<uint8_t>& var_tmp_watchdog_3_tempC_chill;
-extern FRAMObject<uint8_t>& var_tmp_watchdog_3_tempC_heat;
-extern FRAMObject<uint16_t>& var_tmp_watchdog_3_durat_ss_pasteur;
-extern FRAMObject<uint16_t>& var_tmp_watchdog_3_durat_ss_chill;
-extern FRAMObject<uint16_t>& var_tmp_watchdog_3_durat_ss_heat;
-extern FRAMObject<bool>& var_tmp_watchdog_3_heat_untill_user_stop;
-extern FRAMObject<bool>& var_tmp_watchdog_3_is_active;
+
+extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_main;
+extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_heating;
+extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_cooling;
+extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_wd_1;
+extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_wd_2;
+extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_wd_3;
+extern FRAMObject<S_Time>& prog_tmpe_wd_1_boot_time;
+extern FRAMObject<S_Time>& prog_tmpe_wd_2_boot_time;
+extern FRAMObject<S_Time>& prog_tmpe_wd_3_boot_time;
+extern FRAMObject<boolean>& prog_tmpe_wd_1_on_off;
+extern FRAMObject<boolean>& prog_tmpe_wd_2_on_off;
+extern FRAMObject<boolean>& prog_tmpe_wd_3_on_off;
+
+extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_1;
+extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_2;
+extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_3;
+extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_4;
+extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_5;
+extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_6;
+extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_7;
+extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_8;
+extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_9;
+extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_10;
+
+extern FRAMObject<uint16_t>& prog_runned_steps_count;
+extern FRAMObject<ProgramControl>& prog_runned;
+extern FRAMObject<ProgramStep>& prog_runned_step_1;
+extern FRAMObject<ProgramStep>& prog_runned_step_2;
+extern FRAMObject<ProgramStep>& prog_runned_step_3;
+extern FRAMObject<ProgramStep>& prog_runned_step_4;
+extern FRAMObject<ProgramStep>& prog_runned_step_5;
+extern FRAMObject<ProgramStep>& prog_runned_step_6;
+extern FRAMObject<ProgramStep>& prog_runned_step_7;
+extern FRAMObject<ProgramStep>& prog_runned_step_8;
+extern FRAMObject<ProgramStep>& prog_runned_step_9;
+extern FRAMObject<ProgramStep>& prog_runned_step_10;
+extern FRAMObject<ProgramStep>& prog_runned_step_11;
+extern FRAMObject<ProgramStep>& prog_runned_step_12;
+extern FRAMObject<ProgramStep>& prog_runned_step_13;
+extern FRAMObject<ProgramStep>& prog_runned_step_14;
+extern FRAMObject<ProgramStep>& prog_runned_step_15;
+extern FRAMObject<ProgramStep>& prog_runned_step_16;
+extern FRAMObject<ProgramStep>& prog_runned_step_17;
+extern FRAMObject<ProgramStep>& prog_runned_step_18;
+extern FRAMObject<ProgramStep>& prog_runned_step_19;
+extern FRAMObject<ProgramStep>& prog_runned_step_20;
+extern FRAMObject<ProgramStep>& prog_runned_step_21;
+extern FRAMObject<ProgramStep>& prog_runned_step_22;
+extern FRAMObject<ProgramStep>& prog_runned_step_23;
+extern FRAMObject<ProgramStep>& prog_runned_step_24;
+
+extern vector<FRAMObject<TMPEProgramTemplate>*>     prog_tmpe_templates;
+extern vector<FRAMObject<S_Time>*>                  prog_tmpe_templates_wd_time;
+extern vector<FRAMObject<boolean>*>                 prog_tmpe_templates_wd_state;
+extern vector<FRAMObject<CHMProgramTemplate>*>      prog_chm_templates;
+extern vector<FRAMObject<ProgramStep>*>             prog_runned_steps;
 
 #endif // FRAM_DB_HPP

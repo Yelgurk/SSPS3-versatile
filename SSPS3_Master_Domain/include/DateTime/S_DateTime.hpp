@@ -26,12 +26,6 @@ private:
             rt_months = 0,
             rt_years = 0;
 
-    void _set_rt_lambda(DTLambdaType get_rt)
-    {
-        if (get_rt != NULL)
-            get_rt_ds3231 = get_rt;
-    }
-
     void _set_rt()
     {
         if (get_rt_ds3231)
@@ -48,7 +42,7 @@ private:
     }
 
 public:
-    S_DateTime(int day = 1, int month = 1, int year = 2000, int hours = 0, int minutes = 0, int seconds = 0, DTLambdaType get_rt_ds3231 = NULL)
+    S_DateTime(int day = 1, int month = 1, int year = 2000, int hours = 0, int minutes = 0, int seconds = 0)
     :   date(day, month, year),
         time
         (
@@ -56,11 +50,9 @@ public:
             [this]() { this->date.set_day(this->date.get_day() - 1); },
             [this]() { this->date.set_day(this->date.get_day() + 1); }
         )
-    {
-        _set_rt_lambda(get_rt_ds3231);
-    }
+    {}
 
-    S_DateTime(const S_Date& d, const int64_t& total_ss, DTLambdaType get_rt_ds3231 = NULL)
+    S_DateTime(const S_Date& d, const int64_t& total_ss)
     :   date(d),
         time
         (
@@ -68,18 +60,14 @@ public:
             [this]() { this->date.set_day(this->date.get_day() - 1); },
             [this]() { this->date.set_day(this->date.get_day() + 1); }
         )
-    {
-        _set_rt_lambda(get_rt_ds3231);
-    }
+    {}
 
-    S_DateTime(const S_Date& d, const S_Time& t, DTLambdaType get_rt_ds3231 = NULL) : date(d), time(t)
+    S_DateTime(const S_Date& d, const S_Time& t) : date(d), time(t)
     {
         this->time.set_time_changed_cb(
             [this]() { this->date.set_day(this->date.get_day() - 1); },
             [this]() { this->date.set_day(this->date.get_day() + 1); }
         );
-        
-        _set_rt_lambda(get_rt_ds3231);
     }
 
     S_Date * get_date() { return &date; }
@@ -89,6 +77,12 @@ public:
     {
         _set_rt();
         return this;
+    }
+
+    void set_rt_lambda(DTLambdaType get_rt = NULL)
+    {
+        if (get_rt != NULL)
+            get_rt_ds3231 = get_rt;
     }
 
     S_DateTime * set_date(S_Date d)

@@ -9,19 +9,9 @@
 
 extern S_DateTime * dt_rt;
 
-enum class ProgramStepAimEnum : uint8_t
-{
-    WATER_JACKET,
-    PASTEUR,
-    CHILLING,
-    CUTTING,
-    MIXING,
-    HEATING,
-    DRYING
-};
-
 enum class ProgramAimEnum : uint8_t
 {
+    NONE,
     TMP_PASTEUR,
     TMP_HEAT,
     TMP_CHILL,
@@ -39,32 +29,48 @@ enum class ProgramAimEnum : uint8_t
     CHM_TEMPL_6
 };
 
+enum class ProgramStepAimEnum : uint8_t
+{
+    WATER_JACKET,
+    PASTEUR,
+    CHILLING,
+    CUTTING,
+    MIXING,
+    HEATING,
+    DRYING
+};
+
 struct __attribute__((packed)) ProgramStep
 {
     ProgramStepAimEnum aim;
     uint8_t fan;
     uint8_t tempC;
-    uint8_t duration_ss;
-    bool step_is_turned_on;
+    uint32_t duration_ss;
+    bool must_be_cooled;
     bool await_ok_button;
+    bool step_is_turned_on;
 
     StepStateEnum state = StepStateEnum::AWAIT;
     uint32_t gone_ss = 0;
+
+    ProgramStep() : ProgramStep(ProgramStepAimEnum::PASTEUR, 0, 0, 0, 0, 0, 0) {}
 
     ProgramStep(
         ProgramStepAimEnum aim,
         uint8_t fan,
         uint8_t tempC,
         uint32_t duration_ss,
-        bool step_is_turned_on,
-        bool await_ok_button
+        bool must_be_cooled,
+        bool await_ok_button,
+        bool step_is_turned_on
     ) :
     aim(aim),
     fan(fan),
     tempC(tempC),
     duration_ss(duration_ss),
-    step_is_turned_on(step_is_turned_on),
-    await_ok_button(await_ok_button)
+    must_be_cooled(must_be_cooled),
+    await_ok_button(await_ok_button),
+    step_is_turned_on(step_is_turned_on)
     {}
 
     bool is_time_out() {
@@ -89,10 +95,19 @@ struct __attribute__((packed)) ProgramControl
     ProgramAimEnum aim;
     TaskStateEnum state = TaskStateEnum::AWAIT;
 
-    boolean is_active = false;
+    boolean is_runned = false;
     S_DateTime started_at;
     S_DateTime last_iteration;
     uint32_t gone_ss;
+
+    ProgramControl() :
+    aim(ProgramAimEnum::NONE),
+    state(TaskStateEnum::AWAIT),
+    is_runned(false),
+    started_at(S_DateTime()),
+    last_iteration(S_DateTime()),
+    gone_ss(0)
+    {}
 
     int64_t seconds() {
         return millis() / 1000;
@@ -138,13 +153,73 @@ struct __attribute__((packed)) ProgramControl
 private:
     void set_task_state(TaskStateEnum task_new_state)
     {
-        if (this->is_active)
+        if (this->is_runned)
             this->state = task_new_state;
     }
 
     TaskStateEnum get_task_state() {
         return this->state;
     }
+};
+
+struct __attribute__((packed)) TMPEProgramTemplate
+{
+    ProgramStep step_pasteurising;
+    ProgramStep step_cooling;
+    ProgramStep step_heating;
+
+    TMPEProgramTemplate() : TMPEProgramTemplate(
+        ProgramStep(ProgramStepAimEnum::PASTEUR,    0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::CHILLING,   0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::HEATING,    0, 0, 0, 0, 0, 0)
+    )
+    {}
+
+    TMPEProgramTemplate(
+        ProgramStep step_pasteurising,
+        ProgramStep step_cooling,
+        ProgramStep step_heating
+    ) :
+    step_pasteurising(step_pasteurising),
+    step_cooling(step_cooling),
+    step_heating(step_heating)
+    {}
+};
+
+struct __attribute__((packed)) CHMProgramTemplate
+{
+    ProgramStep step_pasteurising;
+    ProgramStep step_cooling;
+    ProgramStep step_cutting;
+    ProgramStep step_mixing;
+    ProgramStep step_heating;
+    ProgramStep step_drying;
+
+    CHMProgramTemplate() : CHMProgramTemplate(
+        ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::CHILLING, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::CUTTING,  0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::MIXING,   0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::HEATING,  0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::DRYING,   0, 0, 0, 0, 0, 0)
+    )
+    {}
+
+    CHMProgramTemplate(
+        ProgramStep step_pasteurising,
+        ProgramStep step_cooling,
+        ProgramStep step_cutting,
+        ProgramStep step_mixing,
+        ProgramStep step_heating,
+        ProgramStep step_drying
+    ) :
+    step_pasteurising(step_pasteurising),
+    step_cooling(step_cooling),
+    step_cutting(step_cutting),
+    step_mixing(step_mixing),
+    step_heating(step_heating),
+    step_drying(step_drying)
+    {}
 };
 
 #endif

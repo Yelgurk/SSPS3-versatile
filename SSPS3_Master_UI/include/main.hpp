@@ -12,7 +12,6 @@
 #include "Watchdogs/HeatingWatchdog.hpp"
 #include "Watchdogs/V380SupplyWatchdog.hpp"
 #include "Watchdogs/WaterJacketDrainWatchdog.hpp"
-
 #include "FRAM_DB.hpp"
 
 /* I2C */
