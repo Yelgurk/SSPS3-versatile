@@ -42,19 +42,19 @@ struct __attribute__((packed)) TaskDataStruct
 TaskDataStruct defaultTaskData;
 S_DateTime defaultDT;
 
-auto& mem_TDS_4 = Storage::allocate<TaskDataStruct>(defaultTaskData);
-auto& mem_TDS_2 = Storage::allocate<TaskDataStruct>(defaultTaskData);
-auto& mem_Timer1 = Storage::allocate<bool>(false);
-auto& mem_Timer2 = Storage::allocate<uint8_t>(255);
-auto& mem_Timer3 = Storage::allocate<uint16_t>(255);
-auto& mem_TDS_1 = Storage::allocate<TaskDataStruct>(defaultTaskData);
-auto& mem_String = Storage::allocate<std::string>("err");
-auto& mem_DT = Storage::allocate<S_DateTime>(defaultDT);
-auto& mem_Timer4 = Storage::allocate<uint32_t>(255);
-auto& mem_Timer5 = Storage::allocate<uint32_t>(255);
-auto& mem_TDS_3 = Storage::allocate<TaskDataStruct>(defaultTaskData);
-auto& mem_TDS_5 = Storage::allocate<TaskDataStruct>(defaultTaskData);
-auto& mem_TDS_6 = Storage::allocate<TaskDataStruct>(defaultTaskData);
+static auto& mem_TDS_4 = Storage::allocate<TaskDataStruct>(defaultTaskData);
+static auto& mem_TDS_2 = Storage::allocate<TaskDataStruct>(defaultTaskData);
+static auto& mem_Timer1 = Storage::allocate<bool>(false);
+static auto& mem_Timer2 = Storage::allocate<uint8_t>(255);
+static auto& mem_Timer3 = Storage::allocate<uint16_t>(255);
+static auto& mem_TDS_1 = Storage::allocate<TaskDataStruct>(defaultTaskData);
+static auto& mem_String = Storage::allocate<std::string>("err");
+static auto& mem_DT = Storage::allocate<S_DateTime>(defaultDT);
+static auto& mem_Timer4 = Storage::allocate<uint32_t>(255);
+static auto& mem_Timer5 = Storage::allocate<uint32_t>(255);
+static auto& mem_TDS_3 = Storage::allocate<TaskDataStruct>(defaultTaskData);
+static auto& mem_TDS_5 = Storage::allocate<TaskDataStruct>(defaultTaskData);
+static auto& mem_TDS_6 = Storage::allocate<TaskDataStruct>(defaultTaskData);
 
 
 #endif

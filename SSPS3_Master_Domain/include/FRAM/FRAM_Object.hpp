@@ -38,6 +38,10 @@ public:
         _buffer = new uint8_t[full_size];
     }
 
+    uint16_t get_addr() {
+        return this->address;
+    }
+
     uint8_t crc_calc_local() {
         return FRAM::calculateCRC(_buffer, var_size);
     }
@@ -115,6 +119,10 @@ public:
     : address(addr), _default_value(default_value), var_size(size), full_size(size + 1)
     {
         _buffer = new uint8_t[full_size];
+    }
+
+    uint16_t get_addr() {
+        return this->address;
     }
 
     uint8_t crc_calc()

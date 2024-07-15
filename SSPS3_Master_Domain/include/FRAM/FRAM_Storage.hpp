@@ -18,7 +18,7 @@ extern uint8_t FRAM_address;
 extern TwoWire * itcw;
 
 template<typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args) {
+std::unique_ptr<T> custom_make_unique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
@@ -45,7 +45,7 @@ public:
         uint16_t address = currentAddress;
         currentAddress += (size + 1);
 
-        auto obj = make_unique<FRAMObject<T>>(address, default_value, size);
+        auto obj = custom_make_unique<FRAMObject<T>>(address, default_value, size);
         FRAMObject<T>* ptr = obj.get();
 
         name = name == "_" ? ("v_" + to_string(address)) : name;  

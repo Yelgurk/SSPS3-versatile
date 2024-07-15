@@ -38,8 +38,8 @@ UIService::UIService()
 
     this->init_screens();
     this->UI_blowing_control->hide_ui_hierarchy();
-    this->UI_menu_list_user->hide_ui_hierarchy();
-    //this->UI_task_roadmap_control->hide_ui_hierarchy();
+    //this->UI_menu_list_user->hide_ui_hierarchy();
+    this->UI_task_roadmap_control->hide_ui_hierarchy();
 }
 
 void UIService::init_screens()
@@ -292,11 +292,11 @@ void UIService::init_settings_user_controls()
     );
     UI_Set1->set_position(0, 10, 40);
     UI_Set1->set_extra_button_logic({
-        [this]() { ++*demo_setter_value; },
-        [this]() { --*demo_setter_value; },
-        [this]() { Serial.println(*demo_setter_value); }
+        [this]() { var_tmp_default_tempC_heat.set(var_tmp_default_tempC_heat.get() + 1); },//++*demo_setter_value; },
+        [this]() { var_tmp_default_tempC_heat.set(var_tmp_default_tempC_heat.get() - 1); },
+        [this]() { Serial.println(var_tmp_default_tempC_heat.get_addr()); }
     });
-    UI_Set1->add_ui_context_action([this]() { UI_Set1->set_value(*demo_setter_value); });
+    UI_Set1->add_ui_context_action([this]() { UI_Set1->set_value(var_tmp_default_tempC_heat.get()); });
 
     UI_Set2 = new UIValueSetter(
         UI_settings_user_pasteurizer_template_1,

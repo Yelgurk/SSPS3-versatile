@@ -4,6 +4,7 @@ FilterValue * filter_tempC_product;
 FilterValue * filter_tempC_wJacket;
 FilterValue * filter_24v_batt;
 
+uint8_t FRAM_address = FRAM_I2C_ADDR;
 TwoWire         * itcw;
 DS3231          * rtc;
 S_DateTime      * dt_rt;
@@ -49,6 +50,8 @@ void setup()
 
     itcw = new TwoWire(0);
     itcw->begin(SDA, SCL, 400000);
+
+    //init_fram_db_values();
 
     rtc             = new DS3231(*itcw);
     dt_rt = new S_DateTime(0, 0, 0, 0, 0, 0, []() {
@@ -162,13 +165,13 @@ void loop()
         UI_service->UI_notification_bar->key_press(Pressed_key);
         
         // task control
-        UI_service->UI_task_roadmap_control->get_selected()->key_press(Pressed_key);
-        UI_service->UI_task_roadmap_control->get_selected(true)->key_press(Pressed_key);
+        //UI_service->UI_task_roadmap_control->get_selected()->key_press(Pressed_key);
+        //UI_service->UI_task_roadmap_control->get_selected(true)->key_press(Pressed_key);
 
         // user settings control
-        //UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
-        //if (UI_service->UI_menu_list_user->is_selected_on_child())
-        //    UI_service->UI_menu_list_user->get_selected(true)->key_press(Pressed_key);
+        UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
+        if (UI_service->UI_menu_list_user->is_selected_on_child())
+            UI_service->UI_menu_list_user->get_selected(true)->key_press(Pressed_key);
 
         // blowing control
         //UI_service->UI_blowing_control->get_selected()->key_press(Pressed_key);
