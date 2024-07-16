@@ -66,6 +66,7 @@ public:
         bool top_column_setter = false,
         string header_text = "",
         const lv_image_dsc_t * header_icon = nullptr,
+        bool show_arrows = true,
         bool is_button = false
     ) : UIElement {
         { EquipmentType::All },
@@ -107,7 +108,7 @@ public:
         if (header_icon != nullptr)
             lv_image_set_src(icon_setter_header, header_icon);
 
-        if (!is_button)
+        if (show_arrows)
         {
             lv_obj_t * icon_setter_up = lv_image_create(get_container());
             lv_obj_align(icon_setter_up, LV_ALIGN_TOP_MID, 0, 8);

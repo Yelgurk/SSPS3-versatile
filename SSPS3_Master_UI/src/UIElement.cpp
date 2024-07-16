@@ -174,6 +174,7 @@ bool UIElement::key_press(KeyMap key)
 UIElement * UIElement::navi_next()
 {
     bool first_focus_iteration = false;
+    UIElement * old_navi = navi_pointer;
 
     if (navi_childs.size() > 0)
     {
@@ -224,14 +225,14 @@ UIElement * UIElement::navi_next()
     if (navi_pointer != nullptr)
     {
         navi_pointer->set_focused(true);
-        if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration)
+        if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration && (old_navi->_focus_offset_y == 0 || old_navi == nullptr))
         {
             lv_area_t child_pos;
             lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
-            lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1 + _focus_offset_y, LV_ANIM_ON);
+            lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1 + _focus_offset_y, LV_ANIM_OFF);
         }
         else
-            lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
+            lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_OFF);
     }
 
     return this;
@@ -240,6 +241,7 @@ UIElement * UIElement::navi_next()
 UIElement * UIElement::navi_prev()
 {
     bool first_focus_iteration = false;
+    UIElement * old_navi = navi_pointer;
 
     if (navi_childs.size() > 0)
     {
@@ -291,14 +293,14 @@ UIElement * UIElement::navi_prev()
     {
         navi_pointer->set_focused(true);
 
-        if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration)
+        if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration && (old_navi->_focus_offset_y == 0 || old_navi == nullptr))
         {
             lv_area_t child_pos;
             lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
-            lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1 + _focus_offset_y, LV_ANIM_ON);
+            lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1 + _focus_offset_y, LV_ANIM_OFF);
         }
         else
-            lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
+            lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_OFF);
     }
     
     return this;
@@ -364,6 +366,14 @@ void UIElement::set_key_press_actions(vector<KeyModel> key_press_actions) {
 UIElement * UIElement::set_childs_presenter(string key)
 {
     this->navi_childs_presenter = this->get_container_content(key);
+    return this;
+}
+
+UIElement * UIElement::set_childs_presenter(UIElement * presenter)
+{
+    this->navi_childs_presenter = presenter->get_navi_childs_presenter();
+    this->navi_childs.clear();
+    this->navi_childs = presenter->navi_childs;
     return this;
 }
 
@@ -497,10 +507,10 @@ void UIElement::focus_on_first_child(bool clear_prev_navi_focus_style)
         {
             lv_area_t child_pos;
             lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
-            lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1 + _focus_offset_y, LV_ANIM_ON);
+            lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1 + _focus_offset_y, LV_ANIM_OFF);
         }
         else
-            lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_ON);
+            lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_OFF);
     }
 }
 
@@ -585,6 +595,10 @@ UIElement * UIElement::set_childs_transarent()
         lv_obj_set_style_bg_color(navi_childs_presenter, COLOR_GREY, 0);
         lv_obj_set_style_opa(navi_childs_presenter, 255, 0);
     }
+
+    for (auto child : navi_childs)
+        child->update_ui_context();
+
     return this;
 }
 
@@ -595,6 +609,7 @@ UIElement * UIElement::set_childs_visible()
         lv_obj_set_style_bg_color(navi_childs_presenter, COLOR_WHITE, 0);
         lv_obj_set_style_opa(navi_childs_presenter, 255, 0);
     }
+
     return this;
 }
 
@@ -652,6 +667,6 @@ UIElement * UIElement::show_ui_hierarchy()
 
     lv_obj_set_style_opa(get_container(), 255, 0);
     lv_obj_remove_flag(get_container(), LV_OBJ_FLAG_HIDDEN);
-    
+
     return this;
 }

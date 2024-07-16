@@ -184,6 +184,19 @@ struct __attribute__((packed)) TMPEProgramTemplate
     step_cooling(step_cooling),
     step_heating(step_heating)
     {}
+
+    ProgramStep * get_step(uint8_t index)
+    {
+        switch (index)
+        {
+        case 0: return &step_pasteurising; break;
+        case 1: return &step_cooling; break;
+        case 2: return &step_heating; break;
+        default:
+            return &step_pasteurising;
+            break;
+        }
+    }
 };
 
 struct __attribute__((packed)) CHMProgramTemplate

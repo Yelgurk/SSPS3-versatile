@@ -162,7 +162,7 @@ FRAMObject<ProgramStep>& prog_runned_step_22                    = Storage::alloc
 FRAMObject<ProgramStep>& prog_runned_step_23                    = Storage::allocate<ProgramStep>(def_prog_runned_step_null);
 FRAMObject<ProgramStep>& prog_runned_step_24                    = Storage::allocate<ProgramStep>(def_prog_runned_step_null);
 
-vector<FRAMObject<TMPEProgramTemplate>*> prog_tmpe_templates = {
+vector<FRAMObject<TMPEProgramTemplate>*> * prog_tmpe_templates = new vector<FRAMObject<TMPEProgramTemplate>*>{
     &prog_tmpe_main,
     &prog_tmpe_heating,
     &prog_tmpe_cooling,
@@ -171,19 +171,19 @@ vector<FRAMObject<TMPEProgramTemplate>*> prog_tmpe_templates = {
     &prog_tmpe_wd_3
 };
 
-vector<FRAMObject<S_Time>*> prog_tmpe_templates_wd_time = {
+vector<FRAMObject<S_Time>*> * prog_tmpe_templates_wd_time = new vector<FRAMObject<S_Time>*>{
     &prog_tmpe_wd_1_boot_time,
     &prog_tmpe_wd_2_boot_time,
     &prog_tmpe_wd_3_boot_time
 };
 
-vector<FRAMObject<boolean>*> prog_tmpe_templates_wd_state = {
+vector<FRAMObject<boolean>*> * prog_tmpe_templates_wd_state = new vector<FRAMObject<boolean>*>{
     &prog_tmpe_wd_1_on_off,
     &prog_tmpe_wd_2_on_off,
     &prog_tmpe_wd_3_on_off
 };
 
-vector<FRAMObject<CHMProgramTemplate>*> prog_chm_templates = {
+vector<FRAMObject<CHMProgramTemplate>*> * prog_chm_templates = new vector<FRAMObject<CHMProgramTemplate>*>{
     &prog_chm_templ_1,
     &prog_chm_templ_2,
     &prog_chm_templ_3,
@@ -196,7 +196,7 @@ vector<FRAMObject<CHMProgramTemplate>*> prog_chm_templates = {
     &prog_chm_templ_10
 };
 
-vector<FRAMObject<ProgramStep>*> prog_runned_steps = {
+vector<FRAMObject<ProgramStep>*> * prog_runned_steps = new vector<FRAMObject<ProgramStep>*>{
     &prog_runned_step_1,
     &prog_runned_step_2,
     &prog_runned_step_3,

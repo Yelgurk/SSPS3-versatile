@@ -118,10 +118,11 @@ public:
     UIValueSetter * UI_setter_pump_calibr_lm;
 
     UIService();
+    int16_t get_menu_index();
+    uint8_t get_template_index();
 
     /* DEMO BEGIN */
-    uint8_t * demo_setter_value = new uint8_t;
-    
+    /*
     vector<BlowgunValue> b_vars = {
     BlowgunValue(5000),
     BlowgunValue(5000),
@@ -141,6 +142,7 @@ public:
         ProgramStep(ProgramStepAimEnum::CHILLING, 19, 45, 120, false, false, true),
         ProgramStep(ProgramStepAimEnum::CUTTING, 21, 50, 120, false, false, true)
     };
+    */
     /* DEMO END */
 
 private:

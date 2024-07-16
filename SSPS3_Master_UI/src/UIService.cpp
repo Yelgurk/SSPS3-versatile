@@ -42,6 +42,15 @@ UIService::UIService()
     this->UI_task_roadmap_control->hide_ui_hierarchy();
 }
 
+int16_t UIService::get_menu_index() {
+    return UI_menu_list_user->get_focused_index();
+}
+
+uint8_t UIService::get_template_index() {
+    int16_t index = get_menu_index();
+    return (index >= 2 && index <=7 ? index : 2) - 2;
+}
+
 void UIService::init_screens()
 {
     /* upper state bar init */
@@ -118,6 +127,7 @@ void UIService::init_screens()
         }
     );
 
+    /*
     if (!Program_control->is_runned)
     {
         Program_control->start_task(ProgramAimEnum::TMP_PASTEUR, &my_demo_task_steps);
@@ -158,63 +168,6 @@ void UIService::init_screens()
         UI_task_roadmap_control->update_ui_base();
         UI_task_roadmap_control->update_ui_context();
     }
-
-    /*
-    *
-    *
-    *
-    *
-    * 
-    * 
-    * 
-    vector<DEMO_TASK_STEP> my_demo_task_steps =
-    {
-        DEMO_TASK_STEP("Набор воды", 5, 10, 10),
-        DEMO_TASK_STEP("Нагрев", 7, 15, 20),
-        DEMO_TASK_STEP("Пастеризация", 9, 20, 30),
-        DEMO_TASK_STEP("Выдержка", 11, 25, 40),
-        DEMO_TASK_STEP("Охлаждение", 13, 30, 50),
-        DEMO_TASK_STEP("Выдержка", 15, 35, 60),
-        DEMO_TASK_STEP("Нагрев", 17, 40, 90),
-        DEMO_TASK_STEP("Выдержка", 19, 45, 120),
-        DEMO_TASK_STEP("Ожидание", 21, 50, 120)
-    };
-
-    //обдумать, как загружать новые программы по примеру ниже
-
-    if (!my_demo_task.is_runned)
-    {
-        my_demo_task.start_task("Пастеризация", &my_demo_task_steps);
-
-        for (uint16_t i = 0; i < my_demo_task_steps.size(); i++)
-        {
-            DEMO_TASK_STEP* step = &my_demo_task_steps.at(i);
-
-            UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
-            ui_step->set_extra_button_logic({
-                [=](){ step->fan++;          },
-                [=](){ step->fan--;          },
-                [=](){ step->tempC++;        },
-                [=](){ step->tempC--;        },
-                [=](){ step->duration += 10; },
-                [=](){ step->duration -= 10; },
-            });
-
-            ui_step->add_ui_base_action([ui_step, step]() { ui_step->set_step_name(step->name); });
-            ui_step->add_ui_context_action([ui_step, step]() { ui_step->set_step_values(step->fan, step->tempC, step->time_left_ss(), step->state); });
-        } 
-
-        UI_task_roadmap_control->update_ui_base();
-        UI_task_roadmap_control->update_ui_context();
-    }
-    * 
-    * 
-    * 
-    * 
-    * 
-    * 
-    * 
-    * 
     */
 
     /* blowing panel init */
@@ -236,8 +189,6 @@ void UIService::init_screens()
     init_blowing_controls();
 
     /* user menu panel init */
-    *demo_setter_value = 0;
-
     UI_menu_list_user = new UIMenuList(
         this->screen,
         {
@@ -257,6 +208,7 @@ void UIService::init_blowing_controls()
     в UIService проинициализирован demo-вектор vector<BlowgunValue> b_vars для тестов с var в RAM, пока не во FRAM
     */
 
+    /*
     for (uint8_t i = 0; i < 4; i++)
     {
         Blow_vars.push_back(new UIBlowValListItem(UI_blowing_control, i < 3 ? BlowVarTypeEnum::LITRES : BlowVarTypeEnum::TIMER));
@@ -269,6 +221,7 @@ void UIService::init_blowing_controls()
             [=]() { Blowing_control->blowgun_trigger(true, true, i, b_vars.at(i)); }
         });
     }
+    */
 }
 
 void UIService::init_settings_user_controls()
@@ -321,7 +274,7 @@ void UIService::init_settings_user_controls()
         []() {}
     });
 
-    UI_rt_setter_accept = new UIValueSetter(UI_settings_rt, 0, 275, 10, 140, false, "Применить", nullptr, true);
+    UI_rt_setter_accept = new UIValueSetter(UI_settings_rt, 0, 275, 10, 140, false, "Применить", nullptr, false, true);
     UI_rt_setter_accept->set_extra_button_logic({
         []() {},
         []() {},
@@ -343,6 +296,141 @@ void UIService::init_settings_user_controls()
     UI_setter_dd->add_ui_context_action([this]() { display_rt_in_setters(); }, false);
     UI_setter_MM->add_ui_context_action([this]() { display_rt_in_setters(); }, false);
     UI_setter_yyyy->add_ui_context_action([this]() { display_rt_in_setters(); }, false);
+
+    static vector<std::string> tmpe_templ_menu_items_name = {
+        "программа \"Пастеризация\"",
+        "программа \"Охлаждение\"",
+        "программа \"Нагрев\""
+    };
+
+    static vector<std::string> tmpe_templ_step_name = {
+        "1. пастер.",
+        "2. охлажд",
+        "3. нагрев."
+    };
+
+    for (uint8_t i = 0; i < 6; i++)
+    {
+        UI_template_menu_items.push_back(new UIMenuListItem(
+            UI_menu_list_user,
+            i < tmpe_templ_menu_items_name.size() ?
+                tmpe_templ_menu_items_name.at(i) :
+                "Авто ВКЛ. #" + to_string(i - tmpe_templ_menu_items_name.size() + 1)
+        ));
+    }
+
+    UIValueSetter * setter_turn_on_off;
+    UIValueSetter * setter_fan_speed;
+    UIValueSetter * setter_tempC;
+    UIValueSetter * setter_durat_ss;
+    UIValueSetter * setter_pause_after;
+
+    UI_template_menu_items.back()->set_page_header("Поэтапная настройка", 0);
+
+    for (uint8_t page = 0; page < 3; page++)
+    {
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.back(), 0, 80, 10, 40 + (100 * page), page == 0, tmpe_templ_step_name.at(page), nullptr, false));
+        setter_turn_on_off = UI_template_setters.back();
+
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.back(), 0, 40, 95, 40 + (100 * page), page == 0, "", &img_fan));
+        setter_fan_speed = UI_template_setters.back();
+
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.back(), 0, 40, 140, 40 + (100 * page), page == 0, "", &img_tempC));
+        setter_tempC = UI_template_setters.back();
+
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.back(), 0, 40, 185, 40 + (100 * page), page == 0, "", &img_sand_watch));
+        setter_durat_ss = UI_template_setters.back();
+
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.back(), 0, 55, 230, 40 + (100 * page), page == 0, "пауза", nullptr, false));
+        setter_pause_after = UI_template_setters.back();
+
+        /* ON/OFF step processing setter */
+        setter_turn_on_off->set_extra_button_logic({
+            []() {},
+            []() {},
+            [this, page]() {
+                TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_index())->ptr();
+                templ->get_step(page)->step_is_turned_on = !templ->get_step(page)->step_is_turned_on;
+                prog_tmpe_templates->at(get_template_index())->accept();
+            }
+        });
+        setter_turn_on_off->add_ui_context_action([=]() {
+            bool state = prog_tmpe_templates->at(get_template_index())->get().get_step(page)->step_is_turned_on;
+            setter_turn_on_off->set_value(state ? "ВКЛ" : "ВЫКЛ");
+        });
+
+        /* Async motor RPM setter */
+        setter_fan_speed->set_extra_button_logic({
+            [this, page]() {
+                TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_index())->ptr();
+                templ->get_step(page)->fan++;
+                prog_tmpe_templates->at(get_template_index())->accept();
+            },
+            [this, page]() {
+                TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_index())->ptr();
+                templ->get_step(page)->fan--;
+                prog_tmpe_templates->at(get_template_index())->accept();
+            },
+            []() {}
+        });
+        setter_fan_speed->add_ui_context_action([=]() {
+            setter_fan_speed->set_value(prog_tmpe_templates->at(get_template_index())->get().get_step(page)->fan);
+        });
+
+        /* Step temperature limit */
+        setter_tempC->set_extra_button_logic({
+            [this, page]() {
+                TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_index())->ptr();
+                templ->get_step(page)->tempC++;
+                prog_tmpe_templates->at(get_template_index())->accept();
+            },
+            [this, page]() {
+                TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_index())->ptr();
+                templ->get_step(page)->tempC--;
+                prog_tmpe_templates->at(get_template_index())->accept();
+            },
+            []() {}
+        });
+        setter_tempC->add_ui_context_action([=]() {
+            setter_tempC->set_value(prog_tmpe_templates->at(get_template_index())->get().get_step(page)->tempC);
+        });
+
+        /* Step duration SS setter */
+        setter_durat_ss->set_extra_button_logic({
+            [this, page]() {
+                TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_index())->ptr();
+                templ->get_step(page)->duration_ss++;
+                prog_tmpe_templates->at(get_template_index())->accept();
+            },
+            [this, page]() {
+                TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_index())->ptr();
+                templ->get_step(page)->duration_ss--;
+                prog_tmpe_templates->at(get_template_index())->accept();
+            },
+            []() {}
+        });
+        setter_durat_ss->add_ui_context_action([=]() {
+            setter_durat_ss->set_value((int32_t)prog_tmpe_templates->at(get_template_index())->get().get_step(page)->duration_ss);
+        });
+
+        /* ON/OFF pause after step completed setter */
+        setter_pause_after->set_extra_button_logic({
+            []() {},
+            []() {},
+            [this, page]() {
+                TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_index())->ptr();
+                templ->get_step(page)->await_ok_button = !templ->get_step(page)->await_ok_button;
+                prog_tmpe_templates->at(get_template_index())->accept();
+            }
+        });
+        setter_pause_after->add_ui_context_action([=]() {
+            bool state = prog_tmpe_templates->at(get_template_index())->get().get_step(page)->await_ok_button;
+            setter_pause_after->set_value(state ? "ВКЛ" : "ВЫКЛ");
+        });
+    }
+
+    for (uint8_t i = 0; i < UI_template_menu_items.size() - 1; i++)
+        UI_template_menu_items.at(i)->set_childs_presenter(UI_template_menu_items.back());
 }
 
 void UIService::display_rt_in_setters()

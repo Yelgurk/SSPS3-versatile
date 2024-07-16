@@ -168,9 +168,10 @@ void loop()
         //UI_service->UI_task_roadmap_control->get_selected(true)->key_press(Pressed_key);
 
         // user settings control
-        UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
+        
         if (UI_service->UI_menu_list_user->is_selected_on_child())
             UI_service->UI_menu_list_user->get_selected(true)->key_press(Pressed_key);
+        UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
 
         // blowing control
         //UI_service->UI_blowing_control->get_selected()->key_press(Pressed_key);

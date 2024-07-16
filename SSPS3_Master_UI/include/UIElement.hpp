@@ -97,10 +97,8 @@ private:
 protected:
     int32_t _focus_offset_y = 0;
     lv_obj_t * get_container();
-    lv_obj_t * get_navi_childs_presenter();
     
     void set_key_press_actions(vector<KeyModel> key_press_actions);
-    UIElement * set_childs_presenter(string key);
     UIElement * remember_child_element(string key, lv_obj_t * child);
 
 public:
@@ -119,6 +117,7 @@ public:
         bool is_focus_extra_style_lvl = false
     );
     lv_obj_t * get_container_content(string key);
+    lv_obj_t * get_navi_childs_presenter();
     lv_obj_t * get_screen();
     bool is_container();
     bool is_selected_on_child();
@@ -136,6 +135,8 @@ public:
     UIElement * update_ui_context();
     UIElement * lv_clear_states(lv_obj_t * lv_obj = nullptr);
     void focus_on_first_child(bool clear_prev_navi_focus_style = true);
+    UIElement * set_childs_presenter(string key);
+    UIElement * set_childs_presenter(UIElement * presenter);
     UIElement * set_focused(bool state);
     UIElement * set_selected(bool state);
     UIElement * set_transparent(bool state);

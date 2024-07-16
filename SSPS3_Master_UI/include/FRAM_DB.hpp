@@ -152,10 +152,10 @@ extern FRAMObject<ProgramStep>& prog_runned_step_22;
 extern FRAMObject<ProgramStep>& prog_runned_step_23;
 extern FRAMObject<ProgramStep>& prog_runned_step_24;
 
-extern vector<FRAMObject<TMPEProgramTemplate>*>     prog_tmpe_templates;
-extern vector<FRAMObject<S_Time>*>                  prog_tmpe_templates_wd_time;
-extern vector<FRAMObject<boolean>*>                 prog_tmpe_templates_wd_state;
-extern vector<FRAMObject<CHMProgramTemplate>*>      prog_chm_templates;
-extern vector<FRAMObject<ProgramStep>*>             prog_runned_steps;
+extern vector<FRAMObject<TMPEProgramTemplate>*>     *prog_tmpe_templates;
+extern vector<FRAMObject<S_Time>*>                  *prog_tmpe_templates_wd_time;
+extern vector<FRAMObject<boolean>*>                 *prog_tmpe_templates_wd_state;
+extern vector<FRAMObject<CHMProgramTemplate>*>      *prog_chm_templates;
+extern vector<FRAMObject<ProgramStep>*>             *prog_runned_steps;
 
 #endif // FRAM_DB_HPP
