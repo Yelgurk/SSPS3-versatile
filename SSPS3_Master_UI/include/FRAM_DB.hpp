@@ -61,6 +61,7 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 
 // Объявляем переменные как extern
 extern FRAMObject<S_DateTime>& var_last_rt;
+
 extern FRAMObject<uint8_t>& var_type_of_equipment_enum;
 extern FRAMObject<bool>& var_is_blowgun_by_rf;
 extern FRAMObject<bool>& var_is_asyncM_rpm_float;
@@ -71,6 +72,10 @@ extern FRAMObject<uint16_t>& var_sensor_tempC_limit_4ma_12bit;
 extern FRAMObject<uint16_t>& var_sensor_tempC_limit_20ma_12bit;
 extern FRAMObject<int16_t>& var_sensor_tempC_limit_4ma_degrees_C;
 extern FRAMObject<int16_t>& var_sensor_tempC_limit_20ma_degrees_C;
+extern FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_min_12bit;
+extern FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_max_12bit;
+extern FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_min;      
+extern FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_max;      
 
 extern FRAMObject<uint8_t>& var_wJacket_tempC_limit_max;
 extern FRAMObject<uint8_t>& var_blowing_await_ss;
@@ -83,17 +88,18 @@ extern FRAMObject<uint16_t>& var_blowing_limit_ss_min;
 extern FRAMObject<uint8_t>& var_prog_wJacket_drain_max_ss;
 extern FRAMObject<uint16_t>& var_prog_on_pause_max_await_ss;
 extern FRAMObject<uint16_t>& var_prog_await_spite_of_already_runned_ss;
-
 extern FRAMObject<uint8_t>& var_prog_limit_heat_tempC_max;
 extern FRAMObject<uint8_t>& var_prog_limit_heat_tempC_min;
 extern FRAMObject<uint8_t>& var_prog_limit_chill_tempC_max;
 extern FRAMObject<uint8_t>& var_prog_limit_chill_tempC_min;
-extern FRAMObject<uint8_t>& var_prog_limit_asyncM_rpm_max;
-extern FRAMObject<uint8_t>& var_prog_limit_asyncM_rpm_min;
 extern FRAMObject<uint16_t>& var_prog_any_step_max_durat_ss;
 extern FRAMObject<uint16_t>& var_prog_any_step_min_durat_ss;
 extern FRAMObject<uint8_t>& var_prog_heaters_toggle_delay_ss;
 extern FRAMObject<uint8_t>& var_prog_wJacket_toggle_delay_ss;
+
+extern FRAMObject<S_DateTime>& var_rt_setter;
+
+extern FRAMObject<float>& var_blow_pump_calibration_lm;
 
 extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_main;
 extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_heating;
@@ -104,9 +110,9 @@ extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_wd_3;
 extern FRAMObject<S_Time>& prog_tmpe_wd_1_boot_time;
 extern FRAMObject<S_Time>& prog_tmpe_wd_2_boot_time;
 extern FRAMObject<S_Time>& prog_tmpe_wd_3_boot_time;
-extern FRAMObject<boolean>& prog_tmpe_wd_1_on_off;
-extern FRAMObject<boolean>& prog_tmpe_wd_2_on_off;
-extern FRAMObject<boolean>& prog_tmpe_wd_3_on_off;
+extern FRAMObject<bool>& prog_tmpe_wd_1_on_off;
+extern FRAMObject<bool>& prog_tmpe_wd_2_on_off;
+extern FRAMObject<bool>& prog_tmpe_wd_3_on_off;
 
 extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_1;
 extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_2;

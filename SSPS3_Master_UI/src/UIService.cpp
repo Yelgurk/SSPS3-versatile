@@ -273,40 +273,84 @@ void UIService::init_blowing_controls()
 
 void UIService::init_settings_user_controls()
 {
-    UI_settings_user_datetime = new UIMenuListItem(UI_menu_list_user, "Привет");
-    UI_settings_user_pump = new UIMenuListItem(UI_menu_list_user, "Как дела?");
-    UI_settings_user_pasteurizer_template_1 = new UIMenuListItem(UI_menu_list_user, "У меня нормально, как-то так");
-    
-    UI_settings_user_pasteurizer_template_1->set_page_header("Установка времени", 0);
-    UI_settings_user_pasteurizer_template_1->set_page_header("Установка времени 2", 1);
+    UI_settings_rt = new UIMenuListItem(UI_menu_list_user, "Дата / Время");
+    UI_settings_rt->set_page_header("Установка времени", 0);
 
-    /*
-    demo_setter_value - были тестовые данные для обкатки контрола изменения параметров. будет во FRAM 
-    в UIService проинициализирован uint8_t * demo_setter_value для тестов работы контрола
-    */
+    UI_settings_pump_calibr = new UIMenuListItem(UI_menu_list_user, "Раздача жидкости");
+    UI_settings_pump_calibr->set_page_header("Калибровка насоса", 0);
 
-    UI_Set1 = new UIValueSetter(
-        UI_settings_user_pasteurizer_template_1,
-        40, true,
-        "", &img_fan
-    );
-    UI_Set1->set_position(0, 10, 40);
-    UI_Set1->set_extra_button_logic({
-        [this]() { prog_runned_steps.at(0)->ptr()->tempC++; prog_runned_steps.at(0)->accept(); },//++*demo_setter_value; },
-        [this]() { prog_runned_steps.at(0)->ptr()->tempC--; prog_runned_steps.at(0)->accept(); },
-        [this]() { Serial.println(prog_runned_steps.at(0)->get().tempC); }
+    UI_setter_hh = new UIValueSetter(UI_settings_rt, 0, 40, 10, 40, true, "час");
+    UI_setter_hh->set_extra_button_logic({
+        [this]() { *var_rt_setter.ptr() += S_Time(1, 0, 0); var_rt_setter.accept(); },
+        [this]() { *var_rt_setter.ptr() -= S_Time(1, 0, 0); var_rt_setter.accept(); },
+        []() {}
     });
-    UI_Set1->add_ui_context_action([this]() { UI_Set1->set_value(prog_runned_steps.at(0)->get().tempC); });
 
-    UI_Set2 = new UIValueSetter(
-        UI_settings_user_pasteurizer_template_1,
-        1, 40, 10, 40, false,
-        "", &img_tempC
-    );
+    UI_setter_mm = new UIValueSetter(UI_settings_rt, 0, 40, 55, 40, true, "мин");
+    UI_setter_mm->set_extra_button_logic({
+        [this]() { *var_rt_setter.ptr() += S_Time(0, 1, 0); var_rt_setter.accept(); },
+        [this]() { *var_rt_setter.ptr() -= S_Time(0, 1, 0); var_rt_setter.accept(); },
+        []() {}
+    });
 
-    UI_Set3 = new UIValueSetter(
-        UI_settings_user_pasteurizer_template_1,
-        1, 40, 50, 40, false,
-        "час"
-    );
+    UI_setter_ss = new UIValueSetter(UI_settings_rt, 0, 40, 100, 40, true, "сек");
+    UI_setter_ss->set_extra_button_logic({
+        [this]() { *var_rt_setter.ptr() += S_Time(0, 0, 1); var_rt_setter.accept(); },
+        [this]() { *var_rt_setter.ptr() -= S_Time(0, 0, 1); var_rt_setter.accept(); },
+        []() {}
+    });
+    
+    UI_setter_dd = new UIValueSetter(UI_settings_rt, 0, 40, 145, 40, true, "день");
+    UI_setter_dd->set_extra_button_logic({
+        [this]() { *var_rt_setter.ptr() += S_Date(1, 0, 0, true); var_rt_setter.accept(); },
+        [this]() { *var_rt_setter.ptr() -= S_Date(1, 0, 0, true); var_rt_setter.accept(); },
+        []() {}
+    });
+    
+    UI_setter_MM = new UIValueSetter(UI_settings_rt, 0, 40, 190, 40, true, "мес.");
+    UI_setter_MM->set_extra_button_logic({
+        [this]() { *var_rt_setter.ptr() += S_Date(0, 1, 0, true); var_rt_setter.accept(); },
+        [this]() { *var_rt_setter.ptr() -= S_Date(0, 1, 0, true); var_rt_setter.accept(); },
+        []() {}
+    });
+    
+    UI_setter_yyyy = new UIValueSetter(UI_settings_rt, 0, 50, 235, 40, true, "год");
+    UI_setter_yyyy->set_extra_button_logic({
+        [this]() { *var_rt_setter.ptr() += S_Date(0, 0, 1, true); var_rt_setter.accept(); },
+        [this]() { *var_rt_setter.ptr() -= S_Date(0, 0, 1, true); var_rt_setter.accept(); },
+        []() {}
+    });
+
+    UI_rt_setter_accept = new UIValueSetter(UI_settings_rt, 0, 275, 10, 140, false, "Применить", nullptr, true);
+    UI_rt_setter_accept->set_extra_button_logic({
+        []() {},
+        []() {},
+        []() {
+            int year = var_rt_setter.get().get_date()->get_year() - 2000;
+            
+            rtc->setHour(var_rt_setter.get().get_time()->get_hours());
+            rtc->setMinute(var_rt_setter.get().get_time()->get_minutes());
+            rtc->setSecond(var_rt_setter.get().get_time()->get_seconds());
+            rtc->setDate(var_rt_setter.get().get_date()->get_day());
+            rtc->setMonth(var_rt_setter.get().get_date()->get_month());
+            rtc->setYear(year < 0 ? 0 : year);
+        }
+    });
+
+    UI_setter_hh->add_ui_context_action([this]() { display_rt_in_setters(); });
+    UI_setter_mm->add_ui_context_action([this]() { display_rt_in_setters(); }, false);
+    UI_setter_ss->add_ui_context_action([this]() { display_rt_in_setters(); }, false);
+    UI_setter_dd->add_ui_context_action([this]() { display_rt_in_setters(); }, false);
+    UI_setter_MM->add_ui_context_action([this]() { display_rt_in_setters(); }, false);
+    UI_setter_yyyy->add_ui_context_action([this]() { display_rt_in_setters(); }, false);
+}
+
+void UIService::display_rt_in_setters()
+{
+    UI_setter_hh    ->set_value(var_rt_setter.get().get_time()->get_hours());
+    UI_setter_mm    ->set_value(var_rt_setter.get().get_time()->get_minutes());
+    UI_setter_ss    ->set_value(var_rt_setter.get().get_time()->get_seconds());
+    UI_setter_dd    ->set_value(var_rt_setter.get().get_date()->get_day());
+    UI_setter_MM    ->set_value(var_rt_setter.get().get_date()->get_month());
+    UI_setter_yyyy  ->set_value(var_rt_setter.get().get_date()->get_year());
 }

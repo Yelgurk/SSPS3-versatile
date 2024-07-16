@@ -380,10 +380,13 @@ UIElement * UIElement::add_ui_base_action(UIAction action)
     return this;
 }
 
-UIElement * UIElement::add_ui_context_action(UIAction action)
+UIElement * UIElement::add_ui_context_action(UIAction action, bool call_on_init)
 {
     ui_context_actions.push_back(action);
-    update_ui_context();
+
+    if (call_on_init)
+        update_ui_context();
+        
     return this;
 }
 

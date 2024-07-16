@@ -26,6 +26,7 @@
 #include "BlowingControl.hpp"
 #include "ProgramControl.hpp"
 #include "FRAM_DB.hpp"
+#include "DS3231.h"
 
 #define LGFX_USE_V1
 #define SCREEN_WIDTH            480U
@@ -84,31 +85,38 @@ static void lcd_flush_cb(lv_display_t* display, const lv_area_t* area, unsigned 
 
 extern ProgramControl * Program_control;
 extern BlowingControl * Blowing_control;
+extern DS3231 * rtc;
+extern S_DateTime * dt_rt;
 
 class UIService
 {
 public:
+    lv_obj_t* screen;
+
     UIMachineStateBar * UI_machine_state_bar;
     UIDateTime * UI_date_time;
     UINotifyBar * UI_notify_bar;
     UINotificationBar * UI_notification_bar;
-
     UITaskRoadmapList * UI_task_roadmap_control;
+    UIBlowingControl * UI_blowing_control;
+
     vector<UITaskListItem> * UI_task_steps;
+    vector<UIBlowValListItem*> Blow_vars;
+    vector<UIMenuListItem*> UI_template_menu_items;
+    vector<UIValueSetter*> UI_template_setters;
 
     UIMenuList * UI_menu_list_user;
-    UIMenuListItem * UI_settings_user_datetime;
-    UIMenuListItem * UI_settings_user_pump;
-    UIMenuListItem * UI_settings_user_pasteurizer_template_1;
-    UIValueSetter * UI_Set1;
-    UIValueSetter * UI_Set2;
-    UIValueSetter * UI_Set3;
+    UIMenuListItem * UI_settings_rt;
+    UIMenuListItem * UI_settings_pump_calibr;
+    UIValueSetter * UI_setter_hh;
+    UIValueSetter * UI_setter_mm;
+    UIValueSetter * UI_setter_ss;
+    UIValueSetter * UI_setter_dd;
+    UIValueSetter * UI_setter_MM;
+    UIValueSetter * UI_setter_yyyy;
+    UIValueSetter * UI_rt_setter_accept;
+    UIValueSetter * UI_setter_pump_calibr_lm;
 
-    UIBlowingControl * UI_blowing_control;
-    vector<UIBlowValListItem*> Blow_vars;
-
-    lv_obj_t* screen;
-    
     UIService();
 
     /* DEMO BEGIN */
@@ -139,6 +147,7 @@ private:
     void init_screens();
     void init_blowing_controls();
     void init_settings_user_controls();
+    void display_rt_in_setters();
 };
 
 #endif

@@ -129,7 +129,7 @@ public:
     UIElement * navi_ok();
     UIElement * navi_back();
     UIElement * add_ui_base_action(UIAction action);
-    UIElement * add_ui_context_action(UIAction action);
+    UIElement * add_ui_context_action(UIAction action, bool call_on_init = true);
     UIElement * clear_ui_base_action();
     UIElement * clear_ui_context_action();
     UIElement * update_ui_base();

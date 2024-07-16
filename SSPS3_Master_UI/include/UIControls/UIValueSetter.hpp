@@ -65,7 +65,8 @@ public:
         int32_t offset_y = 0,
         bool top_column_setter = false,
         string header_text = "",
-        const lv_image_dsc_t * header_icon = nullptr
+        const lv_image_dsc_t * header_icon = nullptr,
+        bool is_button = false
     ) : UIElement {
         { EquipmentType::All },
         {},
@@ -85,7 +86,7 @@ public:
         
         lv_obj_set_width(get_container(), width == 0 ? LV_SIZE_CONTENT : width);
         lv_obj_set_style_min_width(get_container(), 40, 0);
-        lv_obj_set_height(get_container(), 90);
+        lv_obj_set_height(get_container(), is_button ? 50 : 90);
         lv_obj_set_style_bg_color(get_container(), COLOR_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_pad_all(get_container(), 5, 0);
         lv_obj_set_style_pad_all(get_container(), 1, LV_PART_MAIN | LV_STATE_FOCUSED);
@@ -106,21 +107,24 @@ public:
         if (header_icon != nullptr)
             lv_image_set_src(icon_setter_header, header_icon);
 
-        lv_obj_t * icon_setter_up = lv_image_create(get_container());
-        lv_obj_align(icon_setter_up, LV_ALIGN_TOP_MID, 0, 8);
-        lv_obj_set_width(icon_setter_up, LV_SIZE_CONTENT);
-        lv_obj_set_height(icon_setter_up, LV_SIZE_CONTENT);
-        lv_image_set_src(icon_setter_up, &img_arrow_up);
-        lv_image_set_scale(icon_setter_up, 160);
+        if (!is_button)
+        {
+            lv_obj_t * icon_setter_up = lv_image_create(get_container());
+            lv_obj_align(icon_setter_up, LV_ALIGN_TOP_MID, 0, 8);
+            lv_obj_set_width(icon_setter_up, LV_SIZE_CONTENT);
+            lv_obj_set_height(icon_setter_up, LV_SIZE_CONTENT);
+            lv_image_set_src(icon_setter_up, &img_arrow_up);
+            lv_image_set_scale(icon_setter_up, 160);
+    
+            lv_obj_t * icon_setter_down = lv_image_create(get_container());
+            lv_obj_align(icon_setter_down, LV_ALIGN_BOTTOM_MID, 0, 16);
+            lv_obj_set_width(icon_setter_down, LV_SIZE_CONTENT);
+            lv_obj_set_height(icon_setter_down, LV_SIZE_CONTENT);
+            lv_image_set_src(icon_setter_down, &img_arrow_down);
+            lv_image_set_scale(icon_setter_down, 160);
+        }
 
-        lv_obj_t * icon_setter_down = lv_image_create(get_container());
-        lv_obj_align(icon_setter_down, LV_ALIGN_BOTTOM_MID, 0, 16);
-        lv_obj_set_width(icon_setter_down, LV_SIZE_CONTENT);
-        lv_obj_set_height(icon_setter_down, LV_SIZE_CONTENT);
-        lv_image_set_src(icon_setter_down, &img_arrow_down);
-        lv_image_set_scale(icon_setter_down, 160);
-
-        if (header_icon == nullptr)
+        if (header_icon == nullptr || is_button)
         {
             lv_obj_set_width(icon_setter_header, 0);
             lv_obj_set_height(icon_setter_header, 0);
@@ -134,6 +138,12 @@ public:
         lv_obj_set_style_text_font(label_setter_value, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_label_set_text(label_setter_value, "Val #");
 
+        if (is_button)
+        {
+            lv_obj_align(label_setter_header, LV_ALIGN_CENTER, 0, 0);
+            lv_label_set_text(label_setter_value, "");
+        }
+
         remember_child_element("[header]", label_setter_header);
         remember_child_element("[value]", label_setter_value);
 
@@ -141,14 +151,15 @@ public:
         update_ui_context();
     }
 
-    void set_position(int32_t page, int32_t offset_x, int32_t offset_y)
+    void set_position(int32_t page, int32_t offset_x, int32_t offset_y, int32_t width = -1)
     {
         _focus_offset_y = is_top_column_setter ? -offset_y : 0;
         page = page < 0 ? 0 : page;
         offset_y = offset_y + (page * height_setter_container);
-
         
         lv_obj_align(get_container(), LV_ALIGN_TOP_LEFT, offset_x, offset_y);
+        if (width >= 0)
+            lv_obj_set_width(get_container(), width);
     }
 
     void set_extra_button_logic(ValueSetterFuctionContainer var_edit_func)
