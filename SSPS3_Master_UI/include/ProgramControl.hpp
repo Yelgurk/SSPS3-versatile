@@ -233,6 +233,22 @@ struct __attribute__((packed)) CHMProgramTemplate
     step_heating(step_heating),
     step_drying(step_drying)
     {}
+
+    ProgramStep * get_step(uint8_t index)
+    {
+        switch (index)
+        {
+        case 0: return &step_pasteurising; break;
+        case 1: return &step_cooling; break;
+        case 2: return &step_cutting; break;
+        case 3: return &step_mixing; break;
+        case 4: return &step_heating; break;
+        case 5: return &step_drying; break;
+        default:
+            return &step_pasteurising;
+            break;
+        }
+    }
 };
 
 #endif

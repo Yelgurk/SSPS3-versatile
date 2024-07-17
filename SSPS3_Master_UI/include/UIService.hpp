@@ -102,8 +102,12 @@ public:
 
     vector<UITaskListItem> * UI_task_steps;
     vector<UIBlowValListItem*> Blow_vars;
+
     vector<UIMenuListItem*> UI_template_menu_items;
     vector<UIValueSetter*> UI_template_setters;
+    uint8_t menu_tmpe_start_at      = 0,
+            menu_chm_start_at       = 0,
+            before_tmpl_menu_items  = 2;
 
     UIMenuList * UI_menu_list_user;
     UIMenuListItem * UI_settings_rt;
@@ -119,7 +123,8 @@ public:
 
     UIService();
     int16_t get_menu_index();
-    uint8_t get_template_index();
+    uint8_t get_template_tmpe_index();
+    uint8_t get_template_chm_index();
 
     /* DEMO BEGIN */
     /*
@@ -149,6 +154,10 @@ private:
     void init_screens();
     void init_blowing_controls();
     void init_settings_user_controls();
+    void init_settings_part_datetime();
+    void init_settings_part_pump_calibration();
+    void init_settings_part_tmpe_templates();
+    void init_settings_part_chm_templates();
     void display_rt_in_setters();
 };
 

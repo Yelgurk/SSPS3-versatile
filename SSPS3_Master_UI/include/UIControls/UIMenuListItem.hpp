@@ -12,7 +12,7 @@ private:
     const uint16_t width_setter_container = 295;
 
 public:
-    UIMenuListItem(UIElement * parent_navi, string name = "Настройка # $ # $ #")
+    UIMenuListItem(UIElement * parent_navi, string name = "Настройка # $ # $ #", bool create_childs_presenter = true)
     : UIElement
     {
         { EquipmentType::All },
@@ -45,27 +45,30 @@ public:
         lv_obj_set_style_text_font(label_name, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_label_set_text(label_name, name.c_str());
 
-        lv_obj_t * setters_container = lv_obj_create(parent_navi->get_screen());
-        lv_obj_set_style_pad_all(setters_container, 0, 0);
-        lv_obj_set_width(setters_container, width_setter_container);
-        lv_obj_set_height(setters_container, height_setter_container);
-        lv_obj_align(setters_container, LV_ALIGN_RIGHT_MID, -10, 30);
-        lv_obj_set_style_radius(setters_container, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_opa(setters_container, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_color(setters_container, COLOR_WHITE, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_clip_corner(setters_container, true, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_border_width(setters_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_shadow_color(setters_container, COLOR_MEDIUM_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_shadow_opa(setters_container, 155, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_shadow_width(setters_container, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_shadow_spread(setters_container, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_shadow_offset_x(setters_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_shadow_offset_y(setters_container, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+        if (create_childs_presenter)
+        {
+            lv_obj_t * setters_container = lv_obj_create(parent_navi->get_screen());
+            lv_obj_set_style_pad_all(setters_container, 0, 0);
+            lv_obj_set_width(setters_container, width_setter_container);
+            lv_obj_set_height(setters_container, height_setter_container);
+            lv_obj_align(setters_container, LV_ALIGN_RIGHT_MID, -10, 30);
+            lv_obj_set_style_radius(setters_container, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(setters_container, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(setters_container, COLOR_WHITE, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_clip_corner(setters_container, true, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(setters_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_shadow_color(setters_container, COLOR_MEDIUM_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_shadow_opa(setters_container, 155, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_shadow_width(setters_container, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_shadow_spread(setters_container, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_shadow_offset_x(setters_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_shadow_offset_y(setters_container, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+            remember_child_element("[settings_container]", setters_container);
+            set_childs_presenter("[settings_container]");
+        }
 
         remember_child_element("[settings_name]", label_name);
-        remember_child_element("[settings_container]", setters_container);
-        set_childs_presenter("[settings_container]");
-        
         set_childs_hidden();
     }
 
