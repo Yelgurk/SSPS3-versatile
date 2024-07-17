@@ -81,7 +81,7 @@ void setup()
         filter_tempC_wJacket->add_value(AnIn_state[ADC_TEMPC_WJACKET]);
         filter_24v_batt     ->add_value(AnIn_state[ADC_VOLTAGE_BATT]);
     }, 1000);
-
+    
     rt_task_manager.add_task("update_state_bar_task", [](){
         UI_service->UI_machine_state_bar->control_set_values_state_bar(
             rt_out_speed_async_m,
@@ -168,10 +168,9 @@ void loop()
         //UI_service->UI_task_roadmap_control->get_selected(true)->key_press(Pressed_key);
 
         // user settings control
-        
+        UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
         if (UI_service->UI_menu_list_user->is_selected_on_child())
             UI_service->UI_menu_list_user->get_selected(true)->key_press(Pressed_key);
-        UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
 
         // blowing control
         //UI_service->UI_blowing_control->get_selected()->key_press(Pressed_key);
