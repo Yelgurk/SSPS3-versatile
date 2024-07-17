@@ -559,6 +559,10 @@ UIElement * UIElement::get_navi_el() {
     return this->navi_pointer; 
 }
 
+uint16_t UIElement::get_childs_count() {
+    return navi_childs.size();
+}
+
 UIElement * UIElement::get_selected(bool get_focused)
 {
     if (this->selected != nullptr)

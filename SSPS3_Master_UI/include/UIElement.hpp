@@ -144,6 +144,7 @@ public:
     UIElement * get_parent();
     UIElement * get_selected(bool get_focused = false);
     UIElement * get_navi_el();
+    uint16_t get_childs_count();
     int16_t get_focused_index();
     UIElement * set_childs_hidden();
     UIElement * set_childs_transarent();

@@ -46,18 +46,16 @@ int16_t UIService::get_menu_index() {
     return UI_menu_list_user->get_focused_index();
 }
 
-uint8_t UIService::get_template_tmpe_index() {
-    int16_t index = get_menu_index() - before_tmpl_menu_items;
-    index = (index >= menu_tmpe_start_at && index < menu_chm_start_at ? index : menu_tmpe_start_at) - menu_tmpe_start_at;
-
-    return index;
+uint8_t UIService::get_template_tmpe_index()
+{
+    int16_t index = get_menu_index() - menu_tmpe_general_start_at;
+    return index < 0 ? 0 : (index >= TEMPLATES_COUNT_TMPE ? TEMPLATES_COUNT_TMPE - 1 : index);
 }
 
-uint8_t UIService::get_template_chm_index() {
-    int16_t index = get_menu_index()- before_tmpl_menu_items;
-    index = (index >= menu_chm_start_at && index < menu_chm_start_at + 10 ? index : menu_chm_start_at) - menu_chm_start_at;
-
-    return index;
+uint8_t UIService::get_template_chm_index()
+{
+    int16_t index = get_menu_index() - menu_chm_general_start_at;
+    return index < 0 ? 0 : (index >= TEMPLATES_COUNT_CHM ? TEMPLATES_COUNT_CHM - 1 : index);
 }
 
 void UIService::init_screens()
@@ -239,10 +237,12 @@ void UIService::init_settings_user_controls()
 
     init_settings_part_pump_calibration();
 
-    menu_tmpe_start_at = UI_template_menu_items.size();
+    menu_tmpe_general_start_at = UI_menu_list_user->get_childs_count();
+    menu_tmpe_local_start_at = UI_template_menu_items.size();
     init_settings_part_tmpe_templates();
     
-    menu_chm_start_at = UI_template_menu_items.size();
+    menu_chm_general_start_at = UI_menu_list_user->get_childs_count();
+    menu_chm_local_start_at = UI_template_menu_items.size();
     init_settings_part_chm_templates();
 }
 
@@ -250,9 +250,6 @@ void UIService::init_settings_part_datetime()
 {
     UI_settings_rt = new UIMenuListItem(UI_menu_list_user, "Дата / Время");
     UI_settings_rt->set_page_header("Установка времени", 0);
-
-    UI_settings_pump_calibr = new UIMenuListItem(UI_menu_list_user, "Раздача жидкости");
-    UI_settings_pump_calibr->set_page_header("Калибровка насоса", 0);
 
     UI_setter_hh = new UIValueSetter(UI_settings_rt, 0, 40, 10, 40, true, "час");
     UI_setter_hh->set_extra_button_logic({
@@ -322,7 +319,20 @@ void UIService::init_settings_part_datetime()
 
 void UIService::init_settings_part_pump_calibration()
 {
-    
+    UI_settings_pump_calibr = new UIMenuListItem(UI_menu_list_user, "Раздача жидкости");
+    UI_settings_pump_calibr->set_page_header("Калибровка насоса", 0);
+
+    UI_setter_pump_calibr_lm = new UIValueSetter(UI_settings_pump_calibr, 0, 120, 90, 80, true, "доп. л/м");
+    UI_setter_pump_calibr_lm->set_extra_button_logic({
+        [this]() { *var_blow_pump_calibration_lm.ptr() += 0.1f; var_blow_pump_calibration_lm.accept(); },
+        [this]() { *var_blow_pump_calibration_lm.ptr() -= 0.1f; var_blow_pump_calibration_lm.accept(); },
+        []() {}
+    });
+    UI_setter_pump_calibr_lm->add_ui_context_action([this]() {
+        static char str_buff[10];
+        sprintf(str_buff, "%.3f л.", var_blow_pump_calibration_lm.get());
+        UI_setter_pump_calibr_lm->set_value(std::string(str_buff));
+    });
 }
 
 void UIService::init_settings_part_tmpe_templates()
@@ -345,7 +355,7 @@ void UIService::init_settings_part_tmpe_templates()
             UI_menu_list_user,
             i < tmpe_templ_menu_items_name.size() ?
             tmpe_templ_menu_items_name.at(i) :
-            "Авто ВКЛ. #" + to_string(i - tmpe_templ_menu_items_name.size() + 1),
+            "Автом. прогр. #" + to_string(i - tmpe_templ_menu_items_name.size() + 1),
             i == 0
         ));
     }
@@ -356,23 +366,23 @@ void UIService::init_settings_part_tmpe_templates()
     UIValueSetter * setter_durat_ss;
     UIValueSetter * setter_pause_after;
 
-    UI_template_menu_items.at(menu_tmpe_start_at)->set_page_header("Поэтапная настройка", 0);
+    UI_template_menu_items.at(menu_tmpe_local_start_at)->set_page_header("Поэтапная настройка", 0);
 
     for (uint8_t page = 0; page < 3; page++)
     {
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_start_at), 0, 80, 10, 40 + (100 * page), page == 0, tmpe_templ_step_name.at(page), nullptr, false));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 80, 10, 40 + (100 * page), page == 0, tmpe_templ_step_name.at(page), nullptr, false));
         setter_turn_on_off = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_start_at), 0, 40, 95, 40 + (100 * page), page == 0, "", &img_fan));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 40, 95, 40 + (100 * page), page == 0, "", &img_fan));
         setter_fan_speed = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_start_at), 0, 40, 140, 40 + (100 * page), page == 0, "", &img_tempC));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 40, 140, 40 + (100 * page), page == 0, "", &img_tempC));
         setter_tempC = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_start_at), 0, 40, 185, 40 + (100 * page), page == 0, "", &img_sand_watch));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 40, 185, 40 + (100 * page), page == 0, "", &img_sand_watch));
         setter_durat_ss = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_start_at), 0, 55, 230, 40 + (100 * page), page == 0, "пауза", nullptr, false));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 55, 230, 40 + (100 * page), page == 0, "пауза", nullptr, false));
         setter_pause_after = UI_template_setters.back();
 
         /* ON/OFF step processing setter */
@@ -460,8 +470,8 @@ void UIService::init_settings_part_tmpe_templates()
         });
     } 
 
-    for (uint8_t i = menu_tmpe_start_at + 1; i < UI_template_menu_items.size(); i++)
-        UI_template_menu_items.at(i)->set_childs_presenter(UI_template_menu_items.at(menu_tmpe_start_at));
+    for (uint8_t i = menu_tmpe_local_start_at + 1; i < UI_template_menu_items.size(); i++)
+        UI_template_menu_items.at(i)->set_childs_presenter(UI_template_menu_items.at(menu_tmpe_local_start_at));
 }
 
 void UIService::init_settings_part_chm_templates()
@@ -487,7 +497,7 @@ void UIService::init_settings_part_chm_templates()
             UI_menu_list_user,
             i < chm_templ_menu_items_name.size() ?
             chm_templ_menu_items_name.at(i) :
-            "Свой рецепт #" + to_string(i - chm_templ_menu_items_name.size() + 1),
+            "свой рецепт #" + to_string(i - chm_templ_menu_items_name.size() + 1),
             i == 0
         ));
     }
@@ -498,23 +508,23 @@ void UIService::init_settings_part_chm_templates()
     UIValueSetter * setter_durat_ss;
     UIValueSetter * setter_pause_after;
 
-    UI_template_menu_items.at(menu_chm_start_at)->set_page_header("Тест", 0);
+    UI_template_menu_items.at(menu_chm_local_start_at)->set_page_header("Поэтапная настройка", 0);
 
     for (uint8_t page = 0; page < 6; page++)
     {
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_start_at), 0, 80, 10, 40 + (100 * page), page == 0, chm_templ_step_name.at(page), nullptr, false));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 80, 10, 40 + (100 * page), page == 0, chm_templ_step_name.at(page), nullptr, false));
         setter_turn_on_off = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_start_at), 0, 40, 95, 40 + (100 * page), page == 0, "", &img_fan));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 40, 95, 40 + (100 * page), page == 0, "", &img_fan));
         setter_fan_speed = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_start_at), 0, 40, 140, 40 + (100 * page), page == 0, "", &img_tempC));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 40, 140, 40 + (100 * page), page == 0, "", &img_tempC));
         setter_tempC = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_start_at), 0, 40, 185, 40 + (100 * page), page == 0, "", &img_sand_watch));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 40, 185, 40 + (100 * page), page == 0, "", &img_sand_watch));
         setter_durat_ss = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_start_at), 0, 55, 230, 40 + (100 * page), page == 0, "пауза", nullptr, false));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 55, 230, 40 + (100 * page), page == 0, "пауза", nullptr, false));
         setter_pause_after = UI_template_setters.back();
 
         /* ON/OFF step processing setter */
@@ -602,8 +612,8 @@ void UIService::init_settings_part_chm_templates()
         });
     } 
 
-    for (uint8_t i = menu_chm_start_at + 1; i < UI_template_menu_items.size(); i++)
-        UI_template_menu_items.at(i)->set_childs_presenter(UI_template_menu_items.at(menu_chm_start_at));
+    for (uint8_t i = menu_chm_local_start_at + 1; i < UI_template_menu_items.size(); i++)
+        UI_template_menu_items.at(i)->set_childs_presenter(UI_template_menu_items.at(menu_chm_local_start_at));
 }
 
 void UIService::display_rt_in_setters()

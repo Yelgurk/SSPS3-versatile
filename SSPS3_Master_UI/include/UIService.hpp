@@ -32,6 +32,8 @@
 #define SCREEN_WIDTH            480U
 #define SCREEN_HEIGHT           320U
 #define INIT_BUFFER_IN_PSRAM    1
+#define TEMPLATES_COUNT_TMPE    6
+#define TEMPLATES_COUNT_CHM     10
 
 #if INIT_BUFFER_IN_PSRAM == 0
     #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 24 / 2    
@@ -105,9 +107,10 @@ public:
 
     vector<UIMenuListItem*> UI_template_menu_items;
     vector<UIValueSetter*> UI_template_setters;
-    uint8_t menu_tmpe_start_at      = 0,
-            menu_chm_start_at       = 0,
-            before_tmpl_menu_items  = 2;
+    uint8_t menu_tmpe_local_start_at    = 0,
+            menu_chm_local_start_at     = 0,
+            menu_tmpe_general_start_at  = 0,
+            menu_chm_general_start_at   = 0;    
 
     UIMenuList * UI_menu_list_user;
     UIMenuListItem * UI_settings_rt;
