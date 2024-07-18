@@ -111,8 +111,8 @@ FRAMObject<float>& var_blow_pump_calibration_lm                 = Storage::alloc
 
 // user settings - another pages
 FRAMObject<TMPEProgramTemplate>& prog_tmpe_main                 = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_full);
-FRAMObject<TMPEProgramTemplate>& prog_tmpe_heating              = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_heating);
 FRAMObject<TMPEProgramTemplate>& prog_tmpe_cooling              = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_chilling);
+FRAMObject<TMPEProgramTemplate>& prog_tmpe_heating              = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_heating);
 FRAMObject<TMPEProgramTemplate>& prog_tmpe_wd_1                 = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_full);
 FRAMObject<TMPEProgramTemplate>& prog_tmpe_wd_2                 = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_full);
 FRAMObject<TMPEProgramTemplate>& prog_tmpe_wd_3                 = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_full);
@@ -164,8 +164,8 @@ FRAMObject<ProgramStep>& prog_runned_step_24                    = Storage::alloc
 
 vector<FRAMObject<TMPEProgramTemplate>*> * prog_tmpe_templates = new vector<FRAMObject<TMPEProgramTemplate>*>{
     &prog_tmpe_main,
-    &prog_tmpe_heating,
     &prog_tmpe_cooling,
+    &prog_tmpe_heating,
     &prog_tmpe_wd_1,
     &prog_tmpe_wd_2,
     &prog_tmpe_wd_3

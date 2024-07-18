@@ -18,6 +18,7 @@ class FRAMObjectBase
 {
 public:
     virtual ~FRAMObjectBase() = default;
+    virtual void reset() = 0;
 };
 
 template<typename T>
@@ -68,7 +69,7 @@ public:
         FRAM::fill(address, unset_val, full_size);
     }
 
-    void reset() {
+    void reset() override {
         set(_default_value);
     }
 

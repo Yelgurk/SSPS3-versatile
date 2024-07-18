@@ -50,6 +50,7 @@ void setup()
 
     itcw = new TwoWire(0);
     itcw->begin(SDA, SCL, 400000);
+    Storage::reset_all();
 
     rtc             = new DS3231(*itcw);
     dt_rt = new S_DateTime(0, 0, 0, 0, 0, 0);

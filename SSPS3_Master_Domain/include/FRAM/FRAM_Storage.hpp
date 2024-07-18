@@ -22,8 +22,8 @@ std::unique_ptr<T> custom_make_unique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-static uint16_t currentAddress = 0;
-static FramMap addressMap = FramMap();
+extern uint16_t currentAddress;
+extern FramMap addressMap;
 
 class Storage
 {
@@ -60,6 +60,12 @@ public:
             return &*addressMap[name];
         else
             return nullptr;
+    }
+
+    static void reset_all()
+    {
+        for (auto& pair : addressMap)
+            pair.second->reset();
     }
 };
 
