@@ -40,7 +40,7 @@ public:
     {
       auto cfg = _bus_instance.config();
 
-      cfg.freq_write = 32000000;
+      cfg.freq_write = 16000000;
       cfg.pin_wr = LCD_WR;
       cfg.pin_rd = LCD_RD;
       cfg.pin_rs = LCD_RS;

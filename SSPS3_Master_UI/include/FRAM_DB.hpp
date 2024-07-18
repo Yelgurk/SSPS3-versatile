@@ -63,6 +63,7 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 extern FRAMObject<S_DateTime>& var_last_rt;
 
 extern FRAMObject<uint8_t>& var_type_of_equipment_enum;
+extern FRAMObject<uint8_t>& var_plc_language;
 extern FRAMObject<bool>& var_is_blowgun_by_rf;
 extern FRAMObject<bool>& var_is_asyncM_rpm_float;
 

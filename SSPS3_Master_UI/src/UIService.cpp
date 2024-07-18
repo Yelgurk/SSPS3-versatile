@@ -37,9 +37,10 @@ UIService::UIService()
     lv_disp_load_scr(screen);
 
     this->init_screens();
-    this->UI_blowing_control->hide_ui_hierarchy();
-    //this->UI_menu_list_user->hide_ui_hierarchy();
     this->UI_task_roadmap_control->hide_ui_hierarchy();
+    this->UI_blowing_control->hide_ui_hierarchy();
+    this->UI_menu_list_user->hide_ui_hierarchy();
+    //this->UI_menu_list_master->hide_ui_hierarchy();
 }
 
 void UIService::init_screens()
@@ -190,6 +191,18 @@ void UIService::init_screens()
         }
     );
     init_settings_user_controls();
+
+    /* master menu panel init */
+    UI_menu_list_master = new UIMenuList(
+        this->screen,
+        {
+            KeyModel(KeyMap::TOP, [this]() { UI_menu_list_master->navi_prev(); }),
+            KeyModel(KeyMap::BOTTOM, [this]() { UI_menu_list_master->navi_next(); }),
+            KeyModel(KeyMap::LEFT_TOP,  [this]() { UI_menu_list_master->navi_back(); }),
+            KeyModel(KeyMap::LEFT_BOT,  [this]() { UI_menu_list_master->navi_ok(); })
+        }
+    );
+    init_settings_master_controls();
 }
 
 void UIService::init_blowing_controls()
@@ -688,6 +701,337 @@ void UIService::init_settings_part_chm_templates()
 
     for (uint8_t i = menu_chm_local_start_at + 1; i < UI_template_menu_items.size(); i++)
         UI_template_menu_items.at(i)->set_childs_presenter(UI_template_menu_items.at(menu_chm_local_start_at));
+}
+
+void UIService::init_settings_master_controls()
+{
+    UI_settings_master_machine          = new UIMenuListItem(UI_menu_list_master, "Оборудование");
+    UI_settings_master_sensors          = new UIMenuListItem(UI_menu_list_master, "Сенсоры");
+    UI_settings_master_limits_blowing   = new UIMenuListItem(UI_menu_list_master, "Насос");
+    UI_settings_master_limits_prog      = new UIMenuListItem(UI_menu_list_master, "Программы");
+    UI_settings_master_machine          ->set_page_header("Модель, язык и \"железо\"", 0);
+    UI_settings_master_machine          ->set_page_header("Принудительный перезапуск", 1);
+    UI_settings_master_sensors          ->set_page_header("Надстройка датчиков", 0);
+    UI_settings_master_limits_blowing   ->set_page_header("Надстройка насоса", 0);
+    UI_settings_master_limits_prog      ->set_page_header("Надстройка программ", 0);
+
+    /* master, page - 1 */
+    UI_S_M_type_of_equipment_enum = new UIValueSetter(UI_settings_master_machine, true, 40, "модель");
+    UI_S_M_type_of_equipment_enum->set_extra_button_logic({
+        [this]() { var_type_of_equipment_enum.set(var_type_of_equipment_enum.get() + 1); },
+        [this]() { var_type_of_equipment_enum.set(var_type_of_equipment_enum.get() - 1); },
+        []() {}
+    });
+    UI_S_M_type_of_equipment_enum->add_ui_context_action([this]() { UI_S_M_type_of_equipment_enum->set_value(var_type_of_equipment_enum.get()); });
+
+    UI_S_M_is_blowgun_by_rf = new UIValueSetter(UI_settings_master_machine, false, 40, "пистолет");
+    UI_S_M_is_blowgun_by_rf->set_extra_button_logic({
+        [this]() { var_is_blowgun_by_rf.set(var_is_blowgun_by_rf.get() - 1); },
+        [this]() { var_is_blowgun_by_rf.set(var_is_blowgun_by_rf.get() - 1); },
+        []() {}
+    });
+    UI_S_M_is_blowgun_by_rf->add_ui_context_action([this]() { UI_S_M_is_blowgun_by_rf->set_value(
+        var_is_blowgun_by_rf.get()
+        ? "радио"
+        : "кнопка"    
+    ); });
+
+    UI_S_M_is_asyncM_rpm_float = new UIValueSetter(UI_settings_master_machine, false, 40, "частотник");
+    UI_S_M_is_asyncM_rpm_float->set_extra_button_logic({
+        [this]() { var_is_asyncM_rpm_float.set(var_is_asyncM_rpm_float.get() - 1); },
+        [this]() { var_is_asyncM_rpm_float.set(var_is_asyncM_rpm_float.get() - 1); },
+        []() {}
+    });
+    UI_S_M_is_asyncM_rpm_float->add_ui_context_action([this]() { UI_S_M_is_asyncM_rpm_float->set_value(
+        var_is_asyncM_rpm_float.get()
+        ? "есть"
+        : "нет"
+    ); });
+
+    UI_S_M_plc_language = new UIValueSetter(UI_settings_master_machine, true, 40, "язык системы");
+    UI_S_M_plc_language->set_extra_button_logic({
+        [this]() { var_plc_language.set(var_plc_language.get() + 1); },
+        [this]() { var_plc_language.set(var_plc_language.get() - 1); },
+        []() {}
+    });
+    UI_S_M_plc_language->add_ui_context_action([this]() { UI_S_M_plc_language->set_value(var_plc_language.get()); });
+
+    UI_S_M_reset_system = new UIValueSetter(UI_settings_master_machine, 1, 265, 10, 40, false, "Выполнить", nullptr, false, true);
+    UI_S_M_reset_system->set_extra_button_logic({
+        []() {},
+        []() {},
+        []() { ESP.restart(); }
+    });
+    
+    /* master, page - 2 */   
+    UI_S_M_sensor_voltage_min_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_voltage_min_12bit->set_extra_button_logic({
+        [this]() { var_sensor_voltage_min_12bit.set(var_sensor_voltage_min_12bit.get() + 1); },
+        [this]() { var_sensor_voltage_min_12bit.set(var_sensor_voltage_min_12bit.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_voltage_min_12bit->add_ui_context_action([this]() { UI_S_M_sensor_voltage_min_12bit->set_value(var_sensor_voltage_min_12bit.get()); });
+
+    UI_S_M_sensor_voltage_max_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_voltage_max_12bit->set_extra_button_logic({
+        [this]() { var_sensor_voltage_max_12bit.set(var_sensor_voltage_max_12bit.get() + 1); },
+        [this]() { var_sensor_voltage_max_12bit.set(var_sensor_voltage_max_12bit.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_voltage_max_12bit->add_ui_context_action([this]() { UI_S_M_sensor_voltage_max_12bit->set_value(var_sensor_voltage_max_12bit.get()); });
+
+    UI_S_M_sensor_tempC_limit_4ma_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_tempC_limit_4ma_12bit->set_extra_button_logic({
+        [this]() { var_sensor_tempC_limit_4ma_12bit.set(var_sensor_tempC_limit_4ma_12bit.get() + 1); },
+        [this]() { var_sensor_tempC_limit_4ma_12bit.set(var_sensor_tempC_limit_4ma_12bit.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_tempC_limit_4ma_12bit->add_ui_context_action([this]() { UI_S_M_sensor_tempC_limit_4ma_12bit->set_value(var_sensor_tempC_limit_4ma_12bit.get()); });
+
+    UI_S_M_sensor_tempC_limit_20ma_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_tempC_limit_20ma_12bit->set_extra_button_logic({
+        [this]() { var_sensor_tempC_limit_20ma_12bit.set(var_sensor_tempC_limit_20ma_12bit.get() + 1); },
+        [this]() { var_sensor_tempC_limit_20ma_12bit.set(var_sensor_tempC_limit_20ma_12bit.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_tempC_limit_20ma_12bit->add_ui_context_action([this]() { UI_S_M_sensor_tempC_limit_20ma_12bit->set_value(var_sensor_tempC_limit_20ma_12bit.get()); });
+
+    UI_S_M_sensor_tempC_limit_4ma_degrees_C = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_tempC_limit_4ma_degrees_C->set_extra_button_logic({
+        [this]() { var_sensor_tempC_limit_4ma_degrees_C.set(var_sensor_tempC_limit_4ma_degrees_C.get() + 1); },
+        [this]() { var_sensor_tempC_limit_4ma_degrees_C.set(var_sensor_tempC_limit_4ma_degrees_C.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_tempC_limit_4ma_degrees_C->add_ui_context_action([this]() { UI_S_M_sensor_tempC_limit_4ma_degrees_C->set_value(var_sensor_tempC_limit_4ma_degrees_C.get()); });
+
+    UI_S_M_sensor_tempC_limit_20ma_degrees_C = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_tempC_limit_20ma_degrees_C->set_extra_button_logic({
+        [this]() { var_sensor_tempC_limit_20ma_degrees_C.set(var_sensor_tempC_limit_20ma_degrees_C.get() + 1); },
+        [this]() { var_sensor_tempC_limit_20ma_degrees_C.set(var_sensor_tempC_limit_20ma_degrees_C.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_tempC_limit_20ma_degrees_C->add_ui_context_action([this]() { UI_S_M_sensor_tempC_limit_20ma_degrees_C->set_value(var_sensor_tempC_limit_20ma_degrees_C.get()); });
+
+    UI_S_M_sensor_dac_rpm_limit_min_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_dac_rpm_limit_min_12bit->set_extra_button_logic({
+        [this]() { var_sensor_dac_rpm_limit_min_12bit.set(var_sensor_dac_rpm_limit_min_12bit.get() + 1); },
+        [this]() { var_sensor_dac_rpm_limit_min_12bit.set(var_sensor_dac_rpm_limit_min_12bit.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_dac_rpm_limit_min_12bit->add_ui_context_action([this]() { UI_S_M_sensor_dac_rpm_limit_min_12bit->set_value(var_sensor_dac_rpm_limit_min_12bit.get()); });
+
+    UI_S_M_sensor_dac_rpm_limit_max_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_dac_rpm_limit_max_12bit->set_extra_button_logic({
+        [this]() { var_sensor_dac_rpm_limit_max_12bit.set(var_sensor_dac_rpm_limit_max_12bit.get() + 1); },
+        [this]() { var_sensor_dac_rpm_limit_max_12bit.set(var_sensor_dac_rpm_limit_max_12bit.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_dac_rpm_limit_max_12bit->add_ui_context_action([this]() { UI_S_M_sensor_dac_rpm_limit_max_12bit->set_value(var_sensor_dac_rpm_limit_max_12bit.get()); });
+
+    UI_S_M_sensor_dac_asyncM_rpm_min = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_dac_asyncM_rpm_min->set_extra_button_logic({
+        [this]() { var_sensor_dac_asyncM_rpm_min.set(var_sensor_dac_asyncM_rpm_min.get() + 1); },
+        [this]() { var_sensor_dac_asyncM_rpm_min.set(var_sensor_dac_asyncM_rpm_min.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_dac_asyncM_rpm_min->add_ui_context_action([this]() { UI_S_M_sensor_dac_asyncM_rpm_min->set_value(var_sensor_dac_asyncM_rpm_min.get()); });
+
+    UI_S_M_sensor_dac_asyncM_rpm_max = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_dac_asyncM_rpm_max->set_extra_button_logic({
+        [this]() { var_sensor_dac_asyncM_rpm_max.set(var_sensor_dac_asyncM_rpm_max.get() + 1); },
+        [this]() { var_sensor_dac_asyncM_rpm_max.set(var_sensor_dac_asyncM_rpm_max.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_dac_asyncM_rpm_max->add_ui_context_action([this]() { UI_S_M_sensor_dac_asyncM_rpm_max->set_value(var_sensor_dac_asyncM_rpm_max.get()); });
+
+
+    /* master, page - 3 */   
+    UI_S_M_blowing_await_ss = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_await_ss->set_extra_button_logic({
+        [this]() { var_blowing_await_ss.set(var_blowing_await_ss.get() + 1); },
+        [this]() { var_blowing_await_ss.set(var_blowing_await_ss.get() - 1); },
+        []() {}
+    });
+    UI_S_M_blowing_await_ss->add_ui_context_action([this]() { UI_S_M_blowing_await_ss->set_value(var_blowing_await_ss.get()); });
+
+    UI_S_M_blowing_pump_power_lm = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_pump_power_lm->set_extra_button_logic({
+        [this]() { var_blowing_pump_power_lm.set(var_blowing_pump_power_lm.get() + 1); },
+        [this]() { var_blowing_pump_power_lm.set(var_blowing_pump_power_lm.get() - 1); },
+        []() {}
+    });
+    UI_S_M_blowing_pump_power_lm->add_ui_context_action([this]() { UI_S_M_blowing_pump_power_lm->set_value(var_blowing_pump_power_lm.get()); });
+
+    UI_S_M_blowing_limit_ml_max = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_limit_ml_max->set_extra_button_logic({
+        [this]() { var_blowing_limit_ml_max.set(var_blowing_limit_ml_max.get() + 1); },
+        [this]() { var_blowing_limit_ml_max.set(var_blowing_limit_ml_max.get() - 1); },
+        []() {}
+    });
+    UI_S_M_blowing_limit_ml_max->add_ui_context_action([this]() { UI_S_M_blowing_limit_ml_max->set_value(var_blowing_limit_ml_max.get()); });
+
+    UI_S_M_blowing_limit_ml_min = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_limit_ml_min->set_extra_button_logic({
+        [this]() { var_blowing_limit_ml_min.set(var_blowing_limit_ml_min.get() + 1); },
+        [this]() { var_blowing_limit_ml_min.set(var_blowing_limit_ml_min.get() - 1); },
+        []() {}
+    });
+    UI_S_M_blowing_limit_ml_min->add_ui_context_action([this]() { UI_S_M_blowing_limit_ml_min->set_value(var_blowing_limit_ml_min.get()); });
+
+    UI_S_M_blowing_limit_ss_max = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_limit_ss_max->set_extra_button_logic({
+        [this]() { var_blowing_limit_ss_max.set(var_blowing_limit_ss_max.get() + 1); },
+        [this]() { var_blowing_limit_ss_max.set(var_blowing_limit_ss_max.get() - 1); },
+        []() {}
+    });
+    UI_S_M_blowing_limit_ss_max->add_ui_context_action([this]() { UI_S_M_blowing_limit_ss_max->set_value(var_blowing_limit_ss_max.get()); });
+
+    UI_S_M_blowing_limit_ss_min = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_limit_ss_min->set_extra_button_logic({
+        [this]() { var_blowing_limit_ss_min.set(var_blowing_limit_ss_min.get() + 1); },
+        [this]() { var_blowing_limit_ss_min.set(var_blowing_limit_ss_min.get() - 1); },
+        []() {}
+    });
+    UI_S_M_blowing_limit_ss_min->add_ui_context_action([this]() { UI_S_M_blowing_limit_ss_min->set_value(var_blowing_limit_ss_min.get()); });
+
+    
+    /* master, page - 4 */    
+    UI_S_M_wJacket_tempC_limit_max = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_wJacket_tempC_limit_max->set_extra_button_logic({
+        [this]() { var_wJacket_tempC_limit_max.set(var_wJacket_tempC_limit_max.get() + 1); },
+        [this]() { var_wJacket_tempC_limit_max.set(var_wJacket_tempC_limit_max.get() - 1); },
+        []() {}
+    });
+    UI_S_M_wJacket_tempC_limit_max->add_ui_context_action([this]() { UI_S_M_wJacket_tempC_limit_max->set_value(var_wJacket_tempC_limit_max.get()); });
+
+    UI_S_M_prog_wJacket_drain_max_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_wJacket_drain_max_ss->set_extra_button_logic({
+        [this]() { var_prog_wJacket_drain_max_ss.set(var_prog_wJacket_drain_max_ss.get() + 1); },
+        [this]() { var_prog_wJacket_drain_max_ss.set(var_prog_wJacket_drain_max_ss.get() - 1); },
+        []() {}
+    });
+    UI_S_M_prog_wJacket_drain_max_ss->add_ui_context_action([this]() { UI_S_M_prog_wJacket_drain_max_ss->set_value(var_prog_wJacket_drain_max_ss.get()); });
+
+    UI_S_M_prog_on_pause_max_await_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_on_pause_max_await_ss->set_extra_button_logic({
+        [this]() { var_prog_on_pause_max_await_ss.set(var_prog_on_pause_max_await_ss.get() + 1); },
+        [this]() { var_prog_on_pause_max_await_ss.set(var_prog_on_pause_max_await_ss.get() - 1); },
+        []() {}
+    });
+    UI_S_M_prog_on_pause_max_await_ss->add_ui_context_action([this]() { UI_S_M_prog_on_pause_max_await_ss->set_value(var_prog_on_pause_max_await_ss.get()); });
+
+    UI_S_M_prog_await_spite_of_already_runned_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_await_spite_of_already_runned_ss->set_extra_button_logic({
+        [this]() { var_prog_await_spite_of_already_runned_ss.set(var_prog_await_spite_of_already_runned_ss.get() + 1); },
+        [this]() { var_prog_await_spite_of_already_runned_ss.set(var_prog_await_spite_of_already_runned_ss.get() - 1); },
+        []() {}
+    });
+    UI_S_M_prog_await_spite_of_already_runned_ss->add_ui_context_action([this]() { UI_S_M_prog_await_spite_of_already_runned_ss->set_value(var_prog_await_spite_of_already_runned_ss.get()); });
+
+    UI_S_M_prog_limit_heat_tempC_max = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_limit_heat_tempC_max->set_extra_button_logic({
+        [this]() { var_prog_limit_heat_tempC_max.set(var_prog_limit_heat_tempC_max.get() + 1); },
+        [this]() { var_prog_limit_heat_tempC_max.set(var_prog_limit_heat_tempC_max.get() - 1); },
+        []() {}
+    });
+    UI_S_M_prog_limit_heat_tempC_max->add_ui_context_action([this]() { UI_S_M_prog_limit_heat_tempC_max->set_value(var_prog_limit_heat_tempC_max.get()); });
+
+    UI_S_M_prog_limit_heat_tempC_min = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_limit_heat_tempC_min->set_extra_button_logic({
+        [this]() { var_prog_limit_heat_tempC_min.set(var_prog_limit_heat_tempC_min.get() + 1); },
+        [this]() { var_prog_limit_heat_tempC_min.set(var_prog_limit_heat_tempC_min.get() - 1); },
+        []() {}
+    });
+    UI_S_M_prog_limit_heat_tempC_min->add_ui_context_action([this]() { UI_S_M_prog_limit_heat_tempC_min->set_value(var_prog_limit_heat_tempC_min.get()); });
+
+    UI_S_M_prog_limit_chill_tempC_max = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_limit_chill_tempC_max->set_extra_button_logic({
+        [this]() { var_prog_limit_chill_tempC_max.set(var_prog_limit_chill_tempC_max.get() + 1); },
+        [this]() { var_prog_limit_chill_tempC_max.set(var_prog_limit_chill_tempC_max.get() - 1); },
+        []() {}
+    });
+    UI_S_M_prog_limit_chill_tempC_max->add_ui_context_action([this]() { UI_S_M_prog_limit_chill_tempC_max->set_value(var_prog_limit_chill_tempC_max.get()); });
+
+    UI_S_M_prog_limit_chill_tempC_min = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_limit_chill_tempC_min->set_extra_button_logic({
+        [this]() { var_prog_limit_chill_tempC_min.set(var_prog_limit_chill_tempC_min.get() + 1); },
+        [this]() { var_prog_limit_chill_tempC_min.set(var_prog_limit_chill_tempC_min.get() - 1); },
+        []() {}
+    });
+    UI_S_M_prog_limit_chill_tempC_min->add_ui_context_action([this]() { UI_S_M_prog_limit_chill_tempC_min->set_value(var_prog_limit_chill_tempC_min.get()); });
+
+    UI_S_M_prog_any_step_max_durat_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_any_step_max_durat_ss->set_extra_button_logic({
+        [this]() { var_prog_any_step_max_durat_ss.set(var_prog_any_step_max_durat_ss.get() + 1); },
+        [this]() { var_prog_any_step_max_durat_ss.set(var_prog_any_step_max_durat_ss.get() - 1); },
+        []() {}
+    });
+    UI_S_M_prog_any_step_max_durat_ss->add_ui_context_action([this]() { UI_S_M_prog_any_step_max_durat_ss->set_value(var_prog_any_step_max_durat_ss.get()); });
+
+    UI_S_M_prog_any_step_min_durat_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_any_step_min_durat_ss->set_extra_button_logic({
+        [this]() { var_prog_any_step_min_durat_ss.set(var_prog_any_step_min_durat_ss.get() + 1); },
+        [this]() { var_prog_any_step_min_durat_ss.set(var_prog_any_step_min_durat_ss.get() - 1); },
+        []() {}
+    });
+    UI_S_M_prog_any_step_min_durat_ss->add_ui_context_action([this]() { UI_S_M_prog_any_step_min_durat_ss->set_value(var_prog_any_step_min_durat_ss.get()); });
+
+    UI_S_M_prog_heaters_toggle_delay_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_heaters_toggle_delay_ss->set_extra_button_logic({
+        [this]() { var_prog_heaters_toggle_delay_ss.set(var_prog_heaters_toggle_delay_ss.get() + 1); },
+        [this]() { var_prog_heaters_toggle_delay_ss.set(var_prog_heaters_toggle_delay_ss.get() - 1); },
+        []() {}
+    });
+    UI_S_M_prog_heaters_toggle_delay_ss->add_ui_context_action([this]() { UI_S_M_prog_heaters_toggle_delay_ss->set_value(var_prog_heaters_toggle_delay_ss.get()); });
+
+    UI_S_M_prog_wJacket_toggle_delay_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_wJacket_toggle_delay_ss->set_extra_button_logic({
+        [this]() { var_prog_wJacket_toggle_delay_ss.set(var_prog_wJacket_toggle_delay_ss.get() + 1); },
+        [this]() { var_prog_wJacket_toggle_delay_ss.set(var_prog_wJacket_toggle_delay_ss.get() - 1); },
+        []() {}
+    });
+    UI_S_M_prog_wJacket_toggle_delay_ss->add_ui_context_action([this]() { UI_S_M_prog_wJacket_toggle_delay_ss->set_value(var_prog_wJacket_toggle_delay_ss.get()); });
+
+
+    /* master, page - 1 */
+    UI_S_M_type_of_equipment_enum               ->set_position(0, 10, 40, 85);       
+    UI_S_M_is_blowgun_by_rf                     ->set_position(0, 100, 40, 85);       
+    UI_S_M_is_asyncM_rpm_float                  ->set_position(0, 190, 40, 85);
+    UI_S_M_plc_language                         ->set_position(0, 10, 140, 175);   
+
+    /* master, page - 2 */    
+    UI_S_M_sensor_voltage_min_12bit             ->set_position(0, 10, 40, 40);
+    UI_S_M_sensor_voltage_max_12bit             ->set_position(0, 55, 40, 40);
+    UI_S_M_sensor_tempC_limit_4ma_12bit         ->set_position(0, 100, 40, 40);
+    UI_S_M_sensor_tempC_limit_20ma_12bit        ->set_position(0, 145, 40, 40);
+    UI_S_M_sensor_tempC_limit_4ma_degrees_C     ->set_position(0, 190, 40, 40);       
+    UI_S_M_sensor_tempC_limit_20ma_degrees_C    ->set_position(0, 10, 140, 40);      
+    UI_S_M_sensor_dac_rpm_limit_min_12bit       ->set_position(0, 55, 140, 40);        
+    UI_S_M_sensor_dac_rpm_limit_max_12bit       ->set_position(0, 100, 140, 40);        
+    UI_S_M_sensor_dac_asyncM_rpm_min            ->set_position(0, 145, 140, 40);              
+    UI_S_M_sensor_dac_asyncM_rpm_max            ->set_position(0, 190, 140, 40);
+
+    /* master, page - 3 */  
+    UI_S_M_blowing_await_ss                     ->set_position(0, 10, 40, 40);                       
+    UI_S_M_blowing_pump_power_lm                ->set_position(0, 55, 40, 40);                    
+    UI_S_M_blowing_limit_ml_max                 ->set_position(0, 100, 40, 40);                  
+    UI_S_M_blowing_limit_ml_min                 ->set_position(0, 145, 40, 40);                  
+    UI_S_M_blowing_limit_ss_max                 ->set_position(0, 190, 40, 40);                  
+    UI_S_M_blowing_limit_ss_min                 ->set_position(0, 235, 40, 40);
+    
+    /* master, page - 4 */ 
+    UI_S_M_wJacket_tempC_limit_max              ->set_position(0, 10, 40, 40);                
+    UI_S_M_prog_wJacket_drain_max_ss            ->set_position(0, 55, 40, 40);              
+    UI_S_M_prog_on_pause_max_await_ss           ->set_position(0, 100, 40, 40);            
+    UI_S_M_prog_await_spite_of_already_runned_ss->set_position(0, 145, 40, 40); 
+    UI_S_M_prog_limit_heat_tempC_max            ->set_position(0, 190, 40, 40);              
+    UI_S_M_prog_limit_heat_tempC_min            ->set_position(0, 235, 40, 40);              
+    UI_S_M_prog_limit_chill_tempC_max           ->set_position(0, 10, 140, 40);             
+    UI_S_M_prog_limit_chill_tempC_min           ->set_position(0, 55, 140, 40);             
+    UI_S_M_prog_any_step_max_durat_ss           ->set_position(0, 100, 140, 40);            
+    UI_S_M_prog_any_step_min_durat_ss           ->set_position(0, 145, 140, 40);            
+    UI_S_M_prog_heaters_toggle_delay_ss         ->set_position(0, 190, 140, 40);           
+    UI_S_M_prog_wJacket_toggle_delay_ss         ->set_position(0, 235, 140, 40);           
 }
 
 void UIService::display_rt_in_setters()

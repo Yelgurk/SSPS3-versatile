@@ -50,7 +50,6 @@ void setup()
 
     itcw = new TwoWire(0);
     itcw->begin(SDA, SCL, 400000);
-    Storage::reset_all();
 
     rtc             = new DS3231(*itcw);
     dt_rt = new S_DateTime(0, 0, 0, 0, 0, 0);
@@ -169,9 +168,14 @@ void loop()
         //UI_service->UI_task_roadmap_control->get_selected(true)->key_press(Pressed_key);
 
         // user settings control
-        if (UI_service->UI_menu_list_user->is_selected_on_child())
-            UI_service->UI_menu_list_user->get_selected(true)->key_press(Pressed_key);
-        UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
+        //if (UI_service->UI_menu_list_user->is_selected_on_child())
+        //    UI_service->UI_menu_list_user->get_selected(true)->key_press(Pressed_key);
+        //UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
+
+        // master settings control
+        if (UI_service->UI_menu_list_master->is_selected_on_child())
+            UI_service->UI_menu_list_master->get_selected(true)->key_press(Pressed_key);
+        UI_service->UI_menu_list_master->get_selected()->key_press(Pressed_key);
 
         // blowing control
         //UI_service->UI_blowing_control->get_selected()->key_press(Pressed_key);

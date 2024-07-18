@@ -94,8 +94,10 @@ extern S_DateTime * dt_rt;
 class UIService
 {
 public:
+    /* Display */
     lv_obj_t* screen;
 
+    /* Screens */
     UIMachineStateBar * UI_machine_state_bar;
     UIDateTime * UI_date_time;
     UINotifyBar * UI_notify_bar;
@@ -103,9 +105,11 @@ public:
     UITaskRoadmapList * UI_task_roadmap_control;
     UIBlowingControl * UI_blowing_control;
 
+    /* Prog and blowing buff lists */
     vector<UITaskListItem> * UI_task_steps;
     vector<UIBlowValListItem*> Blow_vars;
 
+    /* Settings - user */
     UIMenuList * UI_menu_list_user;
     UIMenuListItem * UI_settings_rt;
     UIMenuListItem * UI_settings_pump_calibr;
@@ -131,6 +135,54 @@ public:
     UIValueSetter * UI_setter_wd_mm;
     UIValueSetter * UI_setter_wd_ss;
 
+    /* Settings - master */
+    UIMenuList * UI_menu_list_master;
+    
+    UIMenuListItem * UI_settings_master_machine;
+    UIMenuListItem * UI_settings_master_sensors;
+    UIMenuListItem * UI_settings_master_limits_blowing;
+    UIMenuListItem * UI_settings_master_limits_prog;
+
+    /* master, page - 1 */
+    UIValueSetter * UI_S_M_type_of_equipment_enum;
+    UIValueSetter * UI_S_M_plc_language;          
+    UIValueSetter * UI_S_M_is_blowgun_by_rf;       
+    UIValueSetter * UI_S_M_is_asyncM_rpm_float;
+    UIValueSetter * UI_S_M_reset_system;
+
+    /* master, page - 2 */    
+    UIValueSetter * UI_S_M_sensor_voltage_min_12bit;
+    UIValueSetter * UI_S_M_sensor_voltage_max_12bit;
+    UIValueSetter * UI_S_M_sensor_tempC_limit_4ma_12bit;
+    UIValueSetter * UI_S_M_sensor_tempC_limit_20ma_12bit;
+    UIValueSetter * UI_S_M_sensor_tempC_limit_4ma_degrees_C;       
+    UIValueSetter * UI_S_M_sensor_tempC_limit_20ma_degrees_C;      
+    UIValueSetter * UI_S_M_sensor_dac_rpm_limit_min_12bit;        
+    UIValueSetter * UI_S_M_sensor_dac_rpm_limit_max_12bit;        
+    UIValueSetter * UI_S_M_sensor_dac_asyncM_rpm_min;              
+    UIValueSetter * UI_S_M_sensor_dac_asyncM_rpm_max;
+
+    /* master, page - 3 */              
+    UIValueSetter * UI_S_M_blowing_await_ss;                       
+    UIValueSetter * UI_S_M_blowing_pump_power_lm;                    
+    UIValueSetter * UI_S_M_blowing_limit_ml_max;                  
+    UIValueSetter * UI_S_M_blowing_limit_ml_min;                  
+    UIValueSetter * UI_S_M_blowing_limit_ss_max;                  
+    UIValueSetter * UI_S_M_blowing_limit_ss_min;
+
+    /* master, page - 4 */                  
+    UIValueSetter * UI_S_M_wJacket_tempC_limit_max;                
+    UIValueSetter * UI_S_M_prog_wJacket_drain_max_ss;              
+    UIValueSetter * UI_S_M_prog_on_pause_max_await_ss;            
+    UIValueSetter * UI_S_M_prog_await_spite_of_already_runned_ss; 
+    UIValueSetter * UI_S_M_prog_limit_heat_tempC_max;              
+    UIValueSetter * UI_S_M_prog_limit_heat_tempC_min;              
+    UIValueSetter * UI_S_M_prog_limit_chill_tempC_max;             
+    UIValueSetter * UI_S_M_prog_limit_chill_tempC_min;             
+    UIValueSetter * UI_S_M_prog_any_step_max_durat_ss;            
+    UIValueSetter * UI_S_M_prog_any_step_min_durat_ss;            
+    UIValueSetter * UI_S_M_prog_heaters_toggle_delay_ss;           
+    UIValueSetter * UI_S_M_prog_wJacket_toggle_delay_ss;           
 
     int16_t get_menu_index() {
         return UI_menu_list_user->get_focused_index();
@@ -190,6 +242,7 @@ private:
     void init_settings_part_tmpe_templates();
     void init_settings_part_tmpe_wd();
     void init_settings_part_chm_templates();
+    void init_settings_master_controls();
     void display_rt_in_setters();
     void display_wd_in_setters();
 };

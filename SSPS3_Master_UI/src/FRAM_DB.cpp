@@ -66,8 +66,9 @@ FRAMObject<S_DateTime>& var_last_rt                             = Storage::alloc
 
 // master settings - page 1
 FRAMObject<uint8_t>& var_type_of_equipment_enum                 = Storage::allocate<uint8_t>(0);
-FRAMObject<bool>& var_is_blowgun_by_rf                          = Storage::allocate<bool>(false);
-FRAMObject<bool>& var_is_asyncM_rpm_float                       = Storage::allocate<bool>(false);
+FRAMObject<uint8_t>& var_plc_language                           = Storage::allocate<uint8_t>(0);
+FRAMObject<bool>&   var_is_blowgun_by_rf                          = Storage::allocate<bool>(false);
+FRAMObject<bool>&   var_is_asyncM_rpm_float                       = Storage::allocate<bool>(false);
 
 // master settings - page 2
 FRAMObject<uint16_t>& var_sensor_voltage_min_12bit              = Storage::allocate<uint16_t>(MIN_ADC_4ma, ALLOC_SENS_VAR_BEGIN);
@@ -82,7 +83,6 @@ FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_min              = Storage::alloc
 FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_max              = Storage::allocate<uint8_t>(30);
  
 // master settings - page 3
-FRAMObject<uint8_t>& var_wJacket_tempC_limit_max                = Storage::allocate<uint8_t>(93);
 FRAMObject<uint8_t>& var_blowing_await_ss                       = Storage::allocate<uint8_t>(2, ALLOC_CONF_VAR_BEGIN);
 FRAMObject<float>& var_blowing_pump_power_lm                    = Storage::allocate<float>(36);
 FRAMObject<uint16_t>& var_blowing_limit_ml_max                  = Storage::allocate<uint16_t>(5000);
@@ -91,6 +91,7 @@ FRAMObject<uint16_t>& var_blowing_limit_ss_max                  = Storage::alloc
 FRAMObject<uint16_t>& var_blowing_limit_ss_min                  = Storage::allocate<uint16_t>(10);
 
 // master settings - page 4
+FRAMObject<uint8_t>& var_wJacket_tempC_limit_max                = Storage::allocate<uint8_t>(93);
 FRAMObject<uint8_t>& var_prog_wJacket_drain_max_ss              = Storage::allocate<uint8_t>(30);
 FRAMObject<uint16_t>& var_prog_on_pause_max_await_ss            = Storage::allocate<uint16_t>(3600);
 FRAMObject<uint16_t>& var_prog_await_spite_of_already_runned_ss = Storage::allocate<uint16_t>(600);
