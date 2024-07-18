@@ -33,6 +33,7 @@
 #define SCREEN_HEIGHT           320U
 #define INIT_BUFFER_IN_PSRAM    1
 #define TEMPLATES_COUNT_TMPE    6
+#define TEMPLATES_COUNT_WD      3
 #define TEMPLATES_COUNT_CHM     10
 
 #if INIT_BUFFER_IN_PSRAM == 0
@@ -105,13 +106,6 @@ public:
     vector<UITaskListItem> * UI_task_steps;
     vector<UIBlowValListItem*> Blow_vars;
 
-    vector<UIMenuListItem*> UI_template_menu_items;
-    vector<UIValueSetter*> UI_template_setters;
-    uint8_t menu_tmpe_local_start_at    = 0,
-            menu_chm_local_start_at     = 0,
-            menu_tmpe_general_start_at  = 0,
-            menu_chm_general_start_at   = 0;    
-
     UIMenuList * UI_menu_list_user;
     UIMenuListItem * UI_settings_rt;
     UIMenuListItem * UI_settings_pump_calibr;
@@ -124,10 +118,41 @@ public:
     UIValueSetter * UI_rt_setter_accept;
     UIValueSetter * UI_setter_pump_calibr_lm;
 
-    UIService();
-    int16_t get_menu_index();
-    uint8_t get_template_tmpe_index();
-    uint8_t get_template_chm_index();
+    vector<UIMenuListItem*> UI_template_menu_items;
+    vector<UIValueSetter*> UI_template_setters;
+    uint8_t menu_tmpe_local_start_at    = 0,
+            menu_tmpe_general_start_at  = 0,
+            menu_wd_local_start_at      = 0,
+            menu_wd_general_start_at    = 0,
+            menu_chm_local_start_at     = 0,
+            menu_chm_general_start_at   = 0;
+    UIValueSetter * UI_setter_wd_turn_on_off;
+    UIValueSetter * UI_setter_wd_hh;
+    UIValueSetter * UI_setter_wd_mm;
+    UIValueSetter * UI_setter_wd_ss;
+
+
+    int16_t get_menu_index() {
+        return UI_menu_list_user->get_focused_index();
+    }
+
+    uint8_t get_template_tmpe_index()
+    {
+        int16_t index = get_menu_index() - menu_tmpe_general_start_at;
+        return index < 0 ? 0 : (index >= TEMPLATES_COUNT_TMPE ? TEMPLATES_COUNT_TMPE - 1 : index);
+    }
+
+    uint8_t get_template_chm_index()
+    {
+        int16_t index = get_menu_index() - menu_chm_general_start_at;
+        return index < 0 ? 0 : (index >= TEMPLATES_COUNT_CHM ? TEMPLATES_COUNT_CHM - 1 : index);
+    }
+
+    uint8_t get_template_wd_index()
+    {
+        int16_t index = get_menu_index() - menu_wd_general_start_at;
+        return index < 0 ? 0 : (index >= TEMPLATES_COUNT_WD ? TEMPLATES_COUNT_WD - 1 : index);
+    }
 
     /* DEMO BEGIN */
     /*
@@ -153,6 +178,9 @@ public:
     */
     /* DEMO END */
 
+public:
+    UIService();
+
 private:
     void init_screens();
     void init_blowing_controls();
@@ -160,8 +188,10 @@ private:
     void init_settings_part_datetime();
     void init_settings_part_pump_calibration();
     void init_settings_part_tmpe_templates();
+    void init_settings_part_tmpe_wd();
     void init_settings_part_chm_templates();
     void display_rt_in_setters();
+    void display_wd_in_setters();
 };
 
 #endif

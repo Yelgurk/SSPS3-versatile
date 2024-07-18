@@ -42,22 +42,6 @@ UIService::UIService()
     this->UI_task_roadmap_control->hide_ui_hierarchy();
 }
 
-int16_t UIService::get_menu_index() {
-    return UI_menu_list_user->get_focused_index();
-}
-
-uint8_t UIService::get_template_tmpe_index()
-{
-    int16_t index = get_menu_index() - menu_tmpe_general_start_at;
-    return index < 0 ? 0 : (index >= TEMPLATES_COUNT_TMPE ? TEMPLATES_COUNT_TMPE - 1 : index);
-}
-
-uint8_t UIService::get_template_chm_index()
-{
-    int16_t index = get_menu_index() - menu_chm_general_start_at;
-    return index < 0 ? 0 : (index >= TEMPLATES_COUNT_CHM ? TEMPLATES_COUNT_CHM - 1 : index);
-}
-
 void UIService::init_screens()
 {
     /* upper state bar init */
@@ -234,15 +218,9 @@ void UIService::init_blowing_controls()
 void UIService::init_settings_user_controls()
 {
     init_settings_part_datetime();
-
     init_settings_part_pump_calibration();
-
-    menu_tmpe_general_start_at = UI_menu_list_user->get_childs_count();
-    menu_tmpe_local_start_at = UI_template_menu_items.size();
     init_settings_part_tmpe_templates();
-    
-    menu_chm_general_start_at = UI_menu_list_user->get_childs_count();
-    menu_chm_local_start_at = UI_template_menu_items.size();
+    init_settings_part_tmpe_wd();
     init_settings_part_chm_templates();
 }
 
@@ -337,6 +315,9 @@ void UIService::init_settings_part_pump_calibration()
 
 void UIService::init_settings_part_tmpe_templates()
 {
+    menu_tmpe_general_start_at = UI_menu_list_user->get_childs_count();
+    menu_tmpe_local_start_at = UI_template_menu_items.size();
+
     static vector<std::string> tmpe_templ_menu_items_name = {
         "программа \"Пастеризация\"",
         "программа \"Охлаждение\"",
@@ -349,13 +330,13 @@ void UIService::init_settings_part_tmpe_templates()
         "3. нагрев."
     };
 
-    for (uint8_t i = 0; i < 6; i++)
+    for (uint8_t i = 0; i < TEMPLATES_COUNT_TMPE; i++)
     {
         UI_template_menu_items.push_back(new UIMenuListItem(
             UI_menu_list_user,
             i < tmpe_templ_menu_items_name.size() ?
             tmpe_templ_menu_items_name.at(i) :
-            "Автом. прогр. #" + to_string(i - tmpe_templ_menu_items_name.size() + 1),
+            "Авто прогр. #" + to_string(i - tmpe_templ_menu_items_name.size() + 1),
             i == 0
         ));
     }
@@ -474,8 +455,101 @@ void UIService::init_settings_part_tmpe_templates()
         UI_template_menu_items.at(i)->set_childs_presenter(UI_template_menu_items.at(menu_tmpe_local_start_at));
 }
 
+void UIService::init_settings_part_tmpe_wd()
+{
+    menu_wd_general_start_at = UI_menu_list_user->get_childs_count();
+    menu_wd_local_start_at = UI_template_menu_items.size();
+
+    for (uint8_t i = 0; i < TEMPLATES_COUNT_WD; i++)
+        UI_template_menu_items.push_back(new UIMenuListItem(UI_menu_list_user, "Авто ВКЛ прогр. #" + to_string(i + 1), i == 0));
+    UI_template_menu_items.at(menu_wd_local_start_at)->set_page_header("Настр. включения по времени", 0);
+
+    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 80, 10, 40, true, "Запущено", nullptr, false));
+    UI_setter_wd_turn_on_off = UI_template_setters.back();
+    
+    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 40, 95, 40, true, "час"));
+    UI_setter_wd_hh = UI_template_setters.back();
+    
+    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 40, 140, 40, true, "мин."));
+    UI_setter_wd_mm = UI_template_setters.back();
+    
+    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 40, 185, 40, true, "сек"));
+    UI_setter_wd_ss = UI_template_setters.back();
+    
+    /* ON/OFF template watchdog (auto startup by time) */
+    UI_setter_wd_turn_on_off->set_extra_button_logic({
+        []() {},
+        []() {},
+        [this]() {
+            bool * templ = prog_tmpe_templates_wd_state->at(get_template_wd_index())->ptr();
+            *templ = !*templ;
+            prog_tmpe_templates_wd_state->at(get_template_wd_index())->accept();
+        }
+    });
+    UI_setter_wd_turn_on_off->add_ui_context_action([=]() {
+        UI_setter_wd_turn_on_off->set_value(prog_tmpe_templates_wd_state->at(get_template_wd_index())->get() ? "Да" : "Нет");
+    });
+
+    /* WD startup hours */
+    UI_setter_wd_hh->set_extra_button_logic({
+        [this]() {
+            S_Time * wd_hh = prog_tmpe_templates_wd_time->at(get_template_wd_index())->ptr();
+            *wd_hh += S_Time(1, 0, 0);
+            prog_tmpe_templates_wd_time->at(get_template_wd_index())->accept();
+        },
+        [this]() {
+            
+            S_Time * wd_hh = prog_tmpe_templates_wd_time->at(get_template_wd_index())->ptr();
+            *wd_hh -= S_Time(1, 0, 0);
+            prog_tmpe_templates_wd_time->at(get_template_wd_index())->accept();
+        },
+        []() {}
+    });
+    UI_setter_wd_hh->add_ui_context_action([this]() { display_wd_in_setters(); });
+    
+    /* WD startup minutes */
+    UI_setter_wd_mm->set_extra_button_logic({
+        [this]() {
+            S_Time * wd_hh = prog_tmpe_templates_wd_time->at(get_template_wd_index())->ptr();
+            *wd_hh += S_Time(0, 1, 0);
+            prog_tmpe_templates_wd_time->at(get_template_wd_index())->accept();
+        },
+        [this]() {
+            
+            S_Time * wd_hh = prog_tmpe_templates_wd_time->at(get_template_wd_index())->ptr();
+            *wd_hh -= S_Time(0, 1, 0);
+            prog_tmpe_templates_wd_time->at(get_template_wd_index())->accept();
+        },
+        []() {}
+    });
+    UI_setter_wd_mm->add_ui_context_action([this]() { display_wd_in_setters(); });
+
+    /* WD startup seconds */
+    UI_setter_wd_ss->set_extra_button_logic({
+        [this]() {
+            S_Time * wd_hh = prog_tmpe_templates_wd_time->at(get_template_wd_index())->ptr();
+            *wd_hh += S_Time(0, 0, 1);
+            prog_tmpe_templates_wd_time->at(get_template_wd_index())->accept();
+        },
+        [this]() {
+            
+            S_Time * wd_hh = prog_tmpe_templates_wd_time->at(get_template_wd_index())->ptr();
+            *wd_hh -= S_Time(0, 0, 1);
+            prog_tmpe_templates_wd_time->at(get_template_wd_index())->accept();
+        },
+        []() {}
+    });
+    UI_setter_wd_ss->add_ui_context_action([this]() { display_wd_in_setters(); });
+    
+    for (uint8_t i = menu_wd_local_start_at + 1; i < UI_template_menu_items.size(); i++)
+        UI_template_menu_items.at(i)->set_childs_presenter(UI_template_menu_items.at(menu_wd_local_start_at));
+}
+
 void UIService::init_settings_part_chm_templates()
 {
+    menu_chm_general_start_at = UI_menu_list_user->get_childs_count();
+    menu_chm_local_start_at = UI_template_menu_items.size();
+
     static vector<std::string> chm_templ_menu_items_name = {
         "сыр \"Пармезан\"",
         "сыр \"Тильзитский\"",
@@ -491,7 +565,7 @@ void UIService::init_settings_part_chm_templates()
         "6. сушка"
     };
 
-    for (uint8_t i = 0; i < 10; i++)
+    for (uint8_t i = 0; i < TEMPLATES_COUNT_CHM; i++)
     {
         UI_template_menu_items.push_back(new UIMenuListItem(
             UI_menu_list_user,
@@ -624,4 +698,11 @@ void UIService::display_rt_in_setters()
     UI_setter_dd    ->set_value(var_rt_setter.get().get_date()->get_day());
     UI_setter_MM    ->set_value(var_rt_setter.get().get_date()->get_month());
     UI_setter_yyyy  ->set_value(var_rt_setter.get().get_date()->get_year());
+}
+
+void UIService::display_wd_in_setters()
+{
+    UI_setter_wd_hh ->set_value(prog_tmpe_templates_wd_time->at(get_template_wd_index())->get().get_hours());
+    UI_setter_wd_mm ->set_value(prog_tmpe_templates_wd_time->at(get_template_wd_index())->get().get_minutes());
+    UI_setter_wd_ss ->set_value(prog_tmpe_templates_wd_time->at(get_template_wd_index())->get().get_seconds());
 }

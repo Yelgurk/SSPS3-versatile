@@ -177,7 +177,7 @@ vector<FRAMObject<S_Time>*> * prog_tmpe_templates_wd_time = new vector<FRAMObjec
     &prog_tmpe_wd_3_boot_time
 };
 
-vector<FRAMObject<boolean>*> * prog_tmpe_templates_wd_state = new vector<FRAMObject<boolean>*>{
+vector<FRAMObject<bool>*> * prog_tmpe_templates_wd_state = new vector<FRAMObject<boolean>*>{
     &prog_tmpe_wd_1_on_off,
     &prog_tmpe_wd_2_on_off,
     &prog_tmpe_wd_3_on_off
