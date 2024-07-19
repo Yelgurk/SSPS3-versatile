@@ -60,7 +60,7 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 #define ALLOC_USER_VAR_BEGIN    2000
 
 /* Const physical limitations by company */
-#define LIMIT_WATER_BOILING_POINT_TEMPC     95
+#define LIMIT_WATER_BOILING_POINT_TEMPC     90
 
 // Объявляем переменные как extern
 extern FRAMObject<S_DateTime>& var_last_rt;

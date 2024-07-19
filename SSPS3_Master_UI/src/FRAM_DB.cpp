@@ -71,40 +71,40 @@ FRAMObject<bool>&   var_is_blowgun_by_rf                        = Storage::alloc
 FRAMObject<bool>&   var_is_asyncM_rpm_float                     = Storage::allocate<bool>(false);
 
 // master settings - page 2
-FRAMObject<float>& var_sensor_batt_min_V                        = Storage::allocate<float>(MIN_BATT_VOLTAGE, ALLOC_SENS_VAR_BEGIN);
-FRAMObject<float>& var_sensor_batt_max_V                        = Storage::allocate<float>(MAX_BATT_VOLTAGE);
-FRAMObject<uint16_t>& var_sensor_batt_V_min_12bit               = Storage::allocate<uint16_t>(BATT_V_TO_12BIT * MIN_BATT_VOLTAGE);
-FRAMObject<uint16_t>& var_sensor_batt_V_max_12bit               = Storage::allocate<uint16_t>(BATT_V_TO_12BIT * MAX_BATT_VOLTAGE);
-FRAMObject<uint16_t>& var_sensor_tempC_limit_4ma_12bit          = Storage::allocate<uint16_t>(MIN_ADC_4ma);
-FRAMObject<uint16_t>& var_sensor_tempC_limit_20ma_12bit         = Storage::allocate<uint16_t>(MAX_ADC_20ma);
-FRAMObject<int16_t>& var_sensor_tempC_limit_4ma_degrees_C       = Storage::allocate<int16_t>(-50);
-FRAMObject<int16_t>& var_sensor_tempC_limit_20ma_degrees_C      = Storage::allocate<int16_t>(150);
-FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_min_12bit        = Storage::allocate<uint16_t>(0);
-FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_max_12bit        = Storage::allocate<uint16_t>(4095);
-FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_min              = Storage::allocate<uint8_t>(0);
-FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_max              = Storage::allocate<uint8_t>(30);
+FRAMObject<float>& var_sensor_batt_min_V                        = Storage::allocate<float>(MIN_BATT_VOLTAGE, ALLOC_SENS_VAR_BEGIN);     /////////////// в фильтр (проценты, изменить логику)
+FRAMObject<float>& var_sensor_batt_max_V                        = Storage::allocate<float>(MAX_BATT_VOLTAGE);                           /////////////// в фильтр
+FRAMObject<uint16_t>& var_sensor_batt_V_min_12bit               = Storage::allocate<uint16_t>(BATT_V_TO_12BIT * MIN_BATT_VOLTAGE);      // ok
+FRAMObject<uint16_t>& var_sensor_batt_V_max_12bit               = Storage::allocate<uint16_t>(BATT_V_TO_12BIT * MAX_BATT_VOLTAGE);      // ok
+FRAMObject<uint16_t>& var_sensor_tempC_limit_4ma_12bit          = Storage::allocate<uint16_t>(MIN_ADC_4ma);     //ok
+FRAMObject<uint16_t>& var_sensor_tempC_limit_20ma_12bit         = Storage::allocate<uint16_t>(MAX_ADC_20ma);    //ok
+FRAMObject<int16_t>& var_sensor_tempC_limit_4ma_degrees_C       = Storage::allocate<int16_t>(-50);              //ok
+FRAMObject<int16_t>& var_sensor_tempC_limit_20ma_degrees_C      = Storage::allocate<int16_t>(150);              //ok
+FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_min_12bit        = Storage::allocate<uint16_t>(0);               // в управление частотником
+FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_max_12bit        = Storage::allocate<uint16_t>(4095);            // в управление частотником
+FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_min              = Storage::allocate<uint8_t>(0);                // в управление частотником
+FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_max              = Storage::allocate<uint8_t>(30);               // в управление частотником
  
 // master settings - page 3
-FRAMObject<uint8_t>& var_blowing_await_ss                       = Storage::allocate<uint8_t>(2, ALLOC_CONF_VAR_BEGIN);
-FRAMObject<float>& var_blowing_pump_power_lm                    = Storage::allocate<float>(36);
-FRAMObject<uint16_t>& var_blowing_limit_ml_max                  = Storage::allocate<uint16_t>(5000);
-FRAMObject<uint16_t>& var_blowing_limit_ml_min                  = Storage::allocate<uint16_t>(250);
-FRAMObject<uint16_t>& var_blowing_limit_ss_max                  = Storage::allocate<uint16_t>(600);
-FRAMObject<uint16_t>& var_blowing_limit_ss_min                  = Storage::allocate<uint16_t>(10);
+FRAMObject<uint8_t>& var_blowing_await_ss                       = Storage::allocate<uint8_t>(2, ALLOC_CONF_VAR_BEGIN);  // в управление насоса при раздаче await
+FRAMObject<float>& var_blowing_pump_power_lm                    = Storage::allocate<float>(36);                         // в управление насоса - рассчёты мощности
+FRAMObject<uint16_t>& var_blowing_limit_ml_max                  = Storage::allocate<uint16_t>(5000);                    // в настройки юзера лимиты
+FRAMObject<uint16_t>& var_blowing_limit_ml_min                  = Storage::allocate<uint16_t>(250);                     // в настройки юзера лимиты
+FRAMObject<uint16_t>& var_blowing_limit_ss_max                  = Storage::allocate<uint16_t>(600);                     // в настройки юзера лимиты
+FRAMObject<uint16_t>& var_blowing_limit_ss_min                  = Storage::allocate<uint16_t>(10);                      // в настройки юзера лимиты
 
 // master settings - page 4
-FRAMObject<uint8_t>& var_wJacket_tempC_limit_max                = Storage::allocate<uint8_t>(93);
-FRAMObject<uint8_t>& var_prog_wJacket_drain_max_ss              = Storage::allocate<uint8_t>(30);
-FRAMObject<uint16_t>& var_prog_on_pause_max_await_ss            = Storage::allocate<uint16_t>(3600);
-FRAMObject<uint16_t>& var_prog_await_spite_of_already_runned_ss = Storage::allocate<uint16_t>(600);
-FRAMObject<uint8_t>& var_prog_limit_heat_tempC_max              = Storage::allocate<uint8_t>(92);
-FRAMObject<uint8_t>& var_prog_limit_heat_tempC_min              = Storage::allocate<uint8_t>(30);
-FRAMObject<uint8_t>& var_prog_limit_chill_tempC_max             = Storage::allocate<uint8_t>(50);
-FRAMObject<uint8_t>& var_prog_limit_chill_tempC_min             = Storage::allocate<uint8_t>(5);
-FRAMObject<uint16_t>& var_prog_any_step_max_durat_ss            = Storage::allocate<uint16_t>(3600);
-FRAMObject<uint16_t>& var_prog_any_step_min_durat_ss            = Storage::allocate<uint16_t>(0);
-FRAMObject<uint8_t>& var_prog_heaters_toggle_delay_ss           = Storage::allocate<uint8_t>(20);
-FRAMObject<uint8_t>& var_prog_wJacket_toggle_delay_ss           = Storage::allocate<uint8_t>(10);
+FRAMObject<uint8_t>& var_wJacket_tempC_limit_max                = Storage::allocate<uint8_t>(LIMIT_WATER_BOILING_POINT_TEMPC);  // в WD управление ТЭН-ами при выполнении программы
+FRAMObject<uint8_t>& var_prog_wJacket_drain_max_ss              = Storage::allocate<uint8_t>(30);                               // в WD контроль клапана при программе
+FRAMObject<uint16_t>& var_prog_on_pause_max_await_ss            = Storage::allocate<uint16_t>(3600);                            // в сам ProgProc в лимит ожидания
+FRAMObject<uint16_t>& var_prog_await_spite_of_already_runned_ss = Storage::allocate<uint16_t>(600);                             // в WD авто-пуска проги, если уже запущена прога
+FRAMObject<uint8_t>& var_prog_limit_heat_tempC_max              = Storage::allocate<uint8_t>(LIMIT_WATER_BOILING_POINT_TEMPC);  // ok 
+FRAMObject<uint8_t>& var_prog_limit_heat_tempC_min              = Storage::allocate<uint8_t>(30);                               // ok
+FRAMObject<uint8_t>& var_prog_limit_chill_tempC_max             = Storage::allocate<uint8_t>(50);                               // ok
+FRAMObject<uint8_t>& var_prog_limit_chill_tempC_min             = Storage::allocate<uint8_t>(5);                                // ok
+FRAMObject<uint16_t>& var_prog_any_step_max_durat_ss            = Storage::allocate<uint16_t>(3600);                            // ok
+FRAMObject<uint16_t>& var_prog_any_step_min_durat_ss            = Storage::allocate<uint16_t>(0);                               // ok
+FRAMObject<uint8_t>& var_prog_heaters_toggle_delay_ss           = Storage::allocate<uint8_t>(20);                               // в WD контроля вкл/выкл тэнов
+FRAMObject<uint8_t>& var_prog_wJacket_toggle_delay_ss           = Storage::allocate<uint8_t>(10);                               // в WD контроля вкл/выкл клапана при этапе охлаждения
 
 // user settings - page 1
 FRAMObject<S_DateTime>& var_rt_setter                           = Storage::allocate<S_DateTime>(S_DateTime());

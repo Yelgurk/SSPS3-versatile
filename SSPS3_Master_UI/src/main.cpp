@@ -23,26 +23,6 @@ void setup()
 {
     Serial.begin(115200);
 
-    filter_tempC_product    = new FilterValue(
-        &exp_filter_tempC_product,
-        MIN_ADC_4ma,
-        MAX_ADC_20ma,
-        MIN_ADC_TEMPC,
-        MAX_ADC_TEMPC
-    );
-    filter_tempC_wJacket    = new FilterValue(
-        &exp_filter_tempC_wJacket,
-        MIN_ADC_4ma,
-        MAX_ADC_20ma,
-        MIN_ADC_TEMPC,
-        MAX_ADC_TEMPC
-    );
-    filter_24v_batt         = new FilterValue(
-        &exp_filter_24v_batt,
-        BATT_V_TO_12BIT * MIN_BATT_VOLTAGE,
-        BATT_V_TO_12BIT * MAX_BATT_VOLTAGE
-    );
-
     pinMode(INT, INPUT_PULLDOWN);
     attachInterrupt(digitalPinToInterrupt(INT), interrupt_action, CHANGE);
 
@@ -62,6 +42,26 @@ void setup()
         );
     });
     dt_rt->get_rt();
+
+    filter_tempC_product    = new FilterValue(
+        &exp_filter_tempC_product,
+        var_sensor_tempC_limit_4ma_12bit.get(),
+        var_sensor_tempC_limit_20ma_12bit.get(),
+        var_sensor_tempC_limit_4ma_degrees_C.get(),
+        var_sensor_tempC_limit_20ma_degrees_C.get()
+    );
+    filter_tempC_wJacket    = new FilterValue(
+        &exp_filter_tempC_wJacket,
+        var_sensor_tempC_limit_4ma_12bit.get(),
+        var_sensor_tempC_limit_20ma_12bit.get(),
+        var_sensor_tempC_limit_4ma_degrees_C.get(),
+        var_sensor_tempC_limit_20ma_degrees_C.get()
+    );
+    filter_24v_batt         = new FilterValue(
+        &exp_filter_24v_batt,
+        var_sensor_batt_V_min_12bit.get(),
+        var_sensor_batt_V_max_12bit.get()
+    );
 
     STM32           = new STM32_slave(STM_I2C_ADDR);
     Program_control = new ProgramControl();
