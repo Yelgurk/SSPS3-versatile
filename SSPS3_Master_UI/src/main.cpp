@@ -60,7 +60,9 @@ void setup()
     filter_24v_batt         = new FilterValue(
         &exp_filter_24v_batt,
         var_sensor_batt_V_min_12bit.get(),
-        var_sensor_batt_V_max_12bit.get()
+        var_sensor_batt_V_max_12bit.get(),
+        var_sensor_batt_min_V.get(),
+        var_sensor_batt_max_V.get()
     );
 
     STM32           = new STM32_slave(STM_I2C_ADDR);
@@ -113,13 +115,18 @@ void setup()
 
     async_motor_wd      = new AsynchronousMotorWatchdog(
         [](bool state)      { STM32->set(COMM_SET::RELAY, REL_ASYNC_M, rt_out_state_async_m = state); },
-        [](uint16_t speed_12bit, uint8_t speed_rpm)
+        [](uint8_t speed_rpm)
         {
-            STM32->set(COMM_SET::DAC, DAC_ASYNC_M_SPEED, speed_12bit);
+            STM32->set(
+                COMM_SET::DAC,
+                DAC_ASYNC_M_SPEED,
+                var_sensor_dac_rpm_limit_max_12bit.get()
+                    / var_sensor_dac_asyncM_rpm_max.get()
+                    * speed_rpm
+            );
             rt_out_speed_async_m = speed_rpm;
         },
-        30,
-        10.f
+        var_sensor_dac_asyncM_rpm_max.get()
     );
 
     chilling_wd         = new ChillingWatchdog(
@@ -153,6 +160,22 @@ void loop()
 {
     Blowing_control->do_blowing();
     rt_task_manager.run();
+
+    /* somewhere in ProgramControl */
+    /*
+    async_motor_wd->set_async_motor_speed(20);
+    chilling_wd->get_aim(15, 50);
+    heating_wd->get_aim(85, 50, 55);
+    wJacket_drain_wd->water_in_jacket(true);
+    */
+
+    /* somewhere in loop */
+    /*
+    chilling_wd->do_control();
+    heating_wd->do_control();
+    v380_supply_wd->do_control(true);
+    wJacket_drain_wd->do_control();
+    */
 
     if (interrupted_by_slave)
     {

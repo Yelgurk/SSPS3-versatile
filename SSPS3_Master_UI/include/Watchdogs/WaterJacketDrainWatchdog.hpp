@@ -27,7 +27,7 @@ public:
     draining_started(false)
     {}
 
-    void set_has_water_in_jacket(bool state)
+    void water_in_jacket(bool state)
     {
         has_water_in_jacket = state;
 

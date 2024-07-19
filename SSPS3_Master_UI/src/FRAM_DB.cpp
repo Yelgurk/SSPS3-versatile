@@ -71,18 +71,18 @@ FRAMObject<bool>&   var_is_blowgun_by_rf                        = Storage::alloc
 FRAMObject<bool>&   var_is_asyncM_rpm_float                     = Storage::allocate<bool>(false);
 
 // master settings - page 2
-FRAMObject<float>& var_sensor_batt_min_V                        = Storage::allocate<float>(MIN_BATT_VOLTAGE, ALLOC_SENS_VAR_BEGIN);     /////////////// в фильтр (проценты, изменить логику)
-FRAMObject<float>& var_sensor_batt_max_V                        = Storage::allocate<float>(MAX_BATT_VOLTAGE);                           /////////////// в фильтр
+FRAMObject<float>& var_sensor_batt_min_V                        = Storage::allocate<float>(MIN_BATT_VOLTAGE, ALLOC_SENS_VAR_BEGIN);     // ok
+FRAMObject<float>& var_sensor_batt_max_V                        = Storage::allocate<float>(MAX_BATT_VOLTAGE);                           // ok
 FRAMObject<uint16_t>& var_sensor_batt_V_min_12bit               = Storage::allocate<uint16_t>(BATT_V_TO_12BIT * MIN_BATT_VOLTAGE);      // ok
 FRAMObject<uint16_t>& var_sensor_batt_V_max_12bit               = Storage::allocate<uint16_t>(BATT_V_TO_12BIT * MAX_BATT_VOLTAGE);      // ok
-FRAMObject<uint16_t>& var_sensor_tempC_limit_4ma_12bit          = Storage::allocate<uint16_t>(MIN_ADC_4ma);     //ok
-FRAMObject<uint16_t>& var_sensor_tempC_limit_20ma_12bit         = Storage::allocate<uint16_t>(MAX_ADC_20ma);    //ok
-FRAMObject<int16_t>& var_sensor_tempC_limit_4ma_degrees_C       = Storage::allocate<int16_t>(-50);              //ok
-FRAMObject<int16_t>& var_sensor_tempC_limit_20ma_degrees_C      = Storage::allocate<int16_t>(150);              //ok
-FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_min_12bit        = Storage::allocate<uint16_t>(0);               // в управление частотником
-FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_max_12bit        = Storage::allocate<uint16_t>(4095);            // в управление частотником
-FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_min              = Storage::allocate<uint8_t>(0);                // в управление частотником
-FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_max              = Storage::allocate<uint8_t>(30);               // в управление частотником
+FRAMObject<uint16_t>& var_sensor_tempC_limit_4ma_12bit          = Storage::allocate<uint16_t>(MIN_ADC_4ma);     // ok
+FRAMObject<uint16_t>& var_sensor_tempC_limit_20ma_12bit         = Storage::allocate<uint16_t>(MAX_ADC_20ma);    // ok
+FRAMObject<int16_t>& var_sensor_tempC_limit_4ma_degrees_C       = Storage::allocate<int16_t>(-50);              // ok
+FRAMObject<int16_t>& var_sensor_tempC_limit_20ma_degrees_C      = Storage::allocate<int16_t>(150);              // ok
+FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_min_12bit        = Storage::allocate<uint16_t>(0);               // nowhere useful
+FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_max_12bit        = Storage::allocate<uint16_t>(4095);            // ok
+FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_min              = Storage::allocate<uint8_t>(0);                // nowhere useful
+FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_max              = Storage::allocate<uint8_t>(30);               // ok
  
 // master settings - page 3
 FRAMObject<uint8_t>& var_blowing_await_ss                       = Storage::allocate<uint8_t>(2, ALLOC_CONF_VAR_BEGIN);  // в управление насоса при раздаче await
