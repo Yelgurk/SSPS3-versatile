@@ -91,6 +91,21 @@ extern BlowingControl * Blowing_control;
 extern DS3231 * rtc;
 extern S_DateTime * dt_rt;
 
+template<typename T>
+class ValueComparator
+{
+public:
+    static T calc(const T& min, const T& max, const T& current)
+    {
+        if (current > max)
+            return max;
+        else if (current < min)
+            return min;
+        else
+            return current;
+    }
+};
+
 class UIService
 {
 public:

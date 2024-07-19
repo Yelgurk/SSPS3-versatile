@@ -39,8 +39,8 @@ UIService::UIService()
     this->init_screens();
     this->UI_task_roadmap_control->hide_ui_hierarchy();
     this->UI_blowing_control->hide_ui_hierarchy();
-    this->UI_menu_list_user->hide_ui_hierarchy();
-    //this->UI_menu_list_master->hide_ui_hierarchy();
+    //this->UI_menu_list_user->hide_ui_hierarchy();
+    this->UI_menu_list_master->hide_ui_hierarchy();
 }
 
 void UIService::init_screens()
@@ -367,16 +367,16 @@ void UIService::init_settings_part_tmpe_templates()
         UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 80, 10, 40 + (100 * page), page == 0, tmpe_templ_step_name.at(page), nullptr, false));
         setter_turn_on_off = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 40, 95, 40 + (100 * page), page == 0, "", &img_fan));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 35, 95, 40 + (100 * page), page == 0, "", &img_fan));
         setter_fan_speed = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 40, 140, 40 + (100 * page), page == 0, "", &img_tempC));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 35, 140, 40 + (100 * page), page == 0, "", &img_tempC));
         setter_tempC = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 40, 185, 40 + (100 * page), page == 0, "", &img_sand_watch));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 50, 185, 40 + (100 * page), page == 0, "", &img_sand_watch));
         setter_durat_ss = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 55, 230, 40 + (100 * page), page == 0, "пауза", nullptr, false));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 45, 240, 40 + (100 * page), page == 0, "пауза", nullptr, false));
         setter_pause_after = UI_template_setters.back();
 
         /* ON/OFF step processing setter */
@@ -398,12 +398,20 @@ void UIService::init_settings_part_tmpe_templates()
         setter_fan_speed->set_extra_button_logic({
             [this, page]() {
                 TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_tmpe_index())->ptr();
-                templ->get_step(page)->fan++;
+                templ->get_step(page)->fan = ValueComparator<uint8_t>::calc(
+                    var_sensor_dac_asyncM_rpm_min.get(),
+                    var_sensor_dac_asyncM_rpm_max.get(),
+                    ++templ->get_step(page)->fan
+                ) ;
                 prog_tmpe_templates->at(get_template_tmpe_index())->accept();
             },
             [this, page]() {
                 TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_tmpe_index())->ptr();
-                templ->get_step(page)->fan--;
+                templ->get_step(page)->fan = ValueComparator<uint8_t>::calc(
+                    var_sensor_dac_asyncM_rpm_min.get(),
+                    var_sensor_dac_asyncM_rpm_max.get(),
+                    --templ->get_step(page)->fan
+                ) ;
                 prog_tmpe_templates->at(get_template_tmpe_index())->accept();
             },
             []() {}
@@ -416,36 +424,57 @@ void UIService::init_settings_part_tmpe_templates()
         setter_tempC->set_extra_button_logic({
             [this, page]() {
                 TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_tmpe_index())->ptr();
-                templ->get_step(page)->tempC++;
+                templ->get_step(page)->tempC = ValueComparator<uint8_t>::calc(
+                    templ->get_step(page)->aim == ProgramStepAimEnum::CHILLING ? var_prog_limit_chill_tempC_min.get() : var_prog_limit_heat_tempC_min.get(),
+                    templ->get_step(page)->aim == ProgramStepAimEnum::CHILLING ? var_prog_limit_chill_tempC_max.get() : var_prog_limit_heat_tempC_max.get(),
+                    ++templ->get_step(page)->tempC
+                ) ;
                 prog_tmpe_templates->at(get_template_tmpe_index())->accept();
             },
             [this, page]() {
                 TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_tmpe_index())->ptr();
-                templ->get_step(page)->tempC--;
+                templ->get_step(page)->tempC = ValueComparator<uint8_t>::calc(
+                    templ->get_step(page)->aim == ProgramStepAimEnum::CHILLING ? var_prog_limit_chill_tempC_min.get() : var_prog_limit_heat_tempC_min.get(),
+                    templ->get_step(page)->aim == ProgramStepAimEnum::CHILLING ? var_prog_limit_chill_tempC_max.get() : var_prog_limit_heat_tempC_max.get(),
+                    --templ->get_step(page)->tempC
+                );
                 prog_tmpe_templates->at(get_template_tmpe_index())->accept();
             },
             []() {}
         });
         setter_tempC->add_ui_context_action([=]() {
-            setter_tempC->set_value(prog_tmpe_templates->at(get_template_tmpe_index())->get().get_step(page)->tempC);
+            setter_tempC->set_value(prog_tmpe_templates->at(get_template_tmpe_index())->get().get_step(page)->tempC, "°");
         });
 
         /* Step duration SS setter */
         setter_durat_ss->set_extra_button_logic({
             [this, page]() {
                 TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_tmpe_index())->ptr();
-                templ->get_step(page)->duration_ss++;
+                templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
+                    var_prog_any_step_min_durat_ss.get(),
+                    var_prog_any_step_max_durat_ss.get(),
+                    templ->get_step(page)->duration_ss += 5
+                ) ;
                 prog_tmpe_templates->at(get_template_tmpe_index())->accept();
             },
             [this, page]() {
                 TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_tmpe_index())->ptr();
-                templ->get_step(page)->duration_ss--;
+                templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
+                    var_prog_any_step_min_durat_ss.get(),
+                    var_prog_any_step_max_durat_ss.get(),
+                    templ->get_step(page)->duration_ss -= 5
+                ) ;
                 prog_tmpe_templates->at(get_template_tmpe_index())->accept();
             },
             []() {}
         });
         setter_durat_ss->add_ui_context_action([=]() {
-            setter_durat_ss->set_value((int32_t)prog_tmpe_templates->at(get_template_tmpe_index())->get().get_step(page)->duration_ss);
+            static char buffer[20];
+            static uint32_t * ss;
+            ss = &prog_tmpe_templates->at(get_template_tmpe_index())->get().get_step(page)->duration_ss;
+
+            sprintf(buffer, "%01d:%02dс.", *ss / 60, *ss % 60);
+            setter_durat_ss->set_value(std::string(buffer));
         });
 
         /* ON/OFF pause after step completed setter */
@@ -460,7 +489,7 @@ void UIService::init_settings_part_tmpe_templates()
         });
         setter_pause_after->add_ui_context_action([=]() {
             bool state = prog_tmpe_templates->at(get_template_tmpe_index())->get().get_step(page)->await_ok_button;
-            setter_pause_after->set_value(state ? "ВКЛ" : "ВЫКЛ");
+            setter_pause_after->set_value(state ? "Да" : "Нет");
         });
     } 
 
@@ -608,10 +637,10 @@ void UIService::init_settings_part_chm_templates()
         UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 40, 140, 40 + (100 * page), page == 0, "", &img_tempC));
         setter_tempC = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 40, 185, 40 + (100 * page), page == 0, "", &img_sand_watch));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 50, 185, 40 + (100 * page), page == 0, "", &img_sand_watch));
         setter_durat_ss = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 55, 230, 40 + (100 * page), page == 0, "пауза", nullptr, false));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 45, 240, 40 + (100 * page), page == 0, "пауза", nullptr, false));
         setter_pause_after = UI_template_setters.back();
 
         /* ON/OFF step processing setter */
@@ -633,12 +662,20 @@ void UIService::init_settings_part_chm_templates()
         setter_fan_speed->set_extra_button_logic({
             [this, page]() {
                 CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
-                templ->get_step(page)->fan++;
+                templ->get_step(page)->fan = ValueComparator<uint8_t>::calc(
+                    var_sensor_dac_asyncM_rpm_min.get(),
+                    var_sensor_dac_asyncM_rpm_max.get(),
+                    ++templ->get_step(page)->fan
+                ) ;
                 prog_chm_templates->at(get_template_chm_index())->accept();
             },
             [this, page]() {
                 CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
-                templ->get_step(page)->fan--;
+                templ->get_step(page)->fan = ValueComparator<uint8_t>::calc(
+                    var_sensor_dac_asyncM_rpm_min.get(),
+                    var_sensor_dac_asyncM_rpm_max.get(),
+                    --templ->get_step(page)->fan
+                ) ;
                 prog_chm_templates->at(get_template_chm_index())->accept();
             },
             []() {}
@@ -651,36 +688,79 @@ void UIService::init_settings_part_chm_templates()
         setter_tempC->set_extra_button_logic({
             [this, page]() {
                 CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
-                templ->get_step(page)->tempC++;
+                templ->get_step(page)->tempC = ValueComparator<uint8_t>::calc(
+                    templ->get_step(page)->aim == ProgramStepAimEnum::CHILLING ? var_prog_limit_chill_tempC_min.get() : var_prog_limit_heat_tempC_min.get(),
+                    templ->get_step(page)->aim == ProgramStepAimEnum::CHILLING ? var_prog_limit_chill_tempC_max.get() : var_prog_limit_heat_tempC_max.get(),
+                    ++templ->get_step(page)->tempC
+                ) ;
                 prog_chm_templates->at(get_template_chm_index())->accept();
             },
             [this, page]() {
                 CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
-                templ->get_step(page)->tempC--;
+                templ->get_step(page)->tempC = ValueComparator<uint8_t>::calc(
+                    templ->get_step(page)->aim == ProgramStepAimEnum::CHILLING ? var_prog_limit_chill_tempC_min.get() : var_prog_limit_heat_tempC_min.get(),
+                    templ->get_step(page)->aim == ProgramStepAimEnum::CHILLING ? var_prog_limit_chill_tempC_max.get() : var_prog_limit_heat_tempC_max.get(),
+                    --templ->get_step(page)->tempC
+                ) ;
                 prog_chm_templates->at(get_template_chm_index())->accept();
             },
             []() {}
         });
         setter_tempC->add_ui_context_action([=]() {
-            setter_tempC->set_value(prog_chm_templates->at(get_template_chm_index())->get().get_step(page)->tempC);
+            setter_tempC->set_value(prog_chm_templates->at(get_template_chm_index())->get().get_step(page)->tempC, "°");
         });
 
         /* Step duration SS setter */
         setter_durat_ss->set_extra_button_logic({
+            /*
             [this, page]() {
                 CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
-                templ->get_step(page)->duration_ss++;
+                templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
+                    var_prog_any_step_min_durat_ss.get(),
+                    var_prog_any_step_max_durat_ss.get(),
+                    templ->get_step(page)->duration_ss += 5
+                ) ;
                 prog_chm_templates->at(get_template_chm_index())->accept();
             },
             [this, page]() {
                 CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
-                templ->get_step(page)->duration_ss--;
+                templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
+                    var_prog_any_step_min_durat_ss.get(),
+                    var_prog_any_step_max_durat_ss.get(),
+                    templ->get_step(page)->duration_ss -= 5
+                ) ;
+                prog_chm_templates->at(get_template_chm_index())->accept();
+            },
+            */
+
+            [this, page]() {
+                CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
+                templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
+                    var_prog_any_step_min_durat_ss.get(),
+                    var_prog_any_step_max_durat_ss.get(),
+                    templ->get_step(page)->duration_ss += 5
+                ) ;
+                prog_chm_templates->at(get_template_chm_index())->accept();
+            },
+            [this, page]() {
+                CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
+                templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
+                    var_prog_any_step_min_durat_ss.get(),
+                    var_prog_any_step_max_durat_ss.get(),
+                    templ->get_step(page)->duration_ss -= 5
+                ) ;
                 prog_chm_templates->at(get_template_chm_index())->accept();
             },
             []() {}
         });
         setter_durat_ss->add_ui_context_action([=]() {
-            setter_durat_ss->set_value((int32_t)prog_chm_templates->at(get_template_chm_index())->get().get_step(page)->duration_ss);
+            
+            static char buffer[20];
+            static uint32_t * ss;
+            ss = &prog_chm_templates->at(get_template_chm_index())->get().get_step(page)->duration_ss;
+
+            sprintf(buffer, "%01d:%02dс.", *ss / 60, *ss % 60);
+            setter_durat_ss->set_value(std::string(buffer));
         });
 
         /* ON/OFF pause after step completed setter */
@@ -695,7 +775,7 @@ void UIService::init_settings_part_chm_templates()
         });
         setter_pause_after->add_ui_context_action([=]() {
             bool state = prog_chm_templates->at(get_template_chm_index())->get().get_step(page)->await_ok_button;
-            setter_pause_after->set_value(state ? "ВКЛ" : "ВЫКЛ");
+            setter_pause_after->set_value(state ? "Да" : "Нет");
         });
     } 
 
@@ -928,7 +1008,7 @@ void UIService::init_settings_master_controls()
     });
     UI_S_M_blowing_limit_ss_min->add_ui_context_action([this]() {
         static char buffer[20];
-        sprintf(buffer, "%01dм. %02dс.", var_blowing_limit_ss_min.get() / 60, var_blowing_limit_ss_min.get() % 60);\
+        sprintf(buffer, "%01dм. %02dс.", var_blowing_limit_ss_min.get() / 60, var_blowing_limit_ss_min.get() % 60);
         UI_S_M_blowing_limit_ss_min->set_value(std::string(buffer));    
     });
 
