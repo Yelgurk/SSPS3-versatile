@@ -29,7 +29,7 @@ bool pmFlag;
 /* Filters */
 ExponentialSmoothing exp_filter_tempC_product(0.1);
 ExponentialSmoothing exp_filter_tempC_wJacket(0.1);
-ExponentialSmoothing exp_filter_24v_batt(0.15);
+ExponentialSmoothing exp_filter_24v_batt(0.02);
 
 /* Task manager */
 RtTaskManager rt_task_manager;

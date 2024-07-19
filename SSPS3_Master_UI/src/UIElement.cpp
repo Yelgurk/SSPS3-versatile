@@ -225,11 +225,15 @@ UIElement * UIElement::navi_next()
     if (navi_pointer != nullptr)
     {
         navi_pointer->set_focused(true);
-        if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration && (old_navi->_focus_offset_y == 0 || old_navi == nullptr))
+        if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration && old_navi != nullptr && old_navi->_focus_offset_y == 0)
         {
-            lv_area_t child_pos;
-            lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
-            lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1 + _focus_offset_y, LV_ANIM_OFF);
+            //lv_area_t child_pos;
+            //lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
+            //child_pos.y1 = child_pos.y1 + navi_pointer->_focus_offset_y;
+            //child_pos.y1 = child_pos.y1 < 0 ? 0 : child_pos.y1;
+            //lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1, LV_ANIM_OFF);
+
+            lv_obj_scroll_to_y(navi_childs_presenter, 0, LV_ANIM_OFF);
         }
         else
             lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_OFF);
@@ -293,11 +297,15 @@ UIElement * UIElement::navi_prev()
     {
         navi_pointer->set_focused(true);
 
-        if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration && (old_navi->_focus_offset_y == 0 || old_navi == nullptr))
+        if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration && old_navi != nullptr && old_navi->_focus_offset_y == 0)
         {
-            lv_area_t child_pos;
-            lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
-            lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1 + _focus_offset_y, LV_ANIM_OFF);
+            //lv_area_t child_pos;
+            //lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
+            //child_pos.y1 = child_pos.y1 + navi_pointer->_focus_offset_y;
+            //child_pos.y1 = child_pos.y1 < 0 ? 0 : child_pos.y1;
+            //lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1, LV_ANIM_OFF);
+
+            lv_obj_scroll_to_y(navi_childs_presenter, 0, LV_ANIM_OFF);
         }
         else
             lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_OFF);

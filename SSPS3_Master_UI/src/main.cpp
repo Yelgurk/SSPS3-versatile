@@ -39,10 +39,8 @@ void setup()
     );
     filter_24v_batt         = new FilterValue(
         &exp_filter_24v_batt,
-        BATT_MULT_TO_12BIT * MIN_BATT_VOLTAGE,
-        BATT_MULT_TO_12BIT * MAX_BATT_VOLTAGE,
-        MIN_BATT_VOLTAGE * 10,
-        MAX_BATT_VOLTAGE * 10
+        BATT_V_TO_12BIT * MIN_BATT_VOLTAGE,
+        BATT_V_TO_12BIT * MAX_BATT_VOLTAGE
     );
 
     pinMode(INT, INPUT_PULLDOWN);
@@ -90,7 +88,7 @@ void setup()
                 WaterJacketStateEnum::FILLED : (rt_out_state_wJacket ?
                     WaterJacketStateEnum::FILLING : WaterJacketStateEnum::EMPTY
                 ),
-            filter_24v_batt->get_physical_value() / 10,
+            filter_24v_batt->get_percentage_value(),
             OptIn_state[DIN_380V_SIGNAL] ? ChargeStateEnum::CHARGERING : ChargeStateEnum::STABLE
         );
     }, 500);

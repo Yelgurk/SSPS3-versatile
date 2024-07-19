@@ -45,7 +45,8 @@ public:
         int32_t width,
         bool top_column_setter = false,
         string header_text = "",
-        const lv_image_dsc_t * header_icon = nullptr
+        const lv_image_dsc_t * header_icon = nullptr,
+        const lv_font_t * header_font = nullptr
     ) : UIValueSetter(
         parent_navi,
         0,
@@ -54,7 +55,10 @@ public:
         0,
         top_column_setter,
         header_text,
-        header_icon
+        header_icon,
+        true,
+        false,
+        header_font
     ) {}
 
     UIValueSetter(
@@ -67,7 +71,8 @@ public:
         string header_text = "",
         const lv_image_dsc_t * header_icon = nullptr,
         bool show_arrows = true,
-        bool is_button = false
+        bool is_button = false,
+        const lv_font_t * header_font = nullptr
     ) : UIElement {
         { EquipmentType::All },
         {},
@@ -95,10 +100,20 @@ public:
         lv_obj_set_style_pad_all(get_container(), 0, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_set_style_border_width(get_container(), 0, LV_PART_MAIN | LV_STATE_FOCUSED);
 
+
         lv_obj_t * label_setter_header = lv_label_create(get_container());
-        lv_obj_align(label_setter_header, LV_ALIGN_TOP_MID, 0, 0);
-        lv_obj_set_style_text_font(label_setter_header, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_label_set_text(label_setter_header, header_text.c_str());
+        if (header_font != nullptr)
+        {
+            lv_obj_align(label_setter_header, LV_ALIGN_CENTER, 0, -30);
+            lv_obj_set_style_text_font(label_setter_header, header_font, LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        else
+        {
+            lv_obj_align(label_setter_header, LV_ALIGN_TOP_MID, 0, 0);
+            lv_obj_set_style_text_font(label_setter_header, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        lv_obj_set_style_text_align(label_setter_header, LV_TEXT_ALIGN_CENTER, 0);
 
         lv_obj_t * icon_setter_header = lv_image_create(get_container());
         lv_obj_align(icon_setter_header, LV_ALIGN_TOP_MID, 0, -12);
@@ -181,16 +196,36 @@ public:
         lv_label_set_text(get_container_content("[header]"), new_header.c_str());
     }
 
-    void set_value(int32_t new_value) {
-        set_value(to_string(new_value));
+    void set_value(int32_t new_value, std::string postfix = "") {
+        set_value(to_string(new_value), postfix);
     }
 
-    void set_value(double new_value) {
-        set_value(to_string(new_value));
+    void set_value(double new_value, std::string postfix = "", int8_t chars_after = -1)
+    {
+        static char str_buff[20];
+
+        if (chars_after < 0)
+            set_value(to_string(new_value), postfix);
+        else
+        {
+            switch (chars_after)
+            {
+            case 0: sprintf(str_buff, "%.0f", new_value); break;
+            case 1: sprintf(str_buff, "%.1f", new_value); break;
+            case 2: sprintf(str_buff, "%.2f", new_value); break;
+            case 3: sprintf(str_buff, "%.3f", new_value); break;
+            case 4: sprintf(str_buff, "%.4f", new_value); break;
+            default: sprintf(str_buff, "%.0f", new_value); break;
+            }
+            
+            set_value(string(str_buff), postfix);
+        }
+
     }
 
-    void set_value(string new_value) {
-        lv_label_set_text(get_container_content("[value]"), new_value.c_str());
+    void set_value(string new_value, std::string postfix = "")
+    {
+        lv_label_set_text(get_container_content("[value]"), (new_value + postfix).c_str());
     }
 };
 

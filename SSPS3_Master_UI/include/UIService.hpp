@@ -148,11 +148,14 @@ public:
     UIValueSetter * UI_S_M_plc_language;          
     UIValueSetter * UI_S_M_is_blowgun_by_rf;       
     UIValueSetter * UI_S_M_is_asyncM_rpm_float;
+    UIValueSetter * UI_S_M_reboot_system;
     UIValueSetter * UI_S_M_reset_system;
 
     /* master, page - 2 */    
-    UIValueSetter * UI_S_M_sensor_voltage_min_12bit;
-    UIValueSetter * UI_S_M_sensor_voltage_max_12bit;
+    UIValueSetter * UI_S_M_sensor_batt_min_V;
+    UIValueSetter * UI_S_M_sensor_batt_max_V;
+    UIValueSetter * UI_S_M_sensor_batt_V_min_12bit;
+    UIValueSetter * UI_S_M_sensor_batt_V_max_12bit;
     UIValueSetter * UI_S_M_sensor_tempC_limit_4ma_12bit;
     UIValueSetter * UI_S_M_sensor_tempC_limit_20ma_12bit;
     UIValueSetter * UI_S_M_sensor_tempC_limit_4ma_degrees_C;       

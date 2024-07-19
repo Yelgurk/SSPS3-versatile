@@ -710,10 +710,10 @@ void UIService::init_settings_master_controls()
     UI_settings_master_limits_blowing   = new UIMenuListItem(UI_menu_list_master, "Насос");
     UI_settings_master_limits_prog      = new UIMenuListItem(UI_menu_list_master, "Программы");
     UI_settings_master_machine          ->set_page_header("Модель, язык и \"железо\"", 0);
-    UI_settings_master_machine          ->set_page_header("Принудительный перезапуск", 1);
+    UI_settings_master_machine          ->set_page_header("Опасный раздел", 1);
     UI_settings_master_sensors          ->set_page_header("Надстройка датчиков", 0);
     UI_settings_master_limits_blowing   ->set_page_header("Надстройка насоса", 0);
-    UI_settings_master_limits_prog      ->set_page_header("Надстройка программ", 0);
+    UI_settings_master_limits_prog      ->set_page_header("Надстройка программ\n#АП - \"Авария после\"", 0);
 
     /* master, page - 1 */
     UI_S_M_type_of_equipment_enum = new UIValueSetter(UI_settings_master_machine, true, 40, "модель");
@@ -756,31 +756,57 @@ void UIService::init_settings_master_controls()
     });
     UI_S_M_plc_language->add_ui_context_action([this]() { UI_S_M_plc_language->set_value(var_plc_language.get()); });
 
-    UI_S_M_reset_system = new UIValueSetter(UI_settings_master_machine, 1, 265, 10, 40, false, "Выполнить", nullptr, false, true);
-    UI_S_M_reset_system->set_extra_button_logic({
+    UI_S_M_reboot_system = new UIValueSetter(UI_settings_master_machine, 1, 265, 10, 40, false, "Перезапуск системы", nullptr, false, true);
+    UI_S_M_reboot_system->set_extra_button_logic({
         []() {},
         []() {},
         []() { ESP.restart(); }
     });
+
+    UI_S_M_reset_system = new UIValueSetter(UI_settings_master_machine, 1, 265, 10, 95, false, "Полный сброс + перезапуск", nullptr, false, true);
+    UI_S_M_reset_system->set_extra_button_logic({
+        []() {},
+        []() {},
+        []() {
+            Storage::reset_all();
+            ESP.restart();
+        }
+    });
     
     /* master, page - 2 */   
-    UI_S_M_sensor_voltage_min_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
-    UI_S_M_sensor_voltage_min_12bit->set_extra_button_logic({
-        [this]() { var_sensor_voltage_min_12bit.set(var_sensor_voltage_min_12bit.get() + 1); },
-        [this]() { var_sensor_voltage_min_12bit.set(var_sensor_voltage_min_12bit.get() - 1); },
+    UI_S_M_sensor_batt_min_V = new UIValueSetter(UI_settings_master_sensors, true, 40, "Аккум.\nmin V", nullptr, &OpenSans_bold_14px);
+    UI_S_M_sensor_batt_min_V->set_extra_button_logic({
+        [this]() { var_sensor_batt_min_V.set(var_sensor_batt_min_V.get() + 0.1f); },
+        [this]() { var_sensor_batt_min_V.set(var_sensor_batt_min_V.get() - 0.1f); },
         []() {}
     });
-    UI_S_M_sensor_voltage_min_12bit->add_ui_context_action([this]() { UI_S_M_sensor_voltage_min_12bit->set_value(var_sensor_voltage_min_12bit.get()); });
+    UI_S_M_sensor_batt_min_V->add_ui_context_action([this]() { UI_S_M_sensor_batt_min_V->set_value(var_sensor_batt_min_V.get(), "v", 1); });
 
-    UI_S_M_sensor_voltage_max_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
-    UI_S_M_sensor_voltage_max_12bit->set_extra_button_logic({
-        [this]() { var_sensor_voltage_max_12bit.set(var_sensor_voltage_max_12bit.get() + 1); },
-        [this]() { var_sensor_voltage_max_12bit.set(var_sensor_voltage_max_12bit.get() - 1); },
+    UI_S_M_sensor_batt_max_V = new UIValueSetter(UI_settings_master_sensors, true, 40, "Аккум.\nmax V", nullptr, &OpenSans_bold_14px);
+    UI_S_M_sensor_batt_max_V->set_extra_button_logic({
+        [this]() { var_sensor_batt_max_V.set(var_sensor_batt_max_V.get() + 0.1f); },
+        [this]() { var_sensor_batt_max_V.set(var_sensor_batt_max_V.get() - 0.1f); },
         []() {}
     });
-    UI_S_M_sensor_voltage_max_12bit->add_ui_context_action([this]() { UI_S_M_sensor_voltage_max_12bit->set_value(var_sensor_voltage_max_12bit.get()); });
+    UI_S_M_sensor_batt_max_V->add_ui_context_action([this]() { UI_S_M_sensor_batt_max_V->set_value(var_sensor_batt_max_V.get(), "v", 1); });
 
-    UI_S_M_sensor_tempC_limit_4ma_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_batt_V_min_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "Аккум.\nmin", nullptr, &OpenSans_bold_14px);
+    UI_S_M_sensor_batt_V_min_12bit->set_extra_button_logic({
+        [this]() { var_sensor_batt_V_min_12bit.set(var_sensor_batt_V_min_12bit.get() + 1); },
+        [this]() { var_sensor_batt_V_min_12bit.set(var_sensor_batt_V_min_12bit.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_batt_V_min_12bit->add_ui_context_action([this]() { UI_S_M_sensor_batt_V_min_12bit->set_value(var_sensor_batt_V_min_12bit.get()); });
+
+    UI_S_M_sensor_batt_V_max_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "Аккум.\nmax", nullptr, &OpenSans_bold_14px);
+    UI_S_M_sensor_batt_V_max_12bit->set_extra_button_logic({
+        [this]() { var_sensor_batt_V_max_12bit.set(var_sensor_batt_V_max_12bit.get() + 1); },
+        [this]() { var_sensor_batt_V_max_12bit.set(var_sensor_batt_V_max_12bit.get() - 1); },
+        []() {}
+    });
+    UI_S_M_sensor_batt_V_max_12bit->add_ui_context_action([this]() { UI_S_M_sensor_batt_V_max_12bit->set_value(var_sensor_batt_V_max_12bit.get()); });
+
+    UI_S_M_sensor_tempC_limit_4ma_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "PT100\n4ma", nullptr, &OpenSans_bold_14px);
     UI_S_M_sensor_tempC_limit_4ma_12bit->set_extra_button_logic({
         [this]() { var_sensor_tempC_limit_4ma_12bit.set(var_sensor_tempC_limit_4ma_12bit.get() + 1); },
         [this]() { var_sensor_tempC_limit_4ma_12bit.set(var_sensor_tempC_limit_4ma_12bit.get() - 1); },
@@ -788,7 +814,7 @@ void UIService::init_settings_master_controls()
     });
     UI_S_M_sensor_tempC_limit_4ma_12bit->add_ui_context_action([this]() { UI_S_M_sensor_tempC_limit_4ma_12bit->set_value(var_sensor_tempC_limit_4ma_12bit.get()); });
 
-    UI_S_M_sensor_tempC_limit_20ma_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_tempC_limit_20ma_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "PT100\n20ma", nullptr, &OpenSans_bold_14px);
     UI_S_M_sensor_tempC_limit_20ma_12bit->set_extra_button_logic({
         [this]() { var_sensor_tempC_limit_20ma_12bit.set(var_sensor_tempC_limit_20ma_12bit.get() + 1); },
         [this]() { var_sensor_tempC_limit_20ma_12bit.set(var_sensor_tempC_limit_20ma_12bit.get() - 1); },
@@ -796,39 +822,43 @@ void UIService::init_settings_master_controls()
     });
     UI_S_M_sensor_tempC_limit_20ma_12bit->add_ui_context_action([this]() { UI_S_M_sensor_tempC_limit_20ma_12bit->set_value(var_sensor_tempC_limit_20ma_12bit.get()); });
 
-    UI_S_M_sensor_tempC_limit_4ma_degrees_C = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_tempC_limit_4ma_degrees_C = new UIValueSetter(UI_settings_master_sensors, true, 40, "PT100\n4ma°C", nullptr, &OpenSans_bold_14px);
     UI_S_M_sensor_tempC_limit_4ma_degrees_C->set_extra_button_logic({
         [this]() { var_sensor_tempC_limit_4ma_degrees_C.set(var_sensor_tempC_limit_4ma_degrees_C.get() + 1); },
         [this]() { var_sensor_tempC_limit_4ma_degrees_C.set(var_sensor_tempC_limit_4ma_degrees_C.get() - 1); },
         []() {}
     });
-    UI_S_M_sensor_tempC_limit_4ma_degrees_C->add_ui_context_action([this]() { UI_S_M_sensor_tempC_limit_4ma_degrees_C->set_value(var_sensor_tempC_limit_4ma_degrees_C.get()); });
+    UI_S_M_sensor_tempC_limit_4ma_degrees_C->add_ui_context_action([this]() {
+        UI_S_M_sensor_tempC_limit_4ma_degrees_C->set_value(var_sensor_tempC_limit_4ma_degrees_C.get(), "°");
+    });
 
-    UI_S_M_sensor_tempC_limit_20ma_degrees_C = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_tempC_limit_20ma_degrees_C = new UIValueSetter(UI_settings_master_sensors, true, 40, "PT100\n20ma°C", nullptr, &OpenSans_bold_14px);
     UI_S_M_sensor_tempC_limit_20ma_degrees_C->set_extra_button_logic({
         [this]() { var_sensor_tempC_limit_20ma_degrees_C.set(var_sensor_tempC_limit_20ma_degrees_C.get() + 1); },
         [this]() { var_sensor_tempC_limit_20ma_degrees_C.set(var_sensor_tempC_limit_20ma_degrees_C.get() - 1); },
         []() {}
     });
-    UI_S_M_sensor_tempC_limit_20ma_degrees_C->add_ui_context_action([this]() { UI_S_M_sensor_tempC_limit_20ma_degrees_C->set_value(var_sensor_tempC_limit_20ma_degrees_C.get()); });
+    UI_S_M_sensor_tempC_limit_20ma_degrees_C->add_ui_context_action([this]() {
+        UI_S_M_sensor_tempC_limit_20ma_degrees_C->set_value(var_sensor_tempC_limit_20ma_degrees_C.get(), "°");
+    });
 
-    UI_S_M_sensor_dac_rpm_limit_min_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_dac_rpm_limit_min_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "Мотор\nmin цап", nullptr, &OpenSans_bold_14px);
     UI_S_M_sensor_dac_rpm_limit_min_12bit->set_extra_button_logic({
-        [this]() { var_sensor_dac_rpm_limit_min_12bit.set(var_sensor_dac_rpm_limit_min_12bit.get() + 1); },
-        [this]() { var_sensor_dac_rpm_limit_min_12bit.set(var_sensor_dac_rpm_limit_min_12bit.get() - 1); },
+        [this]() { uint16_t val = var_sensor_dac_rpm_limit_min_12bit.get() + 1; var_sensor_dac_rpm_limit_min_12bit.set(val > 4095 ? 0 : val); },
+        [this]() { uint16_t val = var_sensor_dac_rpm_limit_min_12bit.get() - 1; var_sensor_dac_rpm_limit_min_12bit.set(val > 4095 ? 4095 : val); },
         []() {}
     });
     UI_S_M_sensor_dac_rpm_limit_min_12bit->add_ui_context_action([this]() { UI_S_M_sensor_dac_rpm_limit_min_12bit->set_value(var_sensor_dac_rpm_limit_min_12bit.get()); });
 
-    UI_S_M_sensor_dac_rpm_limit_max_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_dac_rpm_limit_max_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "Мотор\nmax цап", nullptr, &OpenSans_bold_14px);
     UI_S_M_sensor_dac_rpm_limit_max_12bit->set_extra_button_logic({
-        [this]() { var_sensor_dac_rpm_limit_max_12bit.set(var_sensor_dac_rpm_limit_max_12bit.get() + 1); },
-        [this]() { var_sensor_dac_rpm_limit_max_12bit.set(var_sensor_dac_rpm_limit_max_12bit.get() - 1); },
+        [this]() { uint16_t val = var_sensor_dac_rpm_limit_max_12bit.get() + 1; var_sensor_dac_rpm_limit_max_12bit.set(val > 4095 ? 0 : val); },
+        [this]() { uint16_t val = var_sensor_dac_rpm_limit_max_12bit.get() - 1; var_sensor_dac_rpm_limit_max_12bit.set(val > 4095 ? 4095 : val); },
         []() {}
     });
     UI_S_M_sensor_dac_rpm_limit_max_12bit->add_ui_context_action([this]() { UI_S_M_sensor_dac_rpm_limit_max_12bit->set_value(var_sensor_dac_rpm_limit_max_12bit.get()); });
 
-    UI_S_M_sensor_dac_asyncM_rpm_min = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_dac_asyncM_rpm_min = new UIValueSetter(UI_settings_master_sensors, true, 40, "Мотор\nmin об.", nullptr, &OpenSans_bold_14px);
     UI_S_M_sensor_dac_asyncM_rpm_min->set_extra_button_logic({
         [this]() { var_sensor_dac_asyncM_rpm_min.set(var_sensor_dac_asyncM_rpm_min.get() + 1); },
         [this]() { var_sensor_dac_asyncM_rpm_min.set(var_sensor_dac_asyncM_rpm_min.get() - 1); },
@@ -836,7 +866,7 @@ void UIService::init_settings_master_controls()
     });
     UI_S_M_sensor_dac_asyncM_rpm_min->add_ui_context_action([this]() { UI_S_M_sensor_dac_asyncM_rpm_min->set_value(var_sensor_dac_asyncM_rpm_min.get()); });
 
-    UI_S_M_sensor_dac_asyncM_rpm_max = new UIValueSetter(UI_settings_master_sensors, true, 40, "text");
+    UI_S_M_sensor_dac_asyncM_rpm_max = new UIValueSetter(UI_settings_master_sensors, true, 40, "Мотор\nmax об.", nullptr, &OpenSans_bold_14px);
     UI_S_M_sensor_dac_asyncM_rpm_max->set_extra_button_logic({
         [this]() { var_sensor_dac_asyncM_rpm_max.set(var_sensor_dac_asyncM_rpm_max.get() + 1); },
         [this]() { var_sensor_dac_asyncM_rpm_max.set(var_sensor_dac_asyncM_rpm_max.get() - 1); },
@@ -846,151 +876,175 @@ void UIService::init_settings_master_controls()
 
 
     /* master, page - 3 */   
-    UI_S_M_blowing_await_ss = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_await_ss = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "Простой");
     UI_S_M_blowing_await_ss->set_extra_button_logic({
         [this]() { var_blowing_await_ss.set(var_blowing_await_ss.get() + 1); },
         [this]() { var_blowing_await_ss.set(var_blowing_await_ss.get() - 1); },
         []() {}
     });
-    UI_S_M_blowing_await_ss->add_ui_context_action([this]() { UI_S_M_blowing_await_ss->set_value(var_blowing_await_ss.get()); });
+    UI_S_M_blowing_await_ss->add_ui_context_action([this]() { UI_S_M_blowing_await_ss->set_value(var_blowing_await_ss.get(), " сек."); });
 
-    UI_S_M_blowing_pump_power_lm = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_pump_power_lm = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "Объём л/м");
     UI_S_M_blowing_pump_power_lm->set_extra_button_logic({
-        [this]() { var_blowing_pump_power_lm.set(var_blowing_pump_power_lm.get() + 1); },
-        [this]() { var_blowing_pump_power_lm.set(var_blowing_pump_power_lm.get() - 1); },
+        [this]() { float val = var_blowing_pump_power_lm.get() + 0.25f; var_blowing_pump_power_lm.set(val < 1.0f ? 1.0f : val); },
+        [this]() { float val = var_blowing_pump_power_lm.get() - 0.25f; var_blowing_pump_power_lm.set(val < 1.0f ? 1.0f : val); },
         []() {}
     });
-    UI_S_M_blowing_pump_power_lm->add_ui_context_action([this]() { UI_S_M_blowing_pump_power_lm->set_value(var_blowing_pump_power_lm.get()); });
+    UI_S_M_blowing_pump_power_lm->add_ui_context_action([this]() { UI_S_M_blowing_pump_power_lm->set_value(var_blowing_pump_power_lm.get(), " л.", 3); });
 
-    UI_S_M_blowing_limit_ml_max = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_limit_ml_max = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "Порция max");
     UI_S_M_blowing_limit_ml_max->set_extra_button_logic({
-        [this]() { var_blowing_limit_ml_max.set(var_blowing_limit_ml_max.get() + 1); },
-        [this]() { var_blowing_limit_ml_max.set(var_blowing_limit_ml_max.get() - 1); },
+        [this]() { var_blowing_limit_ml_max.set(var_blowing_limit_ml_max.get() + 250); },
+        [this]() { var_blowing_limit_ml_max.set(var_blowing_limit_ml_max.get() - 250); },
         []() {}
     });
-    UI_S_M_blowing_limit_ml_max->add_ui_context_action([this]() { UI_S_M_blowing_limit_ml_max->set_value(var_blowing_limit_ml_max.get()); });
+    UI_S_M_blowing_limit_ml_max->add_ui_context_action([this]() { UI_S_M_blowing_limit_ml_max->set_value(var_blowing_limit_ml_max.get()/1000.f, " л.", 3); });
 
-    UI_S_M_blowing_limit_ml_min = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_limit_ml_min = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "Порция min");
     UI_S_M_blowing_limit_ml_min->set_extra_button_logic({
-        [this]() { var_blowing_limit_ml_min.set(var_blowing_limit_ml_min.get() + 1); },
-        [this]() { var_blowing_limit_ml_min.set(var_blowing_limit_ml_min.get() - 1); },
+        [this]() { var_blowing_limit_ml_min.set(var_blowing_limit_ml_min.get() + 250); },
+        [this]() { var_blowing_limit_ml_min.set(var_blowing_limit_ml_min.get() - 250); },
         []() {}
     });
-    UI_S_M_blowing_limit_ml_min->add_ui_context_action([this]() { UI_S_M_blowing_limit_ml_min->set_value(var_blowing_limit_ml_min.get()); });
+    UI_S_M_blowing_limit_ml_min->add_ui_context_action([this]() { UI_S_M_blowing_limit_ml_min->set_value(var_blowing_limit_ml_min.get()/1000.f, " л.", 3); });
 
-    UI_S_M_blowing_limit_ss_max = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_limit_ss_max = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "Мойка max");
     UI_S_M_blowing_limit_ss_max->set_extra_button_logic({
-        [this]() { var_blowing_limit_ss_max.set(var_blowing_limit_ss_max.get() + 1); },
-        [this]() { var_blowing_limit_ss_max.set(var_blowing_limit_ss_max.get() - 1); },
+        [this]() { var_blowing_limit_ss_max.set(var_blowing_limit_ss_max.get() + 5); },
+        [this]() { var_blowing_limit_ss_max.set(var_blowing_limit_ss_max.get() - 5); },
         []() {}
     });
-    UI_S_M_blowing_limit_ss_max->add_ui_context_action([this]() { UI_S_M_blowing_limit_ss_max->set_value(var_blowing_limit_ss_max.get()); });
+    UI_S_M_blowing_limit_ss_max->add_ui_context_action([this]() {
+        static char buffer[20];
+        sprintf(buffer, "%01dм. %02dс.", var_blowing_limit_ss_max.get() / 60, var_blowing_limit_ss_max.get() % 60);\
+        UI_S_M_blowing_limit_ss_max->set_value(std::string(buffer));
+    });
 
-    UI_S_M_blowing_limit_ss_min = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "text");
+    UI_S_M_blowing_limit_ss_min = new UIValueSetter(UI_settings_master_limits_blowing, true, 40, "Мойка min");
     UI_S_M_blowing_limit_ss_min->set_extra_button_logic({
-        [this]() { var_blowing_limit_ss_min.set(var_blowing_limit_ss_min.get() + 1); },
-        [this]() { var_blowing_limit_ss_min.set(var_blowing_limit_ss_min.get() - 1); },
+        [this]() { var_blowing_limit_ss_min.set(var_blowing_limit_ss_min.get() + 5); },
+        [this]() { var_blowing_limit_ss_min.set(var_blowing_limit_ss_min.get() - 5); },
         []() {}
     });
-    UI_S_M_blowing_limit_ss_min->add_ui_context_action([this]() { UI_S_M_blowing_limit_ss_min->set_value(var_blowing_limit_ss_min.get()); });
+    UI_S_M_blowing_limit_ss_min->add_ui_context_action([this]() {
+        static char buffer[20];
+        sprintf(buffer, "%01dм. %02dс.", var_blowing_limit_ss_min.get() / 60, var_blowing_limit_ss_min.get() % 60);\
+        UI_S_M_blowing_limit_ss_min->set_value(std::string(buffer));    
+    });
 
     
     /* master, page - 4 */    
-    UI_S_M_wJacket_tempC_limit_max = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_wJacket_tempC_limit_max = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "Рубашка\nmax°C воды", nullptr, &OpenSans_bold_14px);
     UI_S_M_wJacket_tempC_limit_max->set_extra_button_logic({
-        [this]() { var_wJacket_tempC_limit_max.set(var_wJacket_tempC_limit_max.get() + 1); },
-        [this]() { var_wJacket_tempC_limit_max.set(var_wJacket_tempC_limit_max.get() - 1); },
+        [this]() { uint8_t var = var_wJacket_tempC_limit_max.get() + 1; var_wJacket_tempC_limit_max.set(var > LIMIT_WATER_BOILING_POINT_TEMPC ? LIMIT_WATER_BOILING_POINT_TEMPC : var); },
+        [this]() { uint8_t var = var_wJacket_tempC_limit_max.get() - 1; var_wJacket_tempC_limit_max.set(var > LIMIT_WATER_BOILING_POINT_TEMPC ? LIMIT_WATER_BOILING_POINT_TEMPC : var); },
         []() {}
     });
-    UI_S_M_wJacket_tempC_limit_max->add_ui_context_action([this]() { UI_S_M_wJacket_tempC_limit_max->set_value(var_wJacket_tempC_limit_max.get()); });
+    UI_S_M_wJacket_tempC_limit_max->add_ui_context_action([this]() { UI_S_M_wJacket_tempC_limit_max->set_value(var_wJacket_tempC_limit_max.get(), "°C"); });
 
-    UI_S_M_prog_wJacket_drain_max_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_wJacket_drain_max_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "Рубашка\nпусто? #АП", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_wJacket_drain_max_ss->set_extra_button_logic({
         [this]() { var_prog_wJacket_drain_max_ss.set(var_prog_wJacket_drain_max_ss.get() + 1); },
         [this]() { var_prog_wJacket_drain_max_ss.set(var_prog_wJacket_drain_max_ss.get() - 1); },
         []() {}
     });
-    UI_S_M_prog_wJacket_drain_max_ss->add_ui_context_action([this]() { UI_S_M_prog_wJacket_drain_max_ss->set_value(var_prog_wJacket_drain_max_ss.get()); });
+    UI_S_M_prog_wJacket_drain_max_ss->add_ui_context_action([this]() { UI_S_M_prog_wJacket_drain_max_ss->set_value(var_prog_wJacket_drain_max_ss.get(), "сек."); });
 
-    UI_S_M_prog_on_pause_max_await_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_on_pause_max_await_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "Прогр.\nпростой? #АП", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_on_pause_max_await_ss->set_extra_button_logic({
-        [this]() { var_prog_on_pause_max_await_ss.set(var_prog_on_pause_max_await_ss.get() + 1); },
-        [this]() { var_prog_on_pause_max_await_ss.set(var_prog_on_pause_max_await_ss.get() - 1); },
+        [this]() { var_prog_on_pause_max_await_ss.set(var_prog_on_pause_max_await_ss.get() + 10); },
+        [this]() { var_prog_on_pause_max_await_ss.set(var_prog_on_pause_max_await_ss.get() - 10); },
         []() {}
     });
-    UI_S_M_prog_on_pause_max_await_ss->add_ui_context_action([this]() { UI_S_M_prog_on_pause_max_await_ss->set_value(var_prog_on_pause_max_await_ss.get()); });
+    UI_S_M_prog_on_pause_max_await_ss->add_ui_context_action([this]() {
+        static char buffer[14];
+        sprintf(buffer, "%01d:%02dс.", var_prog_on_pause_max_await_ss.get() / 60, var_prog_on_pause_max_await_ss.get() % 60);
+        UI_S_M_prog_on_pause_max_await_ss->set_value(std::string(buffer));
+    });
 
-    UI_S_M_prog_await_spite_of_already_runned_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_await_spite_of_already_runned_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "Авто-пуск\nожидание", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_await_spite_of_already_runned_ss->set_extra_button_logic({
-        [this]() { var_prog_await_spite_of_already_runned_ss.set(var_prog_await_spite_of_already_runned_ss.get() + 1); },
-        [this]() { var_prog_await_spite_of_already_runned_ss.set(var_prog_await_spite_of_already_runned_ss.get() - 1); },
+        [this]() { var_prog_await_spite_of_already_runned_ss.set(var_prog_await_spite_of_already_runned_ss.get() + 10); },
+        [this]() { var_prog_await_spite_of_already_runned_ss.set(var_prog_await_spite_of_already_runned_ss.get() - 10); },
         []() {}
     });
-    UI_S_M_prog_await_spite_of_already_runned_ss->add_ui_context_action([this]() { UI_S_M_prog_await_spite_of_already_runned_ss->set_value(var_prog_await_spite_of_already_runned_ss.get()); });
+    UI_S_M_prog_await_spite_of_already_runned_ss->add_ui_context_action([this]() {
+        static char buffer[14];
+        sprintf(buffer, "%01d:%02dс.", var_prog_await_spite_of_already_runned_ss.get() / 60, var_prog_await_spite_of_already_runned_ss.get() % 60);
+        UI_S_M_prog_await_spite_of_already_runned_ss->set_value(std::string(buffer));
+    });
 
-    UI_S_M_prog_limit_heat_tempC_max = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_limit_heat_tempC_max = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "Продукт °C\nmax Нагрев", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_limit_heat_tempC_max->set_extra_button_logic({
-        [this]() { var_prog_limit_heat_tempC_max.set(var_prog_limit_heat_tempC_max.get() + 1); },
-        [this]() { var_prog_limit_heat_tempC_max.set(var_prog_limit_heat_tempC_max.get() - 1); },
+        [this]() { uint8_t var = var_prog_limit_heat_tempC_max.get() + 1;  var_prog_limit_heat_tempC_max.set(var > LIMIT_WATER_BOILING_POINT_TEMPC ? LIMIT_WATER_BOILING_POINT_TEMPC : var); },
+        [this]() { uint8_t var = var_prog_limit_heat_tempC_max.get() - 1;  var_prog_limit_heat_tempC_max.set(var > LIMIT_WATER_BOILING_POINT_TEMPC ? LIMIT_WATER_BOILING_POINT_TEMPC : var); },
         []() {}
     });
-    UI_S_M_prog_limit_heat_tempC_max->add_ui_context_action([this]() { UI_S_M_prog_limit_heat_tempC_max->set_value(var_prog_limit_heat_tempC_max.get()); });
+    UI_S_M_prog_limit_heat_tempC_max->add_ui_context_action([this]() { UI_S_M_prog_limit_heat_tempC_max->set_value(var_prog_limit_heat_tempC_max.get(), "°C"); });
 
-    UI_S_M_prog_limit_heat_tempC_min = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_limit_heat_tempC_min = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "Продукт °C\nmin Нагрев", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_limit_heat_tempC_min->set_extra_button_logic({
-        [this]() { var_prog_limit_heat_tempC_min.set(var_prog_limit_heat_tempC_min.get() + 1); },
-        [this]() { var_prog_limit_heat_tempC_min.set(var_prog_limit_heat_tempC_min.get() - 1); },
+        [this]() { uint8_t var = var_prog_limit_heat_tempC_min.get() + 1;  var_prog_limit_heat_tempC_min.set(var > LIMIT_WATER_BOILING_POINT_TEMPC ? LIMIT_WATER_BOILING_POINT_TEMPC : var); },
+        [this]() { uint8_t var = var_prog_limit_heat_tempC_min.get() - 1;  var_prog_limit_heat_tempC_min.set(var > LIMIT_WATER_BOILING_POINT_TEMPC ? LIMIT_WATER_BOILING_POINT_TEMPC : var); },
         []() {}
     });
-    UI_S_M_prog_limit_heat_tempC_min->add_ui_context_action([this]() { UI_S_M_prog_limit_heat_tempC_min->set_value(var_prog_limit_heat_tempC_min.get()); });
+    UI_S_M_prog_limit_heat_tempC_min->add_ui_context_action([this]() { UI_S_M_prog_limit_heat_tempC_min->set_value(var_prog_limit_heat_tempC_min.get(), "°C"); });
 
-    UI_S_M_prog_limit_chill_tempC_max = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_limit_chill_tempC_max = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "Продукт °C\nmax Охлажд.", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_limit_chill_tempC_max->set_extra_button_logic({
-        [this]() { var_prog_limit_chill_tempC_max.set(var_prog_limit_chill_tempC_max.get() + 1); },
-        [this]() { var_prog_limit_chill_tempC_max.set(var_prog_limit_chill_tempC_max.get() - 1); },
+        [this]() { uint8_t var = var_prog_limit_chill_tempC_max.get() + 1; var_prog_limit_chill_tempC_max.set(var > LIMIT_WATER_BOILING_POINT_TEMPC ? LIMIT_WATER_BOILING_POINT_TEMPC : var); },
+        [this]() { uint8_t var = var_prog_limit_chill_tempC_max.get() - 1; var_prog_limit_chill_tempC_max.set(var > LIMIT_WATER_BOILING_POINT_TEMPC ? LIMIT_WATER_BOILING_POINT_TEMPC : var); },
         []() {}
     });
-    UI_S_M_prog_limit_chill_tempC_max->add_ui_context_action([this]() { UI_S_M_prog_limit_chill_tempC_max->set_value(var_prog_limit_chill_tempC_max.get()); });
+    UI_S_M_prog_limit_chill_tempC_max->add_ui_context_action([this]() { UI_S_M_prog_limit_chill_tempC_max->set_value(var_prog_limit_chill_tempC_max.get(), "°C"); });
 
-    UI_S_M_prog_limit_chill_tempC_min = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_limit_chill_tempC_min = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "Продукт °C\nmin Охлажд.", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_limit_chill_tempC_min->set_extra_button_logic({
-        [this]() { var_prog_limit_chill_tempC_min.set(var_prog_limit_chill_tempC_min.get() + 1); },
-        [this]() { var_prog_limit_chill_tempC_min.set(var_prog_limit_chill_tempC_min.get() - 1); },
+        [this]() { uint8_t var = var_prog_limit_chill_tempC_min.get() + 1; var_prog_limit_chill_tempC_min.set(var > LIMIT_WATER_BOILING_POINT_TEMPC ? LIMIT_WATER_BOILING_POINT_TEMPC : var); },
+        [this]() { uint8_t var = var_prog_limit_chill_tempC_min.get() - 1; var_prog_limit_chill_tempC_min.set(var > LIMIT_WATER_BOILING_POINT_TEMPC ? LIMIT_WATER_BOILING_POINT_TEMPC : var); },
         []() {}
     });
-    UI_S_M_prog_limit_chill_tempC_min->add_ui_context_action([this]() { UI_S_M_prog_limit_chill_tempC_min->set_value(var_prog_limit_chill_tempC_min.get()); });
+    UI_S_M_prog_limit_chill_tempC_min->add_ui_context_action([this]() { UI_S_M_prog_limit_chill_tempC_min->set_value(var_prog_limit_chill_tempC_min.get(), "°C"); });
 
-    UI_S_M_prog_any_step_max_durat_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_any_step_max_durat_ss = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "Этап прогр.\nmax длит.", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_any_step_max_durat_ss->set_extra_button_logic({
-        [this]() { var_prog_any_step_max_durat_ss.set(var_prog_any_step_max_durat_ss.get() + 1); },
-        [this]() { var_prog_any_step_max_durat_ss.set(var_prog_any_step_max_durat_ss.get() - 1); },
+        [this]() { var_prog_any_step_max_durat_ss.set(var_prog_any_step_max_durat_ss.get() + 5); },
+        [this]() { var_prog_any_step_max_durat_ss.set(var_prog_any_step_max_durat_ss.get() - 5); },
         []() {}
     });
-    UI_S_M_prog_any_step_max_durat_ss->add_ui_context_action([this]() { UI_S_M_prog_any_step_max_durat_ss->set_value(var_prog_any_step_max_durat_ss.get()); });
+    UI_S_M_prog_any_step_max_durat_ss->add_ui_context_action([this]() {
+        static char buffer[14];
+        sprintf(buffer, "%01d:%02dс.", var_prog_any_step_max_durat_ss.get() / 60, var_prog_any_step_max_durat_ss.get() % 60);
+        UI_S_M_prog_any_step_max_durat_ss->set_value(std::string(buffer));
+    });
 
-    UI_S_M_prog_any_step_min_durat_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_any_step_min_durat_ss = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "Этап прогр.\nmin длит.", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_any_step_min_durat_ss->set_extra_button_logic({
-        [this]() { var_prog_any_step_min_durat_ss.set(var_prog_any_step_min_durat_ss.get() + 1); },
-        [this]() { var_prog_any_step_min_durat_ss.set(var_prog_any_step_min_durat_ss.get() - 1); },
+        [this]() { var_prog_any_step_min_durat_ss.set(var_prog_any_step_min_durat_ss.get() + 5); },
+        [this]() { var_prog_any_step_min_durat_ss.set(var_prog_any_step_min_durat_ss.get() - 5); },
         []() {}
     });
-    UI_S_M_prog_any_step_min_durat_ss->add_ui_context_action([this]() { UI_S_M_prog_any_step_min_durat_ss->set_value(var_prog_any_step_min_durat_ss.get()); });
+    UI_S_M_prog_any_step_min_durat_ss->add_ui_context_action([this]() {
+        static char buffer[14];
+        sprintf(buffer, "%01d:%02dс.", var_prog_any_step_min_durat_ss.get() / 60, var_prog_any_step_min_durat_ss.get() % 60);
+        UI_S_M_prog_any_step_min_durat_ss->set_value(std::string(buffer));
+    });
 
-    UI_S_M_prog_heaters_toggle_delay_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_heaters_toggle_delay_ss = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "ТЭН-ы\nзадерж. вкл", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_heaters_toggle_delay_ss->set_extra_button_logic({
         [this]() { var_prog_heaters_toggle_delay_ss.set(var_prog_heaters_toggle_delay_ss.get() + 1); },
         [this]() { var_prog_heaters_toggle_delay_ss.set(var_prog_heaters_toggle_delay_ss.get() - 1); },
         []() {}
     });
-    UI_S_M_prog_heaters_toggle_delay_ss->add_ui_context_action([this]() { UI_S_M_prog_heaters_toggle_delay_ss->set_value(var_prog_heaters_toggle_delay_ss.get()); });
+    UI_S_M_prog_heaters_toggle_delay_ss->add_ui_context_action([this]() { UI_S_M_prog_heaters_toggle_delay_ss->set_value(var_prog_heaters_toggle_delay_ss.get(), " сек."); });
 
-    UI_S_M_prog_wJacket_toggle_delay_ss = new UIValueSetter(UI_settings_master_limits_prog, true, 40, "text");
+    UI_S_M_prog_wJacket_toggle_delay_ss = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "Охлаждение\nзадерж. вкл", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_wJacket_toggle_delay_ss->set_extra_button_logic({
         [this]() { var_prog_wJacket_toggle_delay_ss.set(var_prog_wJacket_toggle_delay_ss.get() + 1); },
         [this]() { var_prog_wJacket_toggle_delay_ss.set(var_prog_wJacket_toggle_delay_ss.get() - 1); },
         []() {}
     });
-    UI_S_M_prog_wJacket_toggle_delay_ss->add_ui_context_action([this]() { UI_S_M_prog_wJacket_toggle_delay_ss->set_value(var_prog_wJacket_toggle_delay_ss.get()); });
+    UI_S_M_prog_wJacket_toggle_delay_ss->add_ui_context_action([this]() { UI_S_M_prog_wJacket_toggle_delay_ss->set_value(var_prog_wJacket_toggle_delay_ss.get(), " сек."); });
 
 
     /* master, page - 1 */
@@ -1000,38 +1054,40 @@ void UIService::init_settings_master_controls()
     UI_S_M_plc_language                         ->set_position(0, 10, 140, 175);   
 
     /* master, page - 2 */    
-    UI_S_M_sensor_voltage_min_12bit             ->set_position(0, 10, 40, 40);
-    UI_S_M_sensor_voltage_max_12bit             ->set_position(0, 55, 40, 40);
-    UI_S_M_sensor_tempC_limit_4ma_12bit         ->set_position(0, 100, 40, 40);
-    UI_S_M_sensor_tempC_limit_20ma_12bit        ->set_position(0, 145, 40, 40);
-    UI_S_M_sensor_tempC_limit_4ma_degrees_C     ->set_position(0, 190, 40, 40);       
-    UI_S_M_sensor_tempC_limit_20ma_degrees_C    ->set_position(0, 10, 140, 40);      
-    UI_S_M_sensor_dac_rpm_limit_min_12bit       ->set_position(0, 55, 140, 40);        
-    UI_S_M_sensor_dac_rpm_limit_max_12bit       ->set_position(0, 100, 140, 40);        
-    UI_S_M_sensor_dac_asyncM_rpm_min            ->set_position(0, 145, 140, 40);              
-    UI_S_M_sensor_dac_asyncM_rpm_max            ->set_position(0, 190, 140, 40);
+    UI_S_M_sensor_batt_min_V                    ->set_position(0, 10, 40, 40);
+    UI_S_M_sensor_batt_max_V                    ->set_position(0, 55, 40, 40);
+    UI_S_M_sensor_batt_V_min_12bit              ->set_position(0, 100, 40, 40);
+    UI_S_M_sensor_batt_V_max_12bit              ->set_position(0, 145, 40, 40);
+    UI_S_M_sensor_tempC_limit_4ma_12bit         ->set_position(0, 190, 40, 40);
+    UI_S_M_sensor_tempC_limit_20ma_12bit        ->set_position(0, 235, 40, 40);
+    UI_S_M_sensor_tempC_limit_4ma_degrees_C     ->set_position(0, 10, 140, 40);       
+    UI_S_M_sensor_tempC_limit_20ma_degrees_C    ->set_position(0, 55, 140, 40);      
+    UI_S_M_sensor_dac_rpm_limit_min_12bit       ->set_position(0, 100, 140, 40);        
+    UI_S_M_sensor_dac_rpm_limit_max_12bit       ->set_position(0, 145, 140, 40);        
+    UI_S_M_sensor_dac_asyncM_rpm_min            ->set_position(0, 190, 140, 40);              
+    UI_S_M_sensor_dac_asyncM_rpm_max            ->set_position(0, 235, 140, 40);
 
     /* master, page - 3 */  
-    UI_S_M_blowing_await_ss                     ->set_position(0, 10, 40, 40);                       
-    UI_S_M_blowing_pump_power_lm                ->set_position(0, 55, 40, 40);                    
-    UI_S_M_blowing_limit_ml_max                 ->set_position(0, 100, 40, 40);                  
-    UI_S_M_blowing_limit_ml_min                 ->set_position(0, 145, 40, 40);                  
-    UI_S_M_blowing_limit_ss_max                 ->set_position(0, 190, 40, 40);                  
-    UI_S_M_blowing_limit_ss_min                 ->set_position(0, 235, 40, 40);
+    UI_S_M_blowing_await_ss                     ->set_position(0, 10, 40, 85);                       
+    UI_S_M_blowing_pump_power_lm                ->set_position(0, 100, 40, 85);                    
+    UI_S_M_blowing_limit_ml_max                 ->set_position(0, 190, 40, 85);                  
+    UI_S_M_blowing_limit_ml_min                 ->set_position(0, 10, 140, 85);                  
+    UI_S_M_blowing_limit_ss_max                 ->set_position(0, 100, 140, 85);                  
+    UI_S_M_blowing_limit_ss_min                 ->set_position(0, 190, 140, 85);
     
     /* master, page - 4 */ 
-    UI_S_M_wJacket_tempC_limit_max              ->set_position(0, 10, 40, 40);                
-    UI_S_M_prog_wJacket_drain_max_ss            ->set_position(0, 55, 40, 40);              
-    UI_S_M_prog_on_pause_max_await_ss           ->set_position(0, 100, 40, 40);            
-    UI_S_M_prog_await_spite_of_already_runned_ss->set_position(0, 145, 40, 40); 
-    UI_S_M_prog_limit_heat_tempC_max            ->set_position(0, 190, 40, 40);              
-    UI_S_M_prog_limit_heat_tempC_min            ->set_position(0, 235, 40, 40);              
-    UI_S_M_prog_limit_chill_tempC_max           ->set_position(0, 10, 140, 40);             
-    UI_S_M_prog_limit_chill_tempC_min           ->set_position(0, 55, 140, 40);             
-    UI_S_M_prog_any_step_max_durat_ss           ->set_position(0, 100, 140, 40);            
-    UI_S_M_prog_any_step_min_durat_ss           ->set_position(0, 145, 140, 40);            
-    UI_S_M_prog_heaters_toggle_delay_ss         ->set_position(0, 190, 140, 40);           
-    UI_S_M_prog_wJacket_toggle_delay_ss         ->set_position(0, 235, 140, 40);           
+    UI_S_M_wJacket_tempC_limit_max              ->set_position(0, 10, 80, 65);                
+    UI_S_M_prog_wJacket_drain_max_ss            ->set_position(0, 80, 80, 65);              
+    UI_S_M_prog_on_pause_max_await_ss           ->set_position(0, 150, 80, 65);            
+    UI_S_M_prog_await_spite_of_already_runned_ss->set_position(0, 220, 80, 65); 
+    UI_S_M_prog_limit_heat_tempC_max            ->set_position(0, 10, 180, 65);              
+    UI_S_M_prog_limit_heat_tempC_min            ->set_position(0, 80, 180, 65);              
+    UI_S_M_prog_limit_chill_tempC_max           ->set_position(0, 150, 180, 65);             
+    UI_S_M_prog_limit_chill_tempC_min           ->set_position(0, 220, 180, 65);             
+    UI_S_M_prog_any_step_max_durat_ss           ->set_position(0, 10, 280, 65);            
+    UI_S_M_prog_any_step_min_durat_ss           ->set_position(0, 80, 280, 65);            
+    UI_S_M_prog_heaters_toggle_delay_ss         ->set_position(0, 150, 280, 65);           
+    UI_S_M_prog_wJacket_toggle_delay_ss         ->set_position(0, 220, 280, 65);           
 }
 
 void UIService::display_rt_in_setters()

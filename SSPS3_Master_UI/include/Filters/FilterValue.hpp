@@ -9,7 +9,7 @@
 
 class FilterValue
 {
-private:
+public:
     Filter* currentFilter;
     uint16_t minValue;
     uint16_t maxValue;
@@ -48,8 +48,8 @@ public:
     }
 
     double get_percentage_value() {
-        uint16_t scaledValue = get_scaled_value();
-        return (static_cast<double>(scaledValue - minValue) / (maxValue - minValue)) * 100.0;
+        double percentage = 100.0 / (maxValue - minValue) * (max(minValue, get_filtered_value()) - minValue);
+        return percentage < 0.0 ? 0.0 : (percentage > 100.0 ? 100.0 : percentage);
     }
 
     double get_physical_value() {

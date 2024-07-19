@@ -45,9 +45,9 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 #define REL_BLOWGUN_PUMP    4
 
 /* ADC limits */
-#define BATT_MULT_TO_12BIT  69.7674f
+#define BATT_V_TO_12BIT     79.5f   //69.76744f
 #define MIN_BATT_VOLTAGE    22.8f
-#define MAX_BATT_VOLTAGE    25.f
+#define MAX_BATT_VOLTAGE    25.0f
 #define MIN_ADC_4ma         373
 #define MAX_ADC_20ma        1865
 #define MIN_ADC_TEMPC       -50
@@ -59,6 +59,9 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 #define ALLOC_CONF_VAR_BEGIN    1000
 #define ALLOC_USER_VAR_BEGIN    2000
 
+/* Const physical limitations by company */
+#define LIMIT_WATER_BOILING_POINT_TEMPC     95
+
 // Объявляем переменные как extern
 extern FRAMObject<S_DateTime>& var_last_rt;
 
@@ -67,8 +70,10 @@ extern FRAMObject<uint8_t>& var_plc_language;
 extern FRAMObject<bool>& var_is_blowgun_by_rf;
 extern FRAMObject<bool>& var_is_asyncM_rpm_float;
 
-extern FRAMObject<uint16_t>& var_sensor_voltage_min_12bit;
-extern FRAMObject<uint16_t>& var_sensor_voltage_max_12bit;
+extern FRAMObject<float>& var_sensor_batt_min_V;
+extern FRAMObject<float>& var_sensor_batt_max_V;
+extern FRAMObject<uint16_t>& var_sensor_batt_V_min_12bit;
+extern FRAMObject<uint16_t>& var_sensor_batt_V_max_12bit;
 extern FRAMObject<uint16_t>& var_sensor_tempC_limit_4ma_12bit;
 extern FRAMObject<uint16_t>& var_sensor_tempC_limit_20ma_12bit;
 extern FRAMObject<int16_t>& var_sensor_tempC_limit_4ma_degrees_C;

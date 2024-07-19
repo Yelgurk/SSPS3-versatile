@@ -67,14 +67,16 @@ FRAMObject<S_DateTime>& var_last_rt                             = Storage::alloc
 // master settings - page 1
 FRAMObject<uint8_t>& var_type_of_equipment_enum                 = Storage::allocate<uint8_t>(0);
 FRAMObject<uint8_t>& var_plc_language                           = Storage::allocate<uint8_t>(0);
-FRAMObject<bool>&   var_is_blowgun_by_rf                          = Storage::allocate<bool>(false);
-FRAMObject<bool>&   var_is_asyncM_rpm_float                       = Storage::allocate<bool>(false);
+FRAMObject<bool>&   var_is_blowgun_by_rf                        = Storage::allocate<bool>(false);
+FRAMObject<bool>&   var_is_asyncM_rpm_float                     = Storage::allocate<bool>(false);
 
 // master settings - page 2
-FRAMObject<uint16_t>& var_sensor_voltage_min_12bit              = Storage::allocate<uint16_t>(MIN_ADC_4ma, ALLOC_SENS_VAR_BEGIN);
-FRAMObject<uint16_t>& var_sensor_voltage_max_12bit              = Storage::allocate<uint16_t>(MAX_ADC_20ma);
-FRAMObject<uint16_t>& var_sensor_tempC_limit_4ma_12bit          = Storage::allocate<uint16_t>(373);
-FRAMObject<uint16_t>& var_sensor_tempC_limit_20ma_12bit         = Storage::allocate<uint16_t>(1865);
+FRAMObject<float>& var_sensor_batt_min_V                        = Storage::allocate<float>(MIN_BATT_VOLTAGE, ALLOC_SENS_VAR_BEGIN);
+FRAMObject<float>& var_sensor_batt_max_V                        = Storage::allocate<float>(MAX_BATT_VOLTAGE);
+FRAMObject<uint16_t>& var_sensor_batt_V_min_12bit               = Storage::allocate<uint16_t>(BATT_V_TO_12BIT * MIN_BATT_VOLTAGE);
+FRAMObject<uint16_t>& var_sensor_batt_V_max_12bit               = Storage::allocate<uint16_t>(BATT_V_TO_12BIT * MAX_BATT_VOLTAGE);
+FRAMObject<uint16_t>& var_sensor_tempC_limit_4ma_12bit          = Storage::allocate<uint16_t>(MIN_ADC_4ma);
+FRAMObject<uint16_t>& var_sensor_tempC_limit_20ma_12bit         = Storage::allocate<uint16_t>(MAX_ADC_20ma);
 FRAMObject<int16_t>& var_sensor_tempC_limit_4ma_degrees_C       = Storage::allocate<int16_t>(-50);
 FRAMObject<int16_t>& var_sensor_tempC_limit_20ma_degrees_C      = Storage::allocate<int16_t>(150);
 FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_min_12bit        = Storage::allocate<uint16_t>(0);
