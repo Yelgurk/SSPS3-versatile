@@ -9,15 +9,17 @@ TwoWire         * itcw;
 DS3231          * rtc;
 S_DateTime      * dt_rt;
 STM32_slave     * STM32;
+
 ProgramControl  * Program_control;
 BlowingControl  * Blowing_control;
-UIService       * UI_service; 
 
 AsynchronousMotorWatchdog   * async_motor_wd;
 ChillingWatchdog            * chilling_wd;
 HeatingWatchdog             * heating_wd;
 V380SupplyWatchdog          * v380_supply_wd;
 WaterJacketDrainWatchdog    * wJacket_drain_wd;
+
+UIService       * UI_service; 
 
 void setup()
 {
@@ -67,7 +69,11 @@ void setup()
 
     STM32           = new STM32_slave(STM_I2C_ADDR);
     Program_control = new ProgramControl();
-    Blowing_control = new BlowingControl();
+    Blowing_control = new BlowingControl(
+        var_blowing_await_ss.get(),
+        var_blowing_pump_power_lm.get()
+    );
+
     UI_service      = new UIService();
 
     Blowing_control->set_blowing_ui_callback(

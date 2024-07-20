@@ -85,8 +85,8 @@ FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_min              = Storage::alloc
 FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_max              = Storage::allocate<uint8_t>(30);               // ok
  
 // master settings - page 3
-FRAMObject<uint8_t>& var_blowing_await_ss                       = Storage::allocate<uint8_t>(2, ALLOC_CONF_VAR_BEGIN);  // в управление насоса при раздаче await
-FRAMObject<float>& var_blowing_pump_power_lm                    = Storage::allocate<float>(36);                         // в управление насоса - рассчёты мощности
+FRAMObject<uint8_t>& var_blowing_await_ss                       = Storage::allocate<uint8_t>(2, ALLOC_CONF_VAR_BEGIN);  // ok
+FRAMObject<float>& var_blowing_pump_power_lm                    = Storage::allocate<float>(36);                         // ok
 FRAMObject<uint16_t>& var_blowing_limit_ml_max                  = Storage::allocate<uint16_t>(5000);                    // в настройки юзера лимиты
 FRAMObject<uint16_t>& var_blowing_limit_ml_min                  = Storage::allocate<uint16_t>(250);                     // в настройки юзера лимиты
 FRAMObject<uint16_t>& var_blowing_limit_ss_max                  = Storage::allocate<uint16_t>(600);                     // в настройки юзера лимиты

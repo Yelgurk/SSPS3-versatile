@@ -5,7 +5,7 @@ void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int
     if (!do_gurgling)
         trigger_must_be_reloaded = false;
 
-    uint32_t current_time = millis();
+    uint32_t current_time_ms = millis();
     
     if (do_gurgling && !trigger_must_be_reloaded)
     {
@@ -19,7 +19,7 @@ void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int
         if (!is_runned && is_keypad_press)
             callback(curr_value.val * 1000, 0.f, curr_value.is_timer ? BlowingType::TIMER : BlowingType::LITER, 0.001f);
 
-        if ((!timer_running || !is_runned) && ((is_keypad_press && current_time - last_call_time < 2000) || !is_keypad_press))
+        if ((!timer_running || !is_runned) && ((is_keypad_press && current_time_ms - last_call_time_ms < 2000) || !is_keypad_press))
         {
             if (!is_runned)
             {
@@ -27,7 +27,7 @@ void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int
                 current_blow_index = index;
                 is_runned = true;
 
-                ml_per_ms = pump_power_lm * 1000.f / 60.f / 1000.f;
+                ml_per_ms = pump_power_lm / 60.f; // in 1ss => 1000ms i.e. 1l => 1000ml. we store power in l/m, that why after casting we would be do *1000ml and then /1000ms, that why we just do lm/60s
 
                 if (!selected_blowing_value.is_timer)
                     ms_aim = (curr_value.val / (pump_power_lm * 1000)) * (60 * 1000);
@@ -37,12 +37,12 @@ void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int
                 ms_gone = 0;
             }
 
-            last_blow_time = current_time;
+            last_blow_time_ms = current_time_ms;
             timer_running = true;
             start_pump();
         } 
 
-        last_call_time = current_time;
+        last_call_time_ms = current_time_ms;
     }
     else
     {
@@ -67,9 +67,9 @@ void BlowingControl::do_blowing()
 {
     if (!is_runned) return;
 
-    uint32_t current_time = millis();
+    uint32_t current_time_ms = millis();
 
-    if (current_time - last_call_time > 2000)
+    if (current_time_ms - last_call_time_ms > time_span_ss_on_pause_await_limit * 1000)
     {
         blowgun_stop();
         return;
@@ -77,8 +77,8 @@ void BlowingControl::do_blowing()
 
     if (timer_running)
     {
-        ms_gone += current_time - last_blow_time;
-        last_blow_time = current_time;
+        ms_gone += current_time_ms - last_blow_time_ms;
+        last_blow_time_ms = current_time_ms;
 
         callback(ms_aim, ms_gone, selected_blowing_value.is_timer ? BlowingType::TIMER : BlowingType::LITER, ml_per_ms);
 

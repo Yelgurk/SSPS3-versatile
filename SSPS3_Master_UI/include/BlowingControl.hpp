@@ -31,20 +31,27 @@ private:
     uint32_t ms_aim = 0;
     uint32_t ms_gone = 0;
     float ml_per_ms = 0;
-    float pump_power_lm = 52.f;
+
+    float pump_power_lm;
+    uint8_t time_span_ss_on_pause_await_limit;
 
     bool trigger_must_be_reloaded = false;
     bool pump_on;
-    uint32_t last_call_time;
-    uint32_t last_blow_time;
+    uint32_t last_call_time_ms;
+    uint32_t last_blow_time_ms;
 
     void start_pump();
     void stop_pump();
 
 public:
-    BlowingControl() :
+    BlowingControl(
+        uint8_t time_span_ss_on_pause_await_limit,
+        float var_blowing_pump_power_lm
+    ) :
+    pump_power_lm(var_blowing_pump_power_lm),
+    time_span_ss_on_pause_await_limit(time_span_ss_on_pause_await_limit),
     is_runned(false),
-    last_call_time(0), 
+    last_call_time_ms(0), 
     pump_on(false),
     timer_running(false)
     {}
