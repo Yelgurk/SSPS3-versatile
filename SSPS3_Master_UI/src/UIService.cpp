@@ -451,7 +451,7 @@ void UIService::init_settings_part_tmpe_templates()
             [this, page]() {
                 TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_tmpe_index())->ptr();
                 templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
-                    var_prog_any_step_min_durat_ss.get(),
+                    0,
                     var_prog_any_step_max_durat_ss.get(),
                     templ->get_step(page)->duration_ss += 5
                 ) ;
@@ -460,7 +460,7 @@ void UIService::init_settings_part_tmpe_templates()
             [this, page]() {
                 TMPEProgramTemplate * templ = prog_tmpe_templates->at(get_template_tmpe_index())->ptr();
                 templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
-                    var_prog_any_step_min_durat_ss.get(),
+                    0,
                     var_prog_any_step_max_durat_ss.get(),
                     templ->get_step(page)->duration_ss -= 5
                 ) ;
@@ -712,11 +712,10 @@ void UIService::init_settings_part_chm_templates()
 
         /* Step duration SS setter */
         setter_durat_ss->set_extra_button_logic({
-            /*
             [this, page]() {
                 CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
                 templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
-                    var_prog_any_step_min_durat_ss.get(),
+                    0,
                     var_prog_any_step_max_durat_ss.get(),
                     templ->get_step(page)->duration_ss += 5
                 ) ;
@@ -725,27 +724,7 @@ void UIService::init_settings_part_chm_templates()
             [this, page]() {
                 CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
                 templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
-                    var_prog_any_step_min_durat_ss.get(),
-                    var_prog_any_step_max_durat_ss.get(),
-                    templ->get_step(page)->duration_ss -= 5
-                ) ;
-                prog_chm_templates->at(get_template_chm_index())->accept();
-            },
-            */
-
-            [this, page]() {
-                CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
-                templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
-                    var_prog_any_step_min_durat_ss.get(),
-                    var_prog_any_step_max_durat_ss.get(),
-                    templ->get_step(page)->duration_ss += 5
-                ) ;
-                prog_chm_templates->at(get_template_chm_index())->accept();
-            },
-            [this, page]() {
-                CHMProgramTemplate * templ = prog_chm_templates->at(get_template_chm_index())->ptr();
-                templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
-                    var_prog_any_step_min_durat_ss.get(),
+                    0,
                     var_prog_any_step_max_durat_ss.get(),
                     templ->get_step(page)->duration_ss -= 5
                 ) ;
@@ -1098,17 +1077,13 @@ void UIService::init_settings_master_controls()
         UI_S_M_prog_any_step_max_durat_ss->set_value(std::string(buffer));
     });
 
-    UI_S_M_prog_any_step_min_durat_ss = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "Этап прогр.\nmin длит.", nullptr, &OpenSans_bold_14px);
-    UI_S_M_prog_any_step_min_durat_ss->set_extra_button_logic({
-        [this]() { var_prog_any_step_min_durat_ss.set(var_prog_any_step_min_durat_ss.get() + 5); },
-        [this]() { var_prog_any_step_min_durat_ss.set(var_prog_any_step_min_durat_ss.get() - 5); },
+    UI_S_M_prog_coolign_water_safe_mode = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "Охлаждение\nэконом. воды", nullptr, &OpenSans_bold_14px);
+    UI_S_M_prog_coolign_water_safe_mode->set_extra_button_logic({
+        [this]() { var_prog_coolign_water_safe_mode.set(var_prog_coolign_water_safe_mode.get() - 1); },
+        [this]() { var_prog_coolign_water_safe_mode.set(var_prog_coolign_water_safe_mode.get() - 1); },
         []() {}
     });
-    UI_S_M_prog_any_step_min_durat_ss->add_ui_context_action([this]() {
-        static char buffer[14];
-        sprintf(buffer, "%01d:%02dс.", var_prog_any_step_min_durat_ss.get() / 60, var_prog_any_step_min_durat_ss.get() % 60);
-        UI_S_M_prog_any_step_min_durat_ss->set_value(std::string(buffer));
-    });
+    UI_S_M_prog_coolign_water_safe_mode->add_ui_context_action([this]() { UI_S_M_prog_coolign_water_safe_mode->set_value(var_prog_coolign_water_safe_mode.get() ? "Да" : "Нет"); });
 
     UI_S_M_prog_heaters_toggle_delay_ss = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "ТЭН-ы\nзадерж. вкл", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_heaters_toggle_delay_ss->set_extra_button_logic({
@@ -1165,7 +1140,7 @@ void UIService::init_settings_master_controls()
     UI_S_M_prog_limit_chill_tempC_max           ->set_position(0, 150, 180, 65);             
     UI_S_M_prog_limit_chill_tempC_min           ->set_position(0, 220, 180, 65);             
     UI_S_M_prog_any_step_max_durat_ss           ->set_position(0, 10, 280, 65);            
-    UI_S_M_prog_any_step_min_durat_ss           ->set_position(0, 80, 280, 65);            
+    UI_S_M_prog_coolign_water_safe_mode           ->set_position(0, 80, 280, 65);            
     UI_S_M_prog_heaters_toggle_delay_ss         ->set_position(0, 150, 280, 65);           
     UI_S_M_prog_wJacket_toggle_delay_ss         ->set_position(0, 220, 280, 65);           
 }

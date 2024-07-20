@@ -12,59 +12,53 @@ class WaterJacketDrainWatchdog
 private:
     function<void(bool)> turn_wJacket_valve;
     function<void(bool)> set_pause;
+    uint16_t time_span_ss_toggle_wJacket_valve_interval;
+    uint32_t last_control_time_ms;
     bool has_water_in_jacket;
-    unsigned long last_control_time;
-    unsigned long last_drain_time;
     bool draining_started;
+    bool valve_state;
 
 public:
-    WaterJacketDrainWatchdog(function<void(bool)> turn_wJacket_valve_func, function<void(bool)> set_pause_func) :
+    WaterJacketDrainWatchdog(
+        function<void(bool)> turn_wJacket_valve_func, function<void(bool)> set_pause_func,
+        uint16_t time_span_ss_toggle_wJacket_valve_interval
+    ) :
     turn_wJacket_valve(turn_wJacket_valve_func),
     set_pause(set_pause_func),
+    time_span_ss_toggle_wJacket_valve_interval(time_span_ss_toggle_wJacket_valve_interval),
+    last_control_time_ms(0),
     has_water_in_jacket(false),
-    last_control_time(0),
-    last_drain_time(0),
-    draining_started(false)
+    draining_started(false),
+    valve_state(false)
     {}
 
     void water_in_jacket(bool state)
     {
-        has_water_in_jacket = state;
-
-        if (has_water_in_jacket)
+        if (!has_water_in_jacket && state)
         {
-            last_control_time = millis();
-
-            draining_started = false;
-            turn_wJacket_valve(false);
+            set_pause(false);
+            turn_wJacket_valve(valve_state = false);
         }
+
+        if (has_water_in_jacket = state)
+            draining_started = false;
     }
 
     void do_control()
     {
-        unsigned long current_time = millis();
+        uint32_t current_time_ms = millis();
 
         if (has_water_in_jacket)
-        {
-            last_control_time = current_time;
-            set_pause(false);
-        }
+            last_control_time_ms = current_time_ms;
         else
         {
-            if (!draining_started && (current_time - last_control_time >= 30000))
+            if (!valve_state)
+                turn_wJacket_valve(valve_state = true);
+
+            if (!draining_started && (current_time_ms - last_control_time_ms >= time_span_ss_toggle_wJacket_valve_interval * 1000))
             {
                 set_pause(true);
                 draining_started = true;
-                last_drain_time = current_time;
-            }
-
-            if (draining_started)
-            {
-                if (current_time - last_drain_time >= 500)
-                {
-                    turn_wJacket_valve(true);
-                    last_drain_time = current_time;
-                }
             }
         }
     }

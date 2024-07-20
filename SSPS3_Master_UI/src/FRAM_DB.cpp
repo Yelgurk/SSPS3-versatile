@@ -80,7 +80,7 @@ FRAMObject<uint16_t>& var_sensor_tempC_limit_20ma_12bit         = Storage::alloc
 FRAMObject<int16_t>& var_sensor_tempC_limit_4ma_degrees_C       = Storage::allocate<int16_t>(-50);              // ok
 FRAMObject<int16_t>& var_sensor_tempC_limit_20ma_degrees_C      = Storage::allocate<int16_t>(150);              // ok
 FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_min_12bit        = Storage::allocate<uint16_t>(0);               // nowhere useful
-FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_max_12bit        = Storage::allocate<uint16_t>(4095);            // ok
+FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_max_12bit        = Storage::allocate<uint16_t>(BIT_12_VAL / 2);  // ok
 FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_min              = Storage::allocate<uint8_t>(0);                // nowhere useful
 FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_max              = Storage::allocate<uint8_t>(30);               // ok
  
@@ -93,8 +93,8 @@ FRAMObject<uint16_t>& var_blowing_limit_ss_max                  = Storage::alloc
 FRAMObject<uint16_t>& var_blowing_limit_ss_min                  = Storage::allocate<uint16_t>(10);                      // в настройки юзера лимиты
 
 // master settings - page 4
-FRAMObject<uint8_t>& var_wJacket_tempC_limit_max                = Storage::allocate<uint8_t>(LIMIT_WATER_BOILING_POINT_TEMPC);  // в WD управление ТЭН-ами при выполнении программы
-FRAMObject<uint8_t>& var_prog_wJacket_drain_max_ss              = Storage::allocate<uint8_t>(30);                               // в WD контроль клапана при программе
+FRAMObject<uint8_t>& var_wJacket_tempC_limit_max                = Storage::allocate<uint8_t>(LIMIT_WATER_BOILING_POINT_TEMPC);  // ok
+FRAMObject<uint8_t>& var_prog_wJacket_drain_max_ss              = Storage::allocate<uint8_t>(30);                               // ok
 FRAMObject<uint16_t>& var_prog_on_pause_max_await_ss            = Storage::allocate<uint16_t>(3600);                            // в сам ProgProc в лимит ожидания
 FRAMObject<uint16_t>& var_prog_await_spite_of_already_runned_ss = Storage::allocate<uint16_t>(600);                             // в WD авто-пуска проги, если уже запущена прога
 FRAMObject<uint8_t>& var_prog_limit_heat_tempC_max              = Storage::allocate<uint8_t>(LIMIT_WATER_BOILING_POINT_TEMPC);  // ok 
@@ -102,9 +102,9 @@ FRAMObject<uint8_t>& var_prog_limit_heat_tempC_min              = Storage::alloc
 FRAMObject<uint8_t>& var_prog_limit_chill_tempC_max             = Storage::allocate<uint8_t>(50);                               // ok
 FRAMObject<uint8_t>& var_prog_limit_chill_tempC_min             = Storage::allocate<uint8_t>(5);                                // ok
 FRAMObject<uint16_t>& var_prog_any_step_max_durat_ss            = Storage::allocate<uint16_t>(3600);                            // ok
-FRAMObject<uint16_t>& var_prog_any_step_min_durat_ss            = Storage::allocate<uint16_t>(0);                               // ok
-FRAMObject<uint8_t>& var_prog_heaters_toggle_delay_ss           = Storage::allocate<uint8_t>(20);                               // в WD контроля вкл/выкл тэнов
-FRAMObject<uint8_t>& var_prog_wJacket_toggle_delay_ss           = Storage::allocate<uint8_t>(10);                               // в WD контроля вкл/выкл клапана при этапе охлаждения
+FRAMObject<bool>& var_prog_coolign_water_safe_mode              = Storage::allocate<bool>(false);                               // ok
+FRAMObject<uint8_t>& var_prog_heaters_toggle_delay_ss           = Storage::allocate<uint8_t>(20);                               // ok
+FRAMObject<uint8_t>& var_prog_wJacket_toggle_delay_ss           = Storage::allocate<uint8_t>(10);                               // ok
 
 // user settings - page 1
 FRAMObject<S_DateTime>& var_rt_setter                           = Storage::allocate<S_DateTime>(S_DateTime());

@@ -198,7 +198,7 @@ public:
     UIValueSetter * UI_S_M_prog_limit_chill_tempC_max;             
     UIValueSetter * UI_S_M_prog_limit_chill_tempC_min;             
     UIValueSetter * UI_S_M_prog_any_step_max_durat_ss;            
-    UIValueSetter * UI_S_M_prog_any_step_min_durat_ss;            
+    UIValueSetter * UI_S_M_prog_coolign_water_safe_mode;            
     UIValueSetter * UI_S_M_prog_heaters_toggle_delay_ss;           
     UIValueSetter * UI_S_M_prog_wJacket_toggle_delay_ss;           
 

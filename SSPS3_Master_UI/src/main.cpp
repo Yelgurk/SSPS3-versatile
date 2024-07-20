@@ -130,11 +130,15 @@ void setup()
     );
 
     chilling_wd         = new ChillingWatchdog(
-        [](bool state)      { STM32->set(COMM_SET::RELAY, REL_WJACKET_VALVE, rt_out_state_wJacket = state); }
+        [](bool state)      { STM32->set(COMM_SET::RELAY, REL_WJACKET_VALVE, rt_out_state_wJacket = state); },
+        var_prog_wJacket_toggle_delay_ss.get(),
+        var_prog_coolign_water_safe_mode.get()
     );
 
     heating_wd          = new HeatingWatchdog(
-        [](bool state)      { STM32->set(COMM_SET::RELAY, REL_HEATERS, rt_out_state_heaters = state); }
+        [](bool state)      { STM32->set(COMM_SET::RELAY, REL_HEATERS, rt_out_state_heaters = state); },
+        var_prog_heaters_toggle_delay_ss.get(),
+        var_wJacket_tempC_limit_max.get()
     );
 
     v380_supply_wd      = new V380SupplyWatchdog([](bool state){
@@ -152,7 +156,8 @@ void setup()
                 Program_control->pause_task(true);
             else
                 Program_control->resume_task();
-        }
+        },
+        var_prog_wJacket_drain_max_ss.get()
     );
 }
 

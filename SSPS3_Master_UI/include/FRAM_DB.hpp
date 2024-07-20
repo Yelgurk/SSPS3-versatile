@@ -45,6 +45,7 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 #define REL_BLOWGUN_PUMP    4
 
 /* ADC limits */
+#define BIT_12_VAL          4095
 #define BATT_V_TO_12BIT     79.5f   //69.76744f
 #define MIN_BATT_VOLTAGE    22.8f
 #define MAX_BATT_VOLTAGE    25.0f
@@ -99,7 +100,7 @@ extern FRAMObject<uint8_t>& var_prog_limit_heat_tempC_min;
 extern FRAMObject<uint8_t>& var_prog_limit_chill_tempC_max;
 extern FRAMObject<uint8_t>& var_prog_limit_chill_tempC_min;
 extern FRAMObject<uint16_t>& var_prog_any_step_max_durat_ss;
-extern FRAMObject<uint16_t>& var_prog_any_step_min_durat_ss;
+extern FRAMObject<bool>& var_prog_coolign_water_safe_mode;
 extern FRAMObject<uint8_t>& var_prog_heaters_toggle_delay_ss;
 extern FRAMObject<uint8_t>& var_prog_wJacket_toggle_delay_ss;
 
