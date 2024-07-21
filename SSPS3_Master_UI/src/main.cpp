@@ -10,7 +10,6 @@ DS3231          * rtc;
 S_DateTime      * dt_rt;
 STM32_slave     * STM32;
 
-ProgramControl  * Program_control;
 BlowingControl  * Blowing_control;
 
 AsynchronousMotorWatchdog   * async_motor_wd;
@@ -18,6 +17,7 @@ ChillingWatchdog            * chilling_wd;
 HeatingWatchdog             * heating_wd;
 V380SupplyWatchdog          * v380_supply_wd;
 WaterJacketDrainWatchdog    * wJacket_drain_wd;
+ProgStartupWatchdog         * prog_stasrtup_wd;
 
 UIService       * UI_service; 
 
@@ -30,6 +30,7 @@ void setup()
 
     itcw = new TwoWire(0);
     itcw->begin(SDA, SCL, 400000);
+    Storage::reset_all();
 
     rtc             = new DS3231(*itcw);
     dt_rt = new S_DateTime(0, 0, 0, 0, 0, 0);
@@ -68,7 +69,6 @@ void setup()
     );
 
     STM32           = new STM32_slave(STM_I2C_ADDR);
-    Program_control = new ProgramControl();
     Blowing_control = new BlowingControl(
         var_blowing_await_ss.get(),
         var_blowing_pump_power_lm.get()
@@ -114,7 +114,9 @@ void setup()
     }, 1000);
 
     rt_task_manager.add_task("do_program_task", []() {
-        Program_control->do_task();
+        prog_runned.ptr()->do_task();
+        prog_runned.accept();
+
         UI_service->UI_task_roadmap_control->update_task_steps_state();
         UI_service->UI_task_roadmap_control->update_ui_context();
     }, 500);
@@ -149,9 +151,15 @@ void setup()
 
     v380_supply_wd      = new V380SupplyWatchdog([](bool state){
         if (state)
-            Program_control->pause_task(true);
+        {
+            prog_runned.ptr()->pause_task(true);
+            prog_runned.accept();
+        }
         else
-            Program_control->resume_task();
+        {
+            prog_runned.ptr()->resume_task();
+            prog_runned.accept();
+        }
     });
 
     wJacket_drain_wd    = new WaterJacketDrainWatchdog(
@@ -159,18 +167,34 @@ void setup()
         [](bool state)
         {
             if (state)
-                Program_control->pause_task(true);
+            {
+                prog_runned.ptr()->pause_task(true);
+                prog_runned.accept();
+            }
             else
-                Program_control->resume_task();
+            {
+                prog_runned.ptr()->resume_task();
+                prog_runned.accept();
+            }
         },
         var_prog_wJacket_drain_max_ss.get()
     );
+
+    prog_stasrtup_wd    = new ProgStartupWatchdog(var_prog_await_spite_of_already_runned_ss.get());
 }
+
+bool demo_was_runned = false;
 
 void loop()
 {
     Blowing_control->do_blowing();
     rt_task_manager.run();
+
+    if (millis() > 10000 && !demo_was_runned)
+    {
+        demo_was_runned = true;
+        prog_stasrtup_wd->start_program(EquipmentType::DairyTaxiPasteurizer, 0);
+    }
 
     /* somewhere in ProgramControl */
     /*
@@ -196,13 +220,13 @@ void loop()
         UI_service->UI_notification_bar->key_press(Pressed_key);
         
         // task control
-        //UI_service->UI_task_roadmap_control->get_selected()->key_press(Pressed_key);
-        //UI_service->UI_task_roadmap_control->get_selected(true)->key_press(Pressed_key);
+        UI_service->UI_task_roadmap_control->get_selected()->key_press(Pressed_key);
+        UI_service->UI_task_roadmap_control->get_selected(true)->key_press(Pressed_key);
 
         // user settings control
-        if (UI_service->UI_menu_list_user->is_selected_on_child())
-            UI_service->UI_menu_list_user->get_selected(true)->key_press(Pressed_key);
-        UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
+        //if (UI_service->UI_menu_list_user->is_selected_on_child())
+        //    UI_service->UI_menu_list_user->get_selected(true)->key_press(Pressed_key);
+        //UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
 
         // master settings control
         //if (UI_service->UI_menu_list_master->is_selected_on_child())

@@ -5,6 +5,7 @@
 
 #include <Arduino.h>
 #include <vector>
+#include "UIAccess.hpp"
 #include "ProgramControl.hpp"
 #include "BlowingControl.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_Storage.hpp"
@@ -63,10 +64,21 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 /* Const physical limitations by company */
 #define LIMIT_WATER_BOILING_POINT_TEMPC     90
 
+struct __attribute__((packed)) AutoProgStates
+{
+    bool on_off;
+    bool executed;
+
+    AutoProgStates() :
+    on_off(false),
+    executed(false)
+    {}
+};
+
 // Объявляем переменные как extern
 extern FRAMObject<S_DateTime>& var_last_rt;
 
-extern FRAMObject<uint8_t>& var_type_of_equipment_enum;
+extern FRAMObject<EquipmentType>& var_type_of_equipment_enum;
 extern FRAMObject<uint8_t>& var_plc_language;
 extern FRAMObject<bool>& var_is_blowgun_by_rf;
 extern FRAMObject<bool>& var_is_asyncM_rpm_float;
@@ -117,9 +129,9 @@ extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_wd_3;
 extern FRAMObject<S_Time>& prog_tmpe_wd_1_boot_time;
 extern FRAMObject<S_Time>& prog_tmpe_wd_2_boot_time;
 extern FRAMObject<S_Time>& prog_tmpe_wd_3_boot_time;
-extern FRAMObject<bool>& prog_tmpe_wd_1_on_off;
-extern FRAMObject<bool>& prog_tmpe_wd_2_on_off;
-extern FRAMObject<bool>& prog_tmpe_wd_3_on_off;
+extern FRAMObject<AutoProgStates>& prog_tmpe_wd_1_on_off;
+extern FRAMObject<AutoProgStates>& prog_tmpe_wd_2_on_off;
+extern FRAMObject<AutoProgStates>& prog_tmpe_wd_3_on_off;
 
 extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_1;
 extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_2;
@@ -133,6 +145,8 @@ extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_9;
 extern FRAMObject<CHMProgramTemplate>& prog_chm_templ_10;
 
 extern FRAMObject<uint16_t>& prog_runned_steps_count;
+extern FRAMObject<uint8_t>& prog_active_step;
+extern FRAMObject<uint8_t>& prog_next_step;
 extern FRAMObject<ProgramControl>& prog_runned;
 extern FRAMObject<ProgramStep>& prog_runned_step_1;
 extern FRAMObject<ProgramStep>& prog_runned_step_2;
@@ -161,7 +175,7 @@ extern FRAMObject<ProgramStep>& prog_runned_step_24;
 
 extern vector<FRAMObject<TMPEProgramTemplate>*>     *prog_tmpe_templates;
 extern vector<FRAMObject<S_Time>*>                  *prog_tmpe_templates_wd_time;
-extern vector<FRAMObject<bool>*>                    *prog_tmpe_templates_wd_state;
+extern vector<FRAMObject<AutoProgStates>*>          *prog_tmpe_templates_wd_state;
 extern vector<FRAMObject<CHMProgramTemplate>*>      *prog_chm_templates;
 extern vector<FRAMObject<ProgramStep>*>             *prog_runned_steps;
 

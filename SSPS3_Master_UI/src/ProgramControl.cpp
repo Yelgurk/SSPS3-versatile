@@ -5,31 +5,31 @@ double ProgramControl::get_prog_percentage()
     int32_t aim_ss = 0,
             done_ss = 0;
 
-    for (auto _steps : *steps)
+    for (uint8_t i = 0; i < prog_runned_steps_count.get(); i++)
     {
-        aim_ss += _steps.duration_ss;
-        done_ss += (_steps.gone_ss > _steps.duration_ss ? _steps.duration_ss : _steps.gone_ss);
+        ProgramStep * _step = prog_runned_steps->at(i)->ptr();
+        aim_ss += _step->duration_ss;
+        done_ss += min(_step->gone_ss, _step->duration_ss);
     }
 
     return aim_ss <= 0 ? 0 : 100.0 / (double)aim_ss * done_ss;
 }
 
-ProgramStep * ProgramControl::start_task(ProgramAimEnum aim, vector<ProgramStep> * _steps)
+ProgramStep ProgramControl:: start_task(ProgramAimEnum aim, uint16_t limit_ss_max_await_on_pause)
 {
     if (!is_runned)
     {
         this->aim = aim;
-        steps = _steps;
+        this->limit_ss_max_await_on_pause = limit_ss_max_await_on_pause;
 
-        dt_rt->get_rt();
-        
         started_at.set_date(*dt_rt->get_date());
         started_at.set_time(*dt_rt->get_time());
 
         last_iteration.set_date(*dt_rt->get_date());
         last_iteration.set_time(*dt_rt->get_time());
 
-        current_step = next_step = nullptr;
+        prog_active_step.set(0);
+        prog_next_step.set(0);
 
         state = TaskStateEnum::RUNNED;
         is_runned = true;
@@ -43,78 +43,122 @@ uint32_t ProgramControl::sum_gone_ss()
     static uint32_t total_gone_ss = 0;
     total_gone_ss = 0;
 
-    for (const auto& step : *steps)
-        total_gone_ss += step.gone_ss;
+    for (uint8_t i = 0; i < prog_runned_steps_count.get(); i++)
+    {
+        ProgramStep * _step = prog_runned_steps->at(i)->ptr();
+        total_gone_ss += _step->gone_ss;
+    }
 
     return total_gone_ss;
 }
 
-ProgramStep * ProgramControl::do_task()
+ProgramStep ProgramControl::do_task()
 {
-    dt_rt->get_rt();
+    switch (this->state)
+    {
+    case TaskStateEnum::AWAIT:  return prog_null_step; break;
+    case TaskStateEnum::DONE:   return prog_null_step; break;
+    case TaskStateEnum::ERROR:  return prog_null_step; break;
+    default:
+        break;
+    }
 
-    int32_t ss_from_last_iteration = dt_rt->difference_in_seconds(last_iteration);
-    last_iteration.set_date(*dt_rt->get_date());
-    last_iteration.set_time(*dt_rt->get_time());
+    static int32_t ss_from_last_iteration = 0;
+    static ProgramStep _step_curr;
+    static ProgramStep _step_next;
+    static ProgramStep _response;
 
     if (is_runned)
     {
-        for (int i = 0; i < steps->size(); i++)
+        for (int i = 0; i < prog_runned_steps_count.get(); i++)
         {
-            if ( i == 0 && steps->at(i).state == StepStateEnum::AWAIT)
-                steps->at(i).state = StepStateEnum::RUNNED;
-
-            if (i < (int)(steps->size() - 1) && steps->at(i + 1).state == StepStateEnum::AWAIT)
+            ProgramStep _step_obs = prog_runned_steps->at(i)->get();
+            if (i == 0 && _step_obs.state == StepStateEnum::AWAIT)
             {
-                current_step = &steps->at(i);
-                next_step = &steps->at(i + 1);
-                break;
+                _step_obs.state = StepStateEnum::RUNNED;
+                prog_runned_steps->at(i)->set(_step_obs);
             }
 
-            if (i >= steps->size() - 1)
+            if (i < prog_runned_steps_count.get() - 1)
             {
-                current_step = &steps->at(steps->size() - 1);
-                next_step = &steps->at(steps->size() - 1);
+                ProgramStep _step_next = prog_runned_steps->at(i + 1)->get();
+
+                if (_step_next.state == StepStateEnum::AWAIT)
+                {
+                    prog_active_step.set(i);
+                    prog_next_step.set(i + 1);
+                    break;
+                }
+            }
+
+            if (i >= prog_runned_steps_count.get() - 1)
+            {
+                prog_active_step.set(i);
+                prog_next_step.set(i);
                 break;
             }
         }
+
+        _step_curr = prog_runned_steps->at(prog_active_step.get())->get();
+        _step_next = prog_runned_steps->at(prog_next_step.get())->get();
+        _response = _step_curr;
+
         if (state == TaskStateEnum::RUNNED)
         {
-            current_step->iteration_ss(ss_from_last_iteration);
-            current_step->state = StepStateEnum::RUNNED;
+            ss_from_last_iteration = dt_rt->difference_in_seconds(last_iteration);
+            last_iteration.set_date(*dt_rt->get_date());
+            last_iteration.set_time(*dt_rt->get_time());
 
-            if (current_step->is_time_out())
+            ss_from_last_iteration = ss_from_last_iteration >= limit_ss_max_await_on_pause ? 0 : ss_from_last_iteration;
+
+            this->state = TaskStateEnum::RUNNED;
+            _step_curr.iteration_ss(ss_from_last_iteration);
+            _step_curr.state = StepStateEnum::RUNNED;
+
+            if (_step_curr.is_time_out())
             {
-                current_step->state = StepStateEnum::DONE;
-                if (!is_last_step(current_step))
-                    next_step->state = StepStateEnum::RUNNED;
+                _step_curr.state = StepStateEnum::DONE;
+                if (!is_last_step(prog_active_step.get()))
+                    _step_next.state = StepStateEnum::RUNNED;
                 else
                 {
-                    state = TaskStateEnum::DONE;
+                    this->state = TaskStateEnum::DONE;
                     is_runned = false;
                 }
             }
 
             gone_ss = sum_gone_ss();
+
+            prog_runned_steps->at(prog_active_step.get())->set(_step_curr);
+            prog_runned_steps->at(prog_next_step.get())->set(_step_next);
         }
         else if (state == TaskStateEnum::PAUSE)
         {
-            current_step->state = StepStateEnum::PAUSE;
-            /*
-            return дефолт экземпляра ProgramStep у которого стоит всё по 0, т.к. управление будет согласно
-            значениям сугубо по возвращенному в ProgramStep
-            */
+            this->state = TaskStateEnum::PAUSE;
+            _step_curr.state = StepStateEnum::PAUSE;
+
+            if (dt_rt->difference_in_seconds(last_iteration) >= limit_ss_max_await_on_pause)
+            {
+                this->state = TaskStateEnum::ERROR;
+                _step_curr.state = StepStateEnum::ERROR;
+                this->is_runned = false;
+            }
+
+            prog_runned_steps->at(prog_active_step.get())->set(_step_curr);
+            _response = _step_curr;
         }
         else if (state == TaskStateEnum::ERROR)
         {
-            current_step->state = StepStateEnum::ERROR;
-            is_runned = false;
-            /*
-            return дефолт экземпляра ProgramStep у которого стоит всё по 0, т.к. управление будет согласно
-            значениям сугубо по возвращенному в ProgramStep
-            */
+            this->state = TaskStateEnum::ERROR;
+            _step_curr.state = StepStateEnum::ERROR;
+            this->is_runned = false;
+
+            prog_runned_steps->at(prog_active_step.get())->set(_step_curr);
+            _response = _step_curr;
         }
     }
+    else
+        return prog_null_step;
     
-    return current_step;
+    return _response;
 }

@@ -6,15 +6,16 @@
 #include <Arduino.h>
 #include "../../SSPS3_Master_Domain/include/DateTime/S_DateTime.hpp"
 #include "../include/UIControls/UITaskRoadmapList.hpp"
-
-extern S_DateTime * dt_rt;
+#include "../../SSPS3_Master_Domain/include/FRAM/FRAM_Storage.hpp"
+#include "../../SSPS3_Master_Domain/include/FRAM/FRAM_Object.hpp"
+#include "../../SSPS3_Master_Domain/include/FRAM/FRAM_RW.hpp"
 
 enum class ProgramAimEnum : uint8_t
 {
     NONE,
     TMP_PASTEUR,
-    TMP_HEAT,
     TMP_CHILL,
+    TMP_HEAT,
     TMP_WATCHDOG_1,
     TMP_WATCHDOG_2,
     TMP_WATCHDOG_3,
@@ -26,7 +27,8 @@ enum class ProgramAimEnum : uint8_t
     CHM_TEMPL_3,
     CHM_TEMPL_4,
     CHM_TEMPL_5,
-    CHM_TEMPL_6
+    CHM_TEMPL_6,
+    CHM_TEMPL_7
 };
 
 enum class ProgramStepAimEnum : uint8_t
@@ -37,8 +39,12 @@ enum class ProgramStepAimEnum : uint8_t
     CUTTING,
     MIXING,
     HEATING,
-    DRYING
+    DRYING,
+    EXPOSURE,
+    USER_AWAIT
 };
+
+extern S_DateTime * dt_rt;
 
 struct __attribute__((packed)) ProgramStep
 {
@@ -46,6 +52,7 @@ struct __attribute__((packed)) ProgramStep
     uint8_t fan;
     uint8_t tempC;
     uint32_t duration_ss;
+    bool untill_condition_met;
     bool must_be_cooled;
     bool await_ok_button;
     bool step_is_turned_on;
@@ -53,13 +60,14 @@ struct __attribute__((packed)) ProgramStep
     StepStateEnum state = StepStateEnum::AWAIT;
     uint32_t gone_ss = 0;
 
-    ProgramStep() : ProgramStep(ProgramStepAimEnum::PASTEUR, 0, 0, 0, 0, 0, 0) {}
+    ProgramStep() : ProgramStep(ProgramStepAimEnum::WATER_JACKET, 0, 0, 0, 0, 0, 0, 0) {}
 
     ProgramStep(
         ProgramStepAimEnum aim,
         uint8_t fan,
         uint8_t tempC,
         uint32_t duration_ss,
+        bool untill_condition_met,
         bool must_be_cooled,
         bool await_ok_button,
         bool step_is_turned_on
@@ -68,6 +76,7 @@ struct __attribute__((packed)) ProgramStep
     fan(fan),
     tempC(tempC),
     duration_ss(duration_ss),
+    untill_condition_met(untill_condition_met),
     must_be_cooled(must_be_cooled),
     await_ok_button(await_ok_button),
     step_is_turned_on(step_is_turned_on)
@@ -86,9 +95,10 @@ struct __attribute__((packed)) ProgramStep
     }
 };
 
-static vector<ProgramStep> * steps;
-static ProgramStep * current_step = nullptr;
-static ProgramStep * next_step = nullptr;
+extern FRAMObject<uint16_t>&                prog_runned_steps_count;
+extern vector<FRAMObject<ProgramStep>*>   * prog_runned_steps;
+extern FRAMObject<uint8_t>&                 prog_active_step;
+extern FRAMObject<uint8_t>&                 prog_next_step;
 
 struct __attribute__((packed)) ProgramControl
 {
@@ -99,6 +109,7 @@ struct __attribute__((packed)) ProgramControl
     S_DateTime started_at;
     S_DateTime last_iteration;
     uint32_t gone_ss;
+    uint16_t limit_ss_max_await_on_pause;
 
     ProgramControl() :
     aim(ProgramAimEnum::NONE),
@@ -106,7 +117,8 @@ struct __attribute__((packed)) ProgramControl
     is_runned(false),
     started_at(S_DateTime()),
     last_iteration(S_DateTime()),
-    gone_ss(0)
+    gone_ss(0),
+    limit_ss_max_await_on_pause(3600)
     {}
 
     int64_t seconds() {
@@ -114,11 +126,7 @@ struct __attribute__((packed)) ProgramControl
     }
 
     bool is_last_step(uint16_t index) {
-        return index == steps->size() - 1;
-    }
-
-    bool is_last_step(ProgramStep * step) {
-        return &steps->at(steps->size() - 1) == step;
+        return index == prog_runned_steps_count.get() - 1;
     }
 
     void resume_task()
@@ -140,15 +148,14 @@ struct __attribute__((packed)) ProgramControl
             set_task_state(TaskStateEnum::PAUSE);
     }
 
-    void end_task()
-    {
+    void end_task_by_user() {
         set_task_state(TaskStateEnum::ERROR);
     }
 
     double get_prog_percentage();
-    ProgramStep * start_task(ProgramAimEnum aim, vector<ProgramStep> * _steps);
     uint32_t sum_gone_ss();
-    ProgramStep * do_task();
+    ProgramStep do_task();
+    ProgramStep start_task(ProgramAimEnum aim, uint16_t limit_ss_max_await_on_pause = 3600);
     
 private:
     void set_task_state(TaskStateEnum task_new_state)
@@ -162,6 +169,7 @@ private:
     }
 };
 
+/* Prepeared templates cascade for TMPE/P and CHM  */
 struct __attribute__((packed)) TMPEProgramTemplate
 {
     ProgramStep step_pasteurising;
@@ -169,9 +177,9 @@ struct __attribute__((packed)) TMPEProgramTemplate
     ProgramStep step_heating;
 
     TMPEProgramTemplate() : TMPEProgramTemplate(
-        ProgramStep(ProgramStepAimEnum::PASTEUR,    0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::CHILLING,   0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::HEATING,    0, 0, 0, 0, 0, 0)
+        ProgramStep(ProgramStepAimEnum::PASTEUR,    0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::CHILLING,   0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::HEATING,    0, 0, 0, 0, 0, 0, 0)
     )
     {}
 
@@ -209,12 +217,12 @@ struct __attribute__((packed)) CHMProgramTemplate
     ProgramStep step_drying;
 
     CHMProgramTemplate() : CHMProgramTemplate(
-        ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::CHILLING, 0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::CUTTING,  0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::MIXING,   0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::HEATING,  0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::DRYING,   0, 0, 0, 0, 0, 0)
+        ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::CHILLING, 0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::CUTTING,  0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::MIXING,   0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::HEATING,  0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::DRYING,   0, 0, 0, 0, 0, 0, 0)
     )
     {}
 
@@ -250,5 +258,7 @@ struct __attribute__((packed)) CHMProgramTemplate
         }
     }
 };
+
+static ProgramStep prog_null_step = ProgramStep();
 
 #endif

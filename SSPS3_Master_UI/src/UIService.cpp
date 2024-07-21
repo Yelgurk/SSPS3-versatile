@@ -37,9 +37,9 @@ UIService::UIService()
     lv_disp_load_scr(screen);
 
     this->init_screens();
-    this->UI_task_roadmap_control->hide_ui_hierarchy();
+    //this->UI_task_roadmap_control->hide_ui_hierarchy();
     this->UI_blowing_control->hide_ui_hierarchy();
-    //this->UI_menu_list_user->hide_ui_hierarchy();
+    this->UI_menu_list_user->hide_ui_hierarchy();
     this->UI_menu_list_master->hide_ui_hierarchy();
 }
 
@@ -66,13 +66,17 @@ void UIService::init_screens()
             }),
             KeyModel(KeyMap::RIGHT_BOT, [this]()
             {
-                Program_control->pause_task();
+                prog_runned.ptr()->pause_task();
+                prog_runned.accept();
+                
                 UI_task_roadmap_control->update_ui_context();
                 UI_task_roadmap_control->update_task_steps_state();
             }),
             KeyModel(KeyMap::L_STACK_1, [this]()
             {
-                Program_control->end_task();
+                prog_runned.ptr()->end_task_by_user();
+                prog_runned.accept();
+
                 UI_task_roadmap_control->update_ui_context();
                 UI_task_roadmap_control->update_task_steps_state();
             })
@@ -81,25 +85,26 @@ void UIService::init_screens()
     );
 
     UI_task_roadmap_control->add_ui_base_action([this]() {
-        if (Program_control->state != TaskStateEnum::AWAIT)
+        if (prog_runned.get().state != TaskStateEnum::AWAIT)
         {
-            switch (Program_control->aim)
+            switch (prog_runned.get().aim)
             {
             case ProgramAimEnum::TMP_PASTEUR:       UI_task_roadmap_control->set_task_header_name("Пастеризация"); break;
             case ProgramAimEnum::TMP_HEAT:          UI_task_roadmap_control->set_task_header_name("Подогрев"); break;
             case ProgramAimEnum::TMP_CHILL:         UI_task_roadmap_control->set_task_header_name("Охлаждение"); break;
-            case ProgramAimEnum::TMP_WATCHDOG_1:    UI_task_roadmap_control->set_task_header_name("Будильник 1"); break;
-            case ProgramAimEnum::TMP_WATCHDOG_2:    UI_task_roadmap_control->set_task_header_name("Будильник 2"); break;
-            case ProgramAimEnum::TMP_WATCHDOG_3:    UI_task_roadmap_control->set_task_header_name("Будильник 3"); break;
-            case ProgramAimEnum::CHM_MAIN_1:        UI_task_roadmap_control->set_task_header_name("Программа 1"); break;
-            case ProgramAimEnum::CHM_MAIN_2:        UI_task_roadmap_control->set_task_header_name("Программа 2"); break;
-            case ProgramAimEnum::CHM_MAIN_3:        UI_task_roadmap_control->set_task_header_name("Программа 3"); break;
-            case ProgramAimEnum::CHM_TEMPL_1:       UI_task_roadmap_control->set_task_header_name("Шаблон 1"); break;
-            case ProgramAimEnum::CHM_TEMPL_2:       UI_task_roadmap_control->set_task_header_name("Шаблон 2"); break;
-            case ProgramAimEnum::CHM_TEMPL_3:       UI_task_roadmap_control->set_task_header_name("Шаблон 3"); break;
-            case ProgramAimEnum::CHM_TEMPL_4:       UI_task_roadmap_control->set_task_header_name("Шаблон 4"); break;
-            case ProgramAimEnum::CHM_TEMPL_5:       UI_task_roadmap_control->set_task_header_name("Шаблон 5"); break;
-            case ProgramAimEnum::CHM_TEMPL_6:       UI_task_roadmap_control->set_task_header_name("Шаблон 6"); break;
+            case ProgramAimEnum::TMP_WATCHDOG_1:    UI_task_roadmap_control->set_task_header_name("Автопрог. #1"); break;
+            case ProgramAimEnum::TMP_WATCHDOG_2:    UI_task_roadmap_control->set_task_header_name("Автопрог. #2"); break;
+            case ProgramAimEnum::TMP_WATCHDOG_3:    UI_task_roadmap_control->set_task_header_name("Автопрог. #3"); break;
+            case ProgramAimEnum::CHM_MAIN_1:        UI_task_roadmap_control->set_task_header_name("сыр \"Пармезан\""); break;
+            case ProgramAimEnum::CHM_MAIN_2:        UI_task_roadmap_control->set_task_header_name("сыр \"Адыгейский\""); break;
+            case ProgramAimEnum::CHM_MAIN_3:        UI_task_roadmap_control->set_task_header_name("сыр \"Тильзитский\""); break;
+            case ProgramAimEnum::CHM_TEMPL_1:       UI_task_roadmap_control->set_task_header_name("свой сыр #1"); break;
+            case ProgramAimEnum::CHM_TEMPL_2:       UI_task_roadmap_control->set_task_header_name("свой сыр #2"); break;
+            case ProgramAimEnum::CHM_TEMPL_3:       UI_task_roadmap_control->set_task_header_name("свой сыр #3"); break;
+            case ProgramAimEnum::CHM_TEMPL_4:       UI_task_roadmap_control->set_task_header_name("свой сыр #4"); break;
+            case ProgramAimEnum::CHM_TEMPL_5:       UI_task_roadmap_control->set_task_header_name("свой сыр #5"); break;
+            case ProgramAimEnum::CHM_TEMPL_6:       UI_task_roadmap_control->set_task_header_name("свой сыр #6"); break;
+            case ProgramAimEnum::CHM_TEMPL_7:       UI_task_roadmap_control->set_task_header_name("свой сыр #7"); break;
             
             default:
                 break;
@@ -110,57 +115,14 @@ void UIService::init_screens()
     UI_task_roadmap_control->add_ui_context_action(
         [this]()
         {
-            if (Program_control->state != TaskStateEnum::AWAIT)
+            if (prog_runned.get().state != TaskStateEnum::AWAIT)
                 UI_task_roadmap_control->set_task_state_values(
-                    Program_control->get_prog_percentage(),
-                    Program_control->gone_ss,
-                    Program_control->state
+                    prog_runned.get().get_prog_percentage(),
+                    prog_runned.get().gone_ss,
+                    prog_runned.get().state
                 );
         }
     );
-
-    /*
-    if (!Program_control->is_runned)
-    {
-        Program_control->start_task(ProgramAimEnum::TMP_PASTEUR, &my_demo_task_steps);
-
-        for (uint16_t i = 0; i < my_demo_task_steps.size(); i++)
-        {
-            ProgramStep* step = &my_demo_task_steps.at(i);
-
-            UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
-            ui_step->set_extra_button_logic({
-                [=](){ step->fan++;             },
-                [=](){ step->fan--;             },
-                [=](){ step->tempC++;           },
-                [=](){ step->tempC--;           },
-                [=](){ step->duration_ss += 10; },
-                [=](){ step->duration_ss -= 10; },
-            });
-
-            ui_step->add_ui_base_action([ui_step, step]()
-            {
-                switch (step->aim)
-                {
-                case ProgramStepAimEnum::WATER_JACKET:  ui_step->set_step_name("Набор воды"); break;
-                case ProgramStepAimEnum::PASTEUR:       ui_step->set_step_name("Пастеризация"); break;
-                case ProgramStepAimEnum::CHILLING:      ui_step->set_step_name("Охлаждение"); break;
-                case ProgramStepAimEnum::CUTTING:       ui_step->set_step_name("Резка"); break;
-                case ProgramStepAimEnum::MIXING:        ui_step->set_step_name("Замешивание"); break;
-                case ProgramStepAimEnum::HEATING:       ui_step->set_step_name("Нагрев"); break;
-                case ProgramStepAimEnum::DRYING:        ui_step->set_step_name("Сушка"); break;
-                
-                default:
-                    break;
-                }
-            });
-            ui_step->add_ui_context_action([ui_step, step]() { ui_step->set_step_values(step->fan, step->tempC, step->time_left_ss(), step->state); });
-        } 
-
-        UI_task_roadmap_control->update_ui_base();
-        UI_task_roadmap_control->update_ui_context();
-    }
-    */
 
     /* blowing panel init */
     UI_blowing_control = new UIBlowingControl(
@@ -523,13 +485,13 @@ void UIService::init_settings_part_tmpe_wd()
         []() {},
         []() {},
         [this]() {
-            bool * templ = prog_tmpe_templates_wd_state->at(get_template_wd_index())->ptr();
-            *templ = !*templ;
+            AutoProgStates * templ = prog_tmpe_templates_wd_state->at(get_template_wd_index())->ptr();
+            templ->on_off = !templ->on_off;
             prog_tmpe_templates_wd_state->at(get_template_wd_index())->accept();
         }
     });
     UI_setter_wd_turn_on_off->add_ui_context_action([=]() {
-        UI_setter_wd_turn_on_off->set_value(prog_tmpe_templates_wd_state->at(get_template_wd_index())->get() ? "Да" : "Нет");
+        UI_setter_wd_turn_on_off->set_value(prog_tmpe_templates_wd_state->at(get_template_wd_index())->get().on_off? "Да" : "Нет");
     });
 
     /* WD startup hours */
@@ -777,11 +739,39 @@ void UIService::init_settings_master_controls()
     /* master, page - 1 */
     UI_S_M_type_of_equipment_enum = new UIValueSetter(UI_settings_master_machine, true, 40, "модель");
     UI_S_M_type_of_equipment_enum->set_extra_button_logic({
-        [this]() { var_type_of_equipment_enum.set(var_type_of_equipment_enum.get() + 1); },
-        [this]() { var_type_of_equipment_enum.set(var_type_of_equipment_enum.get() - 1); },
+        [this]() {
+            uint8_t type = static_cast<uint8_t>(var_type_of_equipment_enum.get());
+            if (++type >= static_cast<uint8_t>(EquipmentType::_END))
+                type = static_cast<uint8_t>(EquipmentType::All) + 1;
+            var_type_of_equipment_enum.set(static_cast<EquipmentType>(type));
+        },
+        [this]() {
+            uint8_t type = static_cast<uint8_t>(var_type_of_equipment_enum.get());
+            if (--type == static_cast<uint8_t>(EquipmentType::All) || type >= static_cast<uint8_t>(EquipmentType::_END))
+                type = static_cast<uint8_t>(EquipmentType::_END) - 1;
+            var_type_of_equipment_enum.set(static_cast<EquipmentType>(type));
+        },
         []() {}
     });
-    UI_S_M_type_of_equipment_enum->add_ui_context_action([this]() { UI_S_M_type_of_equipment_enum->set_value(var_type_of_equipment_enum.get()); });
+    UI_S_M_type_of_equipment_enum->add_ui_context_action([this]() {
+        static std::string equipment_name = "";
+
+        switch(var_type_of_equipment_enum.get())
+        {
+            case EquipmentType::Pasteurizer:                    equipment_name = "Пастер."; break;
+            case EquipmentType::DairyTaxi:                      equipment_name = "ТМ"; break;
+            case EquipmentType::DairyTaxiFlowgun:               equipment_name = "ТМ +разд."; break;
+            case EquipmentType::DairyTaxiPasteurizer:           equipment_name = "ТМП"; break;
+            case EquipmentType::DairyTaxiPasteurizerFlowgun:    equipment_name = "ТМП + разд."; break;
+            case EquipmentType::Cheesemaker:                    equipment_name = "Сыровар."; break;
+            case EquipmentType::ColostrumDefroster:             equipment_name = "РМ"; break;
+            default:
+                equipment_name = "Неизв.";
+                break;
+        }
+        
+        UI_S_M_type_of_equipment_enum->set_value(equipment_name);
+    });
 
     UI_S_M_is_blowgun_by_rf = new UIValueSetter(UI_settings_master_machine, false, 40, "пистолет");
     UI_S_M_is_blowgun_by_rf->set_extra_button_logic({

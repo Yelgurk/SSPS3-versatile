@@ -12,6 +12,7 @@
 #include "Watchdogs/HeatingWatchdog.hpp"
 #include "Watchdogs/V380SupplyWatchdog.hpp"
 #include "Watchdogs/WaterJacketDrainWatchdog.hpp"
+#include "Watchdogs/ProgStartupWatchdog.hpp"
 #include "FRAM_DB.hpp"
 
 /* I2C */
@@ -43,7 +44,6 @@ extern uint8_t FRAM_address;
 extern TwoWire * itcw;
 extern DS3231 * rtc;
 extern STM32_slave * STM32;
-extern ProgramControl * Program_control;
 extern BlowingControl * Blowing_control;
 extern UIService * UI_service;
 extern S_DateTime * dt_rt;
@@ -53,6 +53,7 @@ extern ChillingWatchdog             * chilling_wd;
 extern HeatingWatchdog              * heating_wd;
 extern V380SupplyWatchdog           * v380_supply_wd;
 extern WaterJacketDrainWatchdog     * wJacket_drain_wd;
+extern ProgStartupWatchdog          * prog_stasrtup_wd;
 
 /* STM32 output states */
 uint8_t rt_out_speed_async_m = 0;

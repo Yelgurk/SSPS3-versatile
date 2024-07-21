@@ -11,7 +11,6 @@
 #include "UIControls/UIBlowingControl.hpp"
 #include "UIControls/UIBlowValListItem.hpp"
 #include "UIControls/UIDateTime.hpp"
-#include "UIControls/UIFlowGunProgressBar.hpp"
 #include "UIControls/UIMachineStateBar.hpp"
 #include "UIControls/UIMenuList.hpp"
 #include "UIControls/UIMenuListItem.hpp"
@@ -31,13 +30,13 @@
 #define LGFX_USE_V1
 #define SCREEN_WIDTH            480U
 #define SCREEN_HEIGHT           320U
-#define INIT_BUFFER_IN_PSRAM    1
+#define INIT_BUFFER_IN_PSRAM    0
 #define TEMPLATES_COUNT_TMPE    6
 #define TEMPLATES_COUNT_WD      3
 #define TEMPLATES_COUNT_CHM     10
 
 #if INIT_BUFFER_IN_PSRAM == 0
-    #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 24 / 2    
+    #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 16 / 2    
     static uint8_t lv_buff_1[SCREEN_BUFFER];
     static uint8_t lv_buff_2[SCREEN_BUFFER];
 #else
@@ -86,7 +85,6 @@ static void lcd_flush_cb(lv_display_t* display, const lv_area_t* area, unsigned 
     lv_display_flush_ready(display);
 }
 
-extern ProgramControl * Program_control;
 extern BlowingControl * Blowing_control;
 extern DS3231 * rtc;
 extern S_DateTime * dt_rt;

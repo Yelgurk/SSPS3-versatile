@@ -12,7 +12,8 @@ enum class EquipmentType : uint8_t
     DairyTaxiPasteurizer,
     DairyTaxiPasteurizerFlowgun,
     Cheesemaker,
-    ColostrumDefroster
+    ColostrumDefroster,
+    _END
 };
 
 enum class PlaceControlIn : uint8_t

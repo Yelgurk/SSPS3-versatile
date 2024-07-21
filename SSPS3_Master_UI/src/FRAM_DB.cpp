@@ -1,21 +1,21 @@
 #include "FRAM_DB.hpp"
 
 static TMPEProgramTemplate def_prog_tmpe_full = TMPEProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,    20, 85, 180, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::CHILLING,   30, 40, 120, 1, 0, 1),
-    ProgramStep(ProgramStepAimEnum::HEATING,    10, 60, 60,  1, 0, 1)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,    20, 85, 180, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING,   30, 40, 120, 0, 1, 0, 1),
+    ProgramStep(ProgramStepAimEnum::HEATING,    10, 60, 60,  0, 1, 0, 1)
 );
 
 static TMPEProgramTemplate def_prog_tmpe_heating = TMPEProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,    0,  0,  0,   0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CHILLING,   0,  0,  0,   0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::HEATING,    10, 60, 60,  1, 0, 1)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,    0,  0,  0,   0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::CHILLING,   0,  0,  0,   0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::HEATING,    10, 60, 60,  0, 1, 0, 1)
 );
 
 static TMPEProgramTemplate def_prog_tmpe_chilling = TMPEProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,    0,  0,  0,   0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CHILLING,   30, 40, 120, 1, 0, 1),
-    ProgramStep(ProgramStepAimEnum::HEATING,    0,  0,  0,   0, 0, 0)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,    0,  0,  0,   0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::CHILLING,   30, 40, 120, 0, 1, 0, 1),
+    ProgramStep(ProgramStepAimEnum::HEATING,    0,  0,  0,   0, 0, 0, 0)
 );
 
 static S_Time def_wd_boot_time_1 = S_Time(8, 0, 0);
@@ -23,39 +23,39 @@ static S_Time def_wd_boot_time_2 = S_Time(14, 0, 0);
 static S_Time def_wd_boot_time_3 = S_Time(23, 0, 0);
 
 static CHMProgramTemplate def_prog_chm_null = CHMProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR, 0, 0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CHILLING, 0, 0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CUTTING, 0, 0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::MIXING, 0, 0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::HEATING, 0, 0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::DRYING, 0, 0, 0, 0, 0, 0)
+    ProgramStep(ProgramStepAimEnum::PASTEUR, 0, 0, 0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::CHILLING, 0, 0, 0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::CUTTING, 0, 0, 0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::MIXING, 0, 0, 0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::HEATING, 0, 0, 0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::DRYING, 0, 0, 0, 0, 0, 0, 0)
 );
 
 static CHMProgramTemplate def_prog_chm_parmezan = CHMProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,  5,  82, 20,   0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::CHILLING, 10, 32, 1800, 1, 1, 1),
-    ProgramStep(ProgramStepAimEnum::CUTTING,  3,  32, 300,  0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::MIXING,   15, 32, 2400, 0, 1, 1),
-    ProgramStep(ProgramStepAimEnum::HEATING,  25, 50, 1200, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::DRYING,   30, 50, 1800, 0, 0, 1)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,  5,  82, 20,   0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING, 10, 32, 1800, 0, 1, 1, 1),
+    ProgramStep(ProgramStepAimEnum::CUTTING,  3,  32, 300,  0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::MIXING,   15, 32, 2400, 0, 0, 1, 1),
+    ProgramStep(ProgramStepAimEnum::HEATING,  25, 50, 1200, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::DRYING,   30, 50, 1800, 0, 0, 0, 1)
 );
 
 static CHMProgramTemplate def_prog_chm_adygeiskij = CHMProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,  20, 90, 0, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::CHILLING, 0,  0,  0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CUTTING,  0,  0,  0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::MIXING,   0,  0,  0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::HEATING,  0,  0,  0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::DRYING,   0,  0,  0, 0, 0, 0)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,  20, 90, 0, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::CUTTING,  0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::MIXING,   0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::HEATING,  0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::DRYING,   0,  0,  0, 0, 0, 0, 0)
 );
 
 static CHMProgramTemplate def_prog_chm_tylzickij = CHMProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,  5,  72, 20,   0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::CHILLING, 15, 32, 1800, 1, 1, 1),
-    ProgramStep(ProgramStepAimEnum::CUTTING,  3,  32, 300,  0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::MIXING,   15, 32, 2400, 0, 1, 1),
-    ProgramStep(ProgramStepAimEnum::HEATING,  25, 50, 1200, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::DRYING,   30, 50, 2580, 0, 0, 1)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,  5,  72, 20,   0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING, 15, 32, 1800, 0, 1, 1, 1),
+    ProgramStep(ProgramStepAimEnum::CUTTING,  3,  32, 300,  0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::MIXING,   15, 32, 2400, 0, 0, 1, 1),
+    ProgramStep(ProgramStepAimEnum::HEATING,  25, 50, 1200, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::DRYING,   30, 50, 2580, 0, 0, 0, 1)
 );
 
 static ProgramControl def_prog_runned_null = ProgramControl();
@@ -65,7 +65,7 @@ static ProgramStep def_prog_runned_step_null = ProgramStep();
 FRAMObject<S_DateTime>& var_last_rt                             = Storage::allocate<S_DateTime>(S_DateTime(), ALLOC_SYS_VAR_BEGIN);
 
 // master settings - page 1
-FRAMObject<uint8_t>& var_type_of_equipment_enum                 = Storage::allocate<uint8_t>(0);
+FRAMObject<EquipmentType>& var_type_of_equipment_enum           = Storage::allocate<EquipmentType>(EquipmentType::DairyTaxi);
 FRAMObject<uint8_t>& var_plc_language                           = Storage::allocate<uint8_t>(0);
 FRAMObject<bool>&   var_is_blowgun_by_rf                        = Storage::allocate<bool>(false);
 FRAMObject<bool>&   var_is_asyncM_rpm_float                     = Storage::allocate<bool>(false);
@@ -95,7 +95,7 @@ FRAMObject<uint16_t>& var_blowing_limit_ss_min                  = Storage::alloc
 // master settings - page 4
 FRAMObject<uint8_t>& var_wJacket_tempC_limit_max                = Storage::allocate<uint8_t>(LIMIT_WATER_BOILING_POINT_TEMPC);  // ok
 FRAMObject<uint8_t>& var_prog_wJacket_drain_max_ss              = Storage::allocate<uint8_t>(30);                               // ok
-FRAMObject<uint16_t>& var_prog_on_pause_max_await_ss            = Storage::allocate<uint16_t>(3600);                            // в сам ProgProc в лимит ожидания
+FRAMObject<uint16_t>& var_prog_on_pause_max_await_ss            = Storage::allocate<uint16_t>(3600);                            // ok
 FRAMObject<uint16_t>& var_prog_await_spite_of_already_runned_ss = Storage::allocate<uint16_t>(600);                             // в WD авто-пуска проги, если уже запущена прога
 FRAMObject<uint8_t>& var_prog_limit_heat_tempC_max              = Storage::allocate<uint8_t>(LIMIT_WATER_BOILING_POINT_TEMPC);  // ok 
 FRAMObject<uint8_t>& var_prog_limit_heat_tempC_min              = Storage::allocate<uint8_t>(30);                               // ok
@@ -122,9 +122,9 @@ FRAMObject<TMPEProgramTemplate>& prog_tmpe_wd_3                 = Storage::alloc
 FRAMObject<S_Time>& prog_tmpe_wd_1_boot_time                    = Storage::allocate<S_Time>(def_wd_boot_time_1);                   
 FRAMObject<S_Time>& prog_tmpe_wd_2_boot_time                    = Storage::allocate<S_Time>(def_wd_boot_time_2);
 FRAMObject<S_Time>& prog_tmpe_wd_3_boot_time                    = Storage::allocate<S_Time>(def_wd_boot_time_3);
-FRAMObject<bool>& prog_tmpe_wd_1_on_off                         = Storage::allocate<bool>(false);
-FRAMObject<bool>& prog_tmpe_wd_2_on_off                         = Storage::allocate<bool>(false);
-FRAMObject<bool>& prog_tmpe_wd_3_on_off                         = Storage::allocate<bool>(false);
+FRAMObject<AutoProgStates>& prog_tmpe_wd_1_on_off               = Storage::allocate<AutoProgStates>(AutoProgStates());
+FRAMObject<AutoProgStates>& prog_tmpe_wd_2_on_off               = Storage::allocate<AutoProgStates>(AutoProgStates());
+FRAMObject<AutoProgStates>& prog_tmpe_wd_3_on_off               = Storage::allocate<AutoProgStates>(AutoProgStates());
 
 FRAMObject<CHMProgramTemplate>& prog_chm_templ_1                = Storage::allocate<CHMProgramTemplate>(def_prog_chm_parmezan);
 FRAMObject<CHMProgramTemplate>& prog_chm_templ_2                = Storage::allocate<CHMProgramTemplate>(def_prog_chm_adygeiskij);
@@ -139,6 +139,8 @@ FRAMObject<CHMProgramTemplate>& prog_chm_templ_10               = Storage::alloc
 
 // private vars
 FRAMObject<uint16_t>& prog_runned_steps_count                   = Storage::allocate<uint16_t>(0);
+FRAMObject<uint8_t>& prog_active_step                           = Storage::allocate<uint8_t>(0);
+FRAMObject<uint8_t>& prog_next_step                             = Storage::allocate<uint8_t>(0);
 FRAMObject<ProgramControl>& prog_runned                         = Storage::allocate<ProgramControl>(def_prog_runned_null);
 FRAMObject<ProgramStep>& prog_runned_step_1                     = Storage::allocate<ProgramStep>(def_prog_runned_step_null);
 FRAMObject<ProgramStep>& prog_runned_step_2                     = Storage::allocate<ProgramStep>(def_prog_runned_step_null);
@@ -180,7 +182,7 @@ vector<FRAMObject<S_Time>*> * prog_tmpe_templates_wd_time = new vector<FRAMObjec
     &prog_tmpe_wd_3_boot_time
 };
 
-vector<FRAMObject<bool>*> * prog_tmpe_templates_wd_state = new vector<FRAMObject<boolean>*>{
+vector<FRAMObject<AutoProgStates>*> * prog_tmpe_templates_wd_state = new vector<FRAMObject<AutoProgStates>*>{
     &prog_tmpe_wd_1_on_off,
     &prog_tmpe_wd_2_on_off,
     &prog_tmpe_wd_3_on_off
