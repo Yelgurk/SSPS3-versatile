@@ -196,6 +196,9 @@ public:
 
         if (it == notifications.end())
             notifications.push_back(SystemNotificationContainer(type));
+
+        if (!animation_in_action)
+            display();
     }
 
     void display(bool button_pressed = false)

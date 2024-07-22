@@ -70,6 +70,11 @@ void setup()
     setup_task_manager();
     setup_watchdogs();
 
+    UI_service->UI_notification_bar->push_info(SystemNotification::OK_TASK_DONE);
+    UI_service->UI_notification_bar->push_info(SystemNotification::INFO_BLOWING_RESET_2_SS_AWAIT);
+    UI_service->UI_notification_bar->push_info(SystemNotification::WARNING_380V_NO_POWER);
+    UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN);
+
     dt_rt->get_rt();
 }
 
@@ -257,7 +262,7 @@ void setup_task_manager()
             async_motor_wd  ->set_async_motor_speed(0);
             chilling_wd     ->set_aim(0, 0);
             heating_wd      ->set_aim(0, 0);
-            wJacket_drain_wd->water_in_jacket(true);
+            //wJacket_drain_wd->water_in_jacket(true);
         }
 
         UI_service->UI_task_roadmap_control->update_task_steps_state();
