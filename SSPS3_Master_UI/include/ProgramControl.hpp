@@ -134,6 +134,7 @@ struct __attribute__((packed)) ProgramControl
         if (get_task_state() == TaskStateEnum::PAUSE)
         {
             set_task_state(TaskStateEnum::RUNNED);
+
             last_iteration.set_date(*dt_rt->get_date());
             last_iteration.set_time(*dt_rt->get_time());
         }
@@ -146,7 +147,7 @@ struct __attribute__((packed)) ProgramControl
             if (get_task_state() == TaskStateEnum::RUNNED)
                 set_task_state(TaskStateEnum::PAUSE);
             else if (get_task_state() == TaskStateEnum::PAUSE)
-                set_task_state(TaskStateEnum::RUNNED);
+                resume_task();
         }
         else
             set_task_state(TaskStateEnum::PAUSE);

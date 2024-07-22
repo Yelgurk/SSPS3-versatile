@@ -54,13 +54,16 @@ uint32_t ProgramControl::sum_gone_ss()
 
 ProgramStep ProgramControl::do_task(bool first_call_after_startup)
 {
-    switch (this->state)
+    if (!this->is_runned)
     {
-    case TaskStateEnum::AWAIT:  return prog_null_step; break;
-    case TaskStateEnum::DONE:   return prog_null_step; break;
-    case TaskStateEnum::ERROR:  return prog_null_step; break;
-    default:
-        break;
+        switch (this->state)
+        {
+        case TaskStateEnum::AWAIT:  return prog_null_step; break;
+        case TaskStateEnum::DONE:   return prog_null_step; break;
+        case TaskStateEnum::ERROR:  return prog_null_step; break;
+        default:
+            break;
+        }
     }
 
     static int32_t ss_from_last_iteration = 0;

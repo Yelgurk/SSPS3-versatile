@@ -178,9 +178,8 @@ public:
     {
         if (ui_task_control_was_inited && !reset_existed_history)
             return false;
-        ui_task_control_was_inited = true;
 
-        if (prog_runned.ptr()->is_runned)
+        if (prog_runned.ptr()->is_runned || !ui_task_control_was_inited)
         {
             for (uint16_t i = 0; i < prog_runned_steps_count.get(); i++)
             {
@@ -230,6 +229,7 @@ public:
             UI_service->UI_task_roadmap_control->update_ui_context();
         }
 
+        ui_task_control_was_inited = true;
         return true;
     }
 
