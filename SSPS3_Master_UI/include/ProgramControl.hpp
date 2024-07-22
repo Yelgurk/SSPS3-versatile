@@ -9,6 +9,8 @@
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_Storage.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_Object.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_RW.hpp"
+#include "STM32Pinouts.hpp"
+#include "Filters/FilterValue.hpp"
 
 enum class ProgramAimEnum : uint8_t
 {
@@ -41,10 +43,14 @@ enum class ProgramStepAimEnum : uint8_t
     HEATING,
     DRYING,
     EXPOSURE,
+    TO_TEMPERATURE,
     USER_AWAIT
 };
 
-extern S_DateTime * dt_rt;
+template <typename T>
+bool IsInBounds(const T& value, const T& low, const T& high) {
+    return !(value < low) && (value < high);
+}
 
 struct __attribute__((packed)) ProgramStep
 {
@@ -95,10 +101,16 @@ struct __attribute__((packed)) ProgramStep
     }
 };
 
+extern S_DateTime * dt_rt;
+
 extern FRAMObject<uint16_t>&                prog_runned_steps_count;
 extern vector<FRAMObject<ProgramStep>*>   * prog_runned_steps;
 extern FRAMObject<uint8_t>&                 prog_active_step;
 extern FRAMObject<uint8_t>&                 prog_next_step;
+
+extern FilterValue                        * filter_tempC_product;
+extern uint8_t                              OptIn_state[8];
+extern boolean                              Pressed_key_accept_for_prog;
 
 struct __attribute__((packed)) ProgramControl
 {

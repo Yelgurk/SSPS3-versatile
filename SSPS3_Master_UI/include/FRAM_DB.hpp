@@ -8,6 +8,7 @@
 #include "UIAccess.hpp"
 #include "ProgramControl.hpp"
 #include "BlowingControl.hpp"
+#include "STM32Pinouts.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_Storage.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_Object.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_RW.hpp"
@@ -26,24 +27,6 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 
 /* Prog conf defines */
 #define PROG_RUNNED_STEPS_NCT_MAX   24
-
-/* IO index in arr */
-#define DIN_BLOWGUN_SENS    7
-#define DIN_380V_SIGNAL     6
-#define DIN_ASYNC_M_ERROR   5
-#define DIN_STOP_SENS       4
-#define DIN_WJACKET_SENS    3
-
-#define ADC_TEMPC_PRODUCT   0
-#define ADC_TEMPC_WJACKET   1
-#define ADC_VOLTAGE_BATT    2
-
-#define DAC_ASYNC_M_SPEED   0
-
-#define REL_HEATERS         7
-#define REL_ASYNC_M         6
-#define REL_WJACKET_VALVE   5
-#define REL_BLOWGUN_PUMP    4
 
 /* ADC limits */
 #define BIT_12_VAL          4095

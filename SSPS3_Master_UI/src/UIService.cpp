@@ -36,6 +36,17 @@ UIService::UIService()
 
     lv_disp_load_scr(screen);
 
+    EquipmentType eq_type = var_type_of_equipment_enum.get();
+    is_chm     =
+        eq_type == EquipmentType::Cheesemaker;
+    is_pasteur =
+        eq_type == EquipmentType::Pasteurizer ||
+        eq_type == EquipmentType::DairyTaxiPasteurizer ||
+        eq_type == EquipmentType::DairyTaxiPasteurizerFlowgun;
+    is_blowgun =
+        eq_type == EquipmentType::DairyTaxiFlowgun ||
+        eq_type == EquipmentType::DairyTaxiPasteurizerFlowgun;
+
     this->init_screens();
     this->UI_prog_selector_control->hide_ui_hierarchy();
     this->UI_task_roadmap_control->hide_ui_hierarchy();
@@ -149,8 +160,19 @@ void UIService::init_screens()
             KeyModel(KeyMap::R_STACK_1, [this]() { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(3); }),
         }
     );
-    init_prog_selector_part_tmpe();
-    init_prog_selector_part_chm();
+    if (is_pasteur)
+        init_prog_selector_part_tmpe();
+    else if (is_chm)
+        init_prog_selector_part_chm();
+    else
+    {
+        UI_program_selector_items.push_back(new UIProgramSelectorItem(
+            UI_prog_selector_control,
+            "Оборудование не поддерживает пастеризацию",
+            [](uint8_t index) { },
+            0
+        ));
+    }
 
     /* blowing panel init */
     UI_blowing_control = new UIBlowingControl(
@@ -243,10 +265,18 @@ void UIService::init_blowing_controls()
 void UIService::init_settings_user_controls()
 {
     init_settings_part_datetime();
-    init_settings_part_pump_calibration();
-    init_settings_part_tmpe_templates();
-    init_settings_part_tmpe_wd();
-    init_settings_part_chm_templates();
+    
+    if (is_blowgun)
+        init_settings_part_pump_calibration();
+    
+    if (is_pasteur)
+    {
+        init_settings_part_tmpe_templates();
+        init_settings_part_tmpe_wd();
+    }
+
+    if (is_chm)
+        init_settings_part_chm_templates();
 }
 
 void UIService::init_settings_part_datetime()
@@ -1166,8 +1196,8 @@ void UIService::init_settings_master_controls()
 
     /* master, page - 1 */
     UI_S_M_type_of_equipment_enum               ->set_position(0, 10, 40, 85);       
-    UI_S_M_is_blowgun_by_rf                     ->set_position(0, 100, 40, 85);       
-    UI_S_M_is_asyncM_rpm_float                  ->set_position(0, 190, 40, 85);
+    UI_S_M_is_blowgun_by_rf                     ->set_position(0, 102, 40, 85);       
+    UI_S_M_is_asyncM_rpm_float                  ->set_position(0, 195, 40, 85);
     UI_S_M_plc_language                         ->set_position(0, 10, 140, 85);   
     UI_S_M_equip_have_wJacket_tempC_sensor      ->set_position(0, 105, 140, 175);   
 

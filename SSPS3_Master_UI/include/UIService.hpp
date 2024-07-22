@@ -112,6 +112,11 @@ public:
 
 class UIService
 {
+private:
+    bool is_chm     = false;
+    bool is_pasteur = false;
+    bool is_blowgun = false;
+
 public:
     /* Display */
     lv_obj_t* screen;

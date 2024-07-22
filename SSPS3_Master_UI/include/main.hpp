@@ -64,9 +64,10 @@ bool rt_out_state_heaters = false;
 bool rt_out_state_wJacket = false;
 
 /* STM32 input values and functions */
-uint8_t     Pressed_key = static_cast<uint8_t>(KeyMap::_END);
-uint8_t     OptIn_state[8] = { 0 };
-uint16_t    AnIn_state[4] = { 0 };
+uint8_t             Pressed_key = static_cast<uint8_t>(KeyMap::_END);
+extern boolean      Pressed_key_accept_for_prog;
+extern uint8_t      OptIn_state[8];
+extern uint16_t     AnIn_state[4];
 
 void IRAM_ATTR interrupt_action() {
     interrupted_by_slave = true;

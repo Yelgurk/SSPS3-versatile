@@ -23,6 +23,10 @@ bool prog_wd_first_call     = true;
 UIService       * UI_service; 
 UIManager       * UI_manager;
 
+uint8_t     OptIn_state[8]  = { 0 };
+uint16_t    AnIn_state[4]   = { 0 };
+boolean     Pressed_key_accept_for_prog = false;
+
 void blowing_proc(bool pistol_trigger);
 void rtc_recovery_by_FRAM();
 void setup_filters();
@@ -79,8 +83,18 @@ void loop()
         interrupted_by_slave = false;
         read_input_signals();
 
+        /* fake demo vals begin */
+
+        OptIn_state[DIN_WJACKET_SENS] = true;
+        AnIn_state[ADC_TEMPC_PRODUCT] = (float)MIN_ADC_4ma + (float)(MAX_ADC_20ma - MIN_ADC_4ma) / (float)200 * (float)((float)50 + (float)32);
+
+        /* fake demo vals end */
+
         UI_service->UI_notification_bar->key_press(Pressed_key);
         UI_manager->handle_key_press(Pressed_key);
+
+        if (prog_runned.local().is_runned)
+            Pressed_key_accept_for_prog = Pressed_key == static_cast<uint8_t>(KeyMap::LEFT_BOT);
 
         if (UI_manager->is_current_control(ScreenType::BLOWING_CONTROL))
             blowing_proc(OptIn_state[DIN_BLOWGUN_SENS]);
@@ -236,7 +250,7 @@ void setup_task_manager()
                 to_do.must_be_cooled ? to_do.tempC - 2 : to_do.tempC,
                 filter_tempC_product->get_physical_value()
             );
-        wJacket_drain_wd    ->water_in_jacket(!OptIn_state[DIN_WJACKET_SENS]); ////////////////////////////////////////////////// !
+        wJacket_drain_wd    ->water_in_jacket(OptIn_state[DIN_WJACKET_SENS]);
     
         if (!to_do.step_is_turned_on)
         {

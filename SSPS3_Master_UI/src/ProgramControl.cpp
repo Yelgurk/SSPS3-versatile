@@ -71,8 +71,10 @@ ProgramStep ProgramControl::do_task(bool first_call_after_startup)
     static ProgramStep _step_next;
     static ProgramStep _response;
     static boolean _was_on_pause;
+    static boolean _go_next_step;
 
     _was_on_pause = this->state == TaskStateEnum::PAUSE;
+    _go_next_step = false;
 
     if (this->state == TaskStateEnum::RUNNED || this->state == TaskStateEnum::PAUSE)
         this->state =
@@ -133,7 +135,16 @@ ProgramStep ProgramControl::do_task(bool first_call_after_startup)
             _step_curr.iteration_ss(ss_from_last_iteration);
             _step_curr.state = StepStateEnum::RUNNED;
 
-            if (_step_curr.is_time_out())
+            if (_step_curr.aim == ProgramStepAimEnum::WATER_JACKET)
+                _go_next_step = OptIn_state[DIN_WJACKET_SENS];
+            else if (_step_curr.await_ok_button)
+                _go_next_step = Pressed_key_accept_for_prog;
+            else if (_step_curr.untill_condition_met)
+                _go_next_step = IsInBounds<int16_t>(filter_tempC_product->get_physical_value(), _step_curr.tempC - 1, _step_curr.tempC + 1);
+            else if (_step_curr.is_time_out())
+                _go_next_step = true;
+
+            if (_go_next_step)
             {
                 _step_curr.state = StepStateEnum::DONE;
                 if (!is_last_step(prog_active_step.get()))
@@ -173,6 +184,8 @@ ProgramStep ProgramControl::do_task(bool first_call_after_startup)
             prog_runned_steps->at(prog_active_step.get())->set(_step_curr);
             _response = prog_null_step;
         }
+
+        Pressed_key_accept_for_prog = false;
     }
     else
         return prog_null_step;

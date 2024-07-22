@@ -121,9 +121,28 @@ public:
                     else
                         source = prog_tmpe_templates->at(prog_index)->ptr()->get_step(local);
                     
+                    ProgramStepAimEnum _prep_step;
+                    ProgramStepAimEnum _main_step;
+
+                    if (source->aim == ProgramStepAimEnum::PASTEUR)
+                    {
+                        _prep_step = ProgramStepAimEnum::HEATING;
+                        _main_step = source->aim;
+                    }
+                    else if (source->aim == ProgramStepAimEnum::DRYING || source->aim == ProgramStepAimEnum::CUTTING || source->aim == ProgramStepAimEnum::MIXING)
+                    {
+                        _prep_step = source->duration_ss > 0 ? ProgramStepAimEnum::TO_TEMPERATURE : source->aim;
+                        _main_step = source->aim;
+                    }
+                    else
+                    {
+                        _prep_step = source->aim;
+                        _main_step = ProgramStepAimEnum::EXPOSURE;
+                    }
+
                     add_new_task_step(
                         step_index++,
-                        source->aim == ProgramStepAimEnum::PASTEUR ? ProgramStepAimEnum::HEATING : source->aim,
+                        _prep_step,
                         source->fan,
                         source->tempC,
                         0,
@@ -135,7 +154,7 @@ public:
                     if (source->duration_ss > 0)
                         add_new_task_step(
                             step_index++,
-                            source->aim == ProgramStepAimEnum::PASTEUR ? ProgramStepAimEnum::PASTEUR : ProgramStepAimEnum::EXPOSURE,
+                            _main_step,
                             source->fan,
                             source->tempC,
                             source->duration_ss,
@@ -148,7 +167,7 @@ public:
                         add_new_task_step(
                             step_index++,
                             ProgramStepAimEnum::USER_AWAIT,
-                            source->fan,
+                            0,
                             source->tempC,
                             0,
                             false,
@@ -211,6 +230,7 @@ public:
                     case ProgramStepAimEnum::HEATING:       ui_step->set_step_name("Нагрев"); break;
                     case ProgramStepAimEnum::DRYING:        ui_step->set_step_name("Сушка"); break;
                     case ProgramStepAimEnum::EXPOSURE:      ui_step->set_step_name("Выдержка"); break;
+                    case ProgramStepAimEnum::TO_TEMPERATURE:ui_step->set_step_name("*подгонка температуры*"); break;
                     case ProgramStepAimEnum::USER_AWAIT:    ui_step->set_step_name("Ожидание: нажмите кнопку"); break;
 
                     default:
