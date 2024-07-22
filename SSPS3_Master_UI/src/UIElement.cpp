@@ -171,6 +171,38 @@ bool UIElement::key_press(KeyMap key)
     return false;
 }
 
+UIElement* UIElement::focus_on(uint8_t child_index)
+{
+    if (child_index >= navi_childs.size())
+        return this;
+
+    UIElement* old_navi = navi_pointer;
+
+    if (navi_childs.size() > 0)
+    {
+        if (navi_pointer != nullptr)
+            navi_pointer->lv_clear_states();
+
+        navi_pointer = navi_childs[child_index];
+
+        if (navi_pointer->_is_focusable)
+        {
+            navi_pointer->set_focused(true);
+
+            if (navi_pointer->_focus_offset_y != 0 && old_navi != nullptr && old_navi->_focus_offset_y == 0)
+                lv_obj_scroll_to_y(navi_childs_presenter, 0, LV_ANIM_OFF);
+            else
+                lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_OFF);
+        }
+        else
+            navi_pointer = nullptr;
+    }
+    else
+        navi_pointer = nullptr;
+
+    return this;
+}
+
 UIElement * UIElement::navi_next()
 {
     bool first_focus_iteration = false;
@@ -226,15 +258,7 @@ UIElement * UIElement::navi_next()
     {
         navi_pointer->set_focused(true);
         if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration && old_navi != nullptr && old_navi->_focus_offset_y == 0)
-        {
-            //lv_area_t child_pos;
-            //lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
-            //child_pos.y1 = child_pos.y1 + navi_pointer->_focus_offset_y;
-            //child_pos.y1 = child_pos.y1 < 0 ? 0 : child_pos.y1;
-            //lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1, LV_ANIM_OFF);
-
             lv_obj_scroll_to_y(navi_childs_presenter, 0, LV_ANIM_OFF);
-        }
         else
             lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_OFF);
     }
@@ -298,15 +322,7 @@ UIElement * UIElement::navi_prev()
         navi_pointer->set_focused(true);
 
         if (navi_pointer->_focus_offset_y != 0 && !first_focus_iteration && old_navi != nullptr && old_navi->_focus_offset_y == 0)
-        {
-            //lv_area_t child_pos;
-            //lv_obj_get_coords(navi_pointer->get_container(), &child_pos);
-            //child_pos.y1 = child_pos.y1 + navi_pointer->_focus_offset_y;
-            //child_pos.y1 = child_pos.y1 < 0 ? 0 : child_pos.y1;
-            //lv_obj_scroll_to_y(navi_childs_presenter, child_pos.y1, LV_ANIM_OFF);
-
             lv_obj_scroll_to_y(navi_childs_presenter, 0, LV_ANIM_OFF);
-        }
         else
             lv_obj_scroll_to_view(navi_pointer->get_container(), LV_ANIM_OFF);
     }

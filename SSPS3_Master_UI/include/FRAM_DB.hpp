@@ -120,6 +120,10 @@ extern FRAMObject<uint8_t>& var_prog_wJacket_toggle_delay_ss;
 extern FRAMObject<S_DateTime>& var_rt_setter;
 
 extern FRAMObject<float>& var_blow_pump_calibration_lm;
+extern FRAMObject<BlowgunValue> var_blowiong_val_ml_1;
+extern FRAMObject<BlowgunValue> var_blowiong_val_ml_2;
+extern FRAMObject<BlowgunValue> var_blowiong_val_ml_3;
+extern FRAMObject<BlowgunValue> var_blowiong_val_timer;
 
 extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_main;
 extern FRAMObject<TMPEProgramTemplate>& prog_tmpe_heating;
@@ -179,5 +183,6 @@ extern vector<FRAMObject<S_Time>*>                  *prog_tmpe_templates_wd_time
 extern vector<FRAMObject<AutoProgStates>*>          *prog_tmpe_templates_wd_state;
 extern vector<FRAMObject<CHMProgramTemplate>*>      *prog_chm_templates;
 extern vector<FRAMObject<ProgramStep>*>             *prog_runned_steps;
+extern vector<FRAMObject<BlowgunValue>*>            *blowing_vals;
 
 #endif // FRAM_DB_HPP

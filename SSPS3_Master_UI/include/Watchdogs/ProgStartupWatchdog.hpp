@@ -5,10 +5,12 @@
 #include <Arduino.h>
 #include "../FRAM_DB.hpp"
 #include "../UIControls/UITaskRoadmapList.hpp"
+#include "../UIManager.hpp"
 
 using namespace std;
 
 extern S_DateTime * dt_rt;
+extern UIManager * UI_manager;
 
 class ProgStartupWatchdog
 {
@@ -171,6 +173,7 @@ public:
         prog_runned.accept();
 
         fill_ui_task_contol(true);
+        UI_manager->set_control(ScreenType::TASK_ROADMAP);
 
         return true;
     }
@@ -217,12 +220,13 @@ public:
                 ui_step->add_ui_context_action([=]()
                 {
                     ui_step->set_step_values(
-                        prog_runned_steps->at(i)->get().fan,
-                        prog_runned_steps->at(i)->get().tempC,
-                        prog_runned_steps->at(i)->get().time_left_ss(),
-                        prog_runned_steps->at(i)->get().state
+                        prog_runned_steps->at(i)->local().fan,
+                        prog_runned_steps->at(i)->local().tempC,
+                        prog_runned_steps->at(i)->local().state == StepStateEnum::DONE
+                            ? -((int32_t)prog_runned_steps->at(i)->local().gone_ss)
+                            : prog_runned_steps->at(i)->local().time_left_ss(),
+                        prog_runned_steps->at(i)->local().state
                     );
-                    // here add method call which save prog step into FRAM if this step is running (in vector by index)
                 });
             } 
 

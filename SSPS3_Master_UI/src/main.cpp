@@ -21,7 +21,9 @@ ProgStartupWatchdog         * prog_stasrtup_wd;
 bool prog_wd_first_call     = true;
 
 UIService       * UI_service; 
+UIManager       * UI_manager;
 
+void blowing_proc(bool pistol_trigger);
 void rtc_recovery_by_FRAM();
 void setup_filters();
 void setup_UI();
@@ -56,7 +58,7 @@ void setup()
     dt_rt->get_rt();
     rtc_recovery_by_FRAM();
 
-    //Storage::reset_all();   
+    //Storage::reset_all(true);   
     
     setup_filters();
     setup_UI();
@@ -67,34 +69,10 @@ void setup()
     dt_rt->get_rt();
 }
 
-bool demo_was_runned = false;
-
 void loop()
 {
     Blowing_control->do_blowing();
     rt_task_manager.run();
-
-    if (millis() > 10000 && !demo_was_runned)
-    {
-        demo_was_runned = true;
-        prog_stasrtup_wd->start_program(EquipmentType::DairyTaxiPasteurizer, 0);
-    }
-
-    /* somewhere in ProgramControl */
-    /*
-    async_motor_wd->set_async_motor_speed(20);
-    chilling_wd->get_aim(15, 50);
-    heating_wd->get_aim(85, 50, 55);
-    wJacket_drain_wd->water_in_jacket(true);
-    */
-
-    /* somewhere in loop */
-    /*
-    chilling_wd->do_control();
-    heating_wd->do_control();
-    v380_supply_wd->do_control(true);
-    wJacket_drain_wd->do_control();
-    */
 
     if (interrupted_by_slave)
     {
@@ -102,31 +80,31 @@ void loop()
         read_input_signals();
 
         UI_service->UI_notification_bar->key_press(Pressed_key);
-        
-        // prog_selector control
-        UI_service->UI_prog_selector_control->get_selected()->key_press(Pressed_key);
-        UI_service->UI_prog_selector_control->get_selected(true)->key_press(Pressed_key);
+        UI_manager->handle_key_press(Pressed_key);
 
-        // task control
-        //UI_service->UI_task_roadmap_control->get_selected()->key_press(Pressed_key);
-        //UI_service->UI_task_roadmap_control->get_selected(true)->key_press(Pressed_key);
-
-        // user settings control
-        //if (UI_service->UI_menu_list_user->is_selected_on_child())
-        //    UI_service->UI_menu_list_user->get_selected(true)->key_press(Pressed_key);
-        //UI_service->UI_menu_list_user->get_selected()->key_press(Pressed_key);
-
-        // master settings control
-        //if (UI_service->UI_menu_list_master->is_selected_on_child())
-        //    UI_service->UI_menu_list_master->get_selected(true)->key_press(Pressed_key);
-        //UI_service->UI_menu_list_master->get_selected()->key_press(Pressed_key);
-
-        // blowing control
-        //UI_service->UI_blowing_control->get_selected()->key_press(Pressed_key);
-        //UI_service->UI_blowing_control->get_selected(true)->key_press(Pressed_key);
+        if (UI_manager->is_current_control(ScreenType::BLOWING_CONTROL))
+            blowing_proc(OptIn_state[DIN_BLOWGUN_SENS]);
+        else if (Blowing_control->is_runned)
+            Blowing_control->blowgun_stop();
     }
 
     lv_task_handler();
+}
+
+void blowing_proc(bool pistol_trigger)
+{
+    if (Blowing_control->triggered_by != BlowingTriggerType::KEYBOARD)
+        if (UI_service->UI_blowing_control->get_focused_index() >= 0)
+        {
+            uint8_t blow_index = min(UI_service->UI_blowing_control->get_focused_index(), (int16_t)3);
+            BlowgunValue val = blowing_vals->at(blow_index)->local();
+
+            if (!Blowing_control->is_runned && pistol_trigger)
+                Blowing_control->blowgun_trigger(true, false, blow_index, val);
+            else
+            if (Blowing_control->is_runned && !pistol_trigger)
+                Blowing_control->blowgun_trigger(false, false, blow_index, val);
+        }
 }
 
 void rtc_recovery_by_FRAM()
@@ -177,11 +155,24 @@ void setup_filters()
 void setup_UI()
 {
     UI_service = new UIService();
+    UI_manager = new UIManager();
+
+    UI_manager->add_control(ScreenType::PROGRAM_SELECTOR,   UI_service->UI_prog_selector_control);
+    UI_manager->add_control(ScreenType::TASK_ROADMAP,       UI_service->UI_task_roadmap_control);
+    UI_manager->add_control(ScreenType::BLOWING_CONTROL,    UI_service->UI_blowing_control);
+    UI_manager->add_control(ScreenType::MENU_USER,          UI_service->UI_menu_list_user);
+    UI_manager->add_control(ScreenType::MENU_MASTER,        UI_service->UI_menu_list_master);
+
+    if (!prog_runned.get().is_runned)
+        UI_manager->set_control(ScreenType::PROGRAM_SELECTOR);
+    else
+        UI_manager->set_control(ScreenType::TASK_ROADMAP);
 }
 
 void setup_controllers()
 {
     Blowing_control = new BlowingControl(
+        [](bool state) { STM32->set(COMM_SET::RELAY, REL_BLOWGUN_PUMP, state); },
         var_blowing_await_ss.get(),
         var_blowing_pump_power_lm.get()
     );
@@ -268,6 +259,10 @@ void setup_task_manager()
         v380_supply_wd      ->do_control(!OptIn_state[DIN_380V_SIGNAL]); //////////////////////////////////////////////////////// !
         wJacket_drain_wd    ->do_control();
     }, 200);
+
+    rt_task_manager.add_task("task_check_autoprogs", []() {
+        prog_stasrtup_wd->do_control();
+    }, 30000);
 }
 
 void setup_watchdogs()

@@ -3,6 +3,7 @@
 #include "../../SSPS3_Master_Domain/include/main.hpp"
 #include "../resource/lv_resources.hpp"
 #include "UIService.hpp"
+#include "UIManager.hpp"
 #include "ProgramControl.hpp"
 #include "BlowingControl.hpp"
 #include "RtTaskManager.hpp"
@@ -46,6 +47,7 @@ extern DS3231 * rtc;
 extern STM32_slave * STM32;
 extern BlowingControl * Blowing_control;
 extern UIService * UI_service;
+extern UIManager * UI_manager;
 extern S_DateTime * dt_rt;
 
 extern AsynchronousMotorWatchdog    * async_motor_wd;

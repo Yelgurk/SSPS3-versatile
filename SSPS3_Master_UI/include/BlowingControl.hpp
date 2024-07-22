@@ -6,7 +6,7 @@
 #include <Arduino.h>
 #include "../include/UIControls/UIBlowingControl.hpp"
 
-struct BlowgunValue
+struct __attribute__((packed)) BlowgunValue
 {
     uint16_t val = 5000;
     bool is_timer = false;
@@ -16,16 +16,26 @@ struct BlowgunValue
     BlowgunValue(bool is_timer, uint16_t val) : is_timer(is_timer), val(val) {}
 };
 
+enum class BlowingTriggerType : uint8_t {
+    NONE,
+    KEYBOARD,
+    PISTOL
+};
+
 class BlowingControl
 {
 public:
+    BlowingTriggerType triggered_by = BlowingTriggerType::NONE;
     bool timer_running;
     bool is_runned;
     using CallbackFunc = std::function<void(float, float, BlowingType, float)>;
+    using ControlBlowingFunc = std::function<void(bool)>;
 
 private:
-    BlowgunValue selected_blowing_value;
     CallbackFunc callback;
+    ControlBlowingFunc blowing_func;
+
+    BlowgunValue selected_blowing_value;
     int8_t current_blow_index = -1;
 
     uint32_t ms_aim = 0;
@@ -36,6 +46,7 @@ private:
     uint8_t time_span_ss_on_pause_await_limit;
 
     bool trigger_must_be_reloaded = false;
+    bool keyboard_must_be_reloaded = false;
     bool pump_on;
     uint32_t last_call_time_ms;
     uint32_t last_blow_time_ms;
@@ -45,9 +56,11 @@ private:
 
 public:
     BlowingControl(
+        ControlBlowingFunc blowing_func,
         uint8_t time_span_ss_on_pause_await_limit,
         float var_blowing_pump_power_lm
     ) :
+    blowing_func(blowing_func),
     pump_power_lm(var_blowing_pump_power_lm),
     time_span_ss_on_pause_await_limit(time_span_ss_on_pause_await_limit),
     is_runned(false),

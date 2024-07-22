@@ -29,6 +29,7 @@
 #include "FRAM_DB.hpp"
 #include "DS3231.h"
 #include "Watchdogs/ProgStartupWatchdog.hpp"
+#include "UIManager.hpp"
 
 #define LGFX_USE_V1
 #define SCREEN_WIDTH            480U
@@ -92,6 +93,7 @@ extern ProgStartupWatchdog  * prog_stasrtup_wd;
 extern BlowingControl       * Blowing_control;
 extern DS3231               * rtc;
 extern S_DateTime           * dt_rt;
+extern UIManager            * UI_manager;
 
 template<typename T>
 class ValueComparator
@@ -170,6 +172,7 @@ public:
     UIValueSetter * UI_S_M_equip_have_wJacket_tempC_sensor;
     UIValueSetter * UI_S_M_reboot_system;
     UIValueSetter * UI_S_M_reset_system;
+    UIValueSetter * UI_S_M_hard_reset_system;
 
     /* master, page - 2 */    
     UIValueSetter * UI_S_M_sensor_batt_min_V;

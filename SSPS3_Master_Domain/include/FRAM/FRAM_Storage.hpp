@@ -29,17 +29,17 @@ class Storage
 {
 public:
     template<typename T>
-    static FRAMObject<T>& allocate(T default_value, uint32_t new_addr, size_t size) {
-        return Storage::allocate(default_value, new_addr, size);
+    static FRAMObject<T>& allocate(T default_value, bool is_resetable, uint32_t new_addr, size_t size) {
+        return Storage::allocate(default_value, is_resetable, new_addr, size);
     }
 
     template<typename T>
-    static FRAMObject<T>& allocate(T default_value, uint32_t new_addr, std::string name) {
-        return Storage::allocate(default_value, new_addr, sizeof(T), name);
+    static FRAMObject<T>& allocate(T default_value, bool is_resetable, uint32_t new_addr, std::string name) {
+        return Storage::allocate(default_value, is_resetable, new_addr, sizeof(T), name);
     }
 
     template<typename T>
-    static FRAMObject<T>& allocate(T default_value, uint32_t new_addr = 0, size_t size = sizeof(T), std::string name = "_")
+    static FRAMObject<T>& allocate(T default_value, bool is_resetable = true, uint32_t new_addr = 0, size_t size = sizeof(T), std::string name = "_")
     {
         currentAddress = new_addr > currentAddress ? new_addr : currentAddress;
         uint16_t address = currentAddress;
@@ -47,6 +47,7 @@ public:
 
         auto obj = custom_make_unique<FRAMObject<T>>(address, default_value, size);
         FRAMObject<T>* ptr = obj.get();
+        ptr->set_is_resetable(is_resetable);
 
         name = name == "_" ? ("v_" + to_string(address)) : name;  
         
@@ -62,10 +63,11 @@ public:
             return nullptr;
     }
 
-    static void reset_all()
+    static void reset_all(bool hard_reset = false)
     {
         for (auto& pair : addressMap)
-            pair.second->reset();
+            if (pair.second->get_is_resetable() || hard_reset)
+                pair.second->reset();
     }
 };
 

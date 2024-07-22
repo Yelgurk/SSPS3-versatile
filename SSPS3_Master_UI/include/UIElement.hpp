@@ -123,6 +123,7 @@ public:
     bool is_selected_on_child();
     bool key_press(uint8_t key);
     bool key_press(KeyMap key);
+    UIElement * focus_on(uint8_t child_index);
     UIElement * navi_next();
     UIElement * navi_prev();
     UIElement * navi_ok();

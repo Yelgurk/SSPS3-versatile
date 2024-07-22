@@ -165,7 +165,7 @@ public:
 
         lv_label_set_text(get_container_content("[val1]"), to_string(val_fan).c_str());
         lv_label_set_text(get_container_content("[val2]"), to_string(val_tempC).c_str());
-        lv_label_set_text(get_container_content("[val3]"), ((val_durat < 0 ? "-" : "") + string(buffer)).c_str());
+        lv_label_set_text(get_container_content("[val3]"), val_durat == 0 ? "" : ((val_durat < 0 ? "-" : "") + string(buffer)).c_str());
 
         if (!lv_obj_has_state(get_container(), LV_STATE_EDITED) && state == StepStateEnum::RUNNED)
             lv_obj_scroll_to_view(get_container(), LV_ANIM_ON);

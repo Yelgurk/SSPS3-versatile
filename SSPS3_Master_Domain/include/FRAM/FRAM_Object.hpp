@@ -16,9 +16,20 @@ extern TwoWire * itcw;
 
 class FRAMObjectBase
 {
+protected:
+    bool is_resetable = true;
+
 public:
     virtual ~FRAMObjectBase() = default;
     virtual void reset() = 0;
+
+    void set_is_resetable(bool state) {
+        is_resetable = state;
+    }
+
+    bool get_is_resetable() {
+        return is_resetable;
+    }
 };
 
 template<typename T>
@@ -117,6 +128,10 @@ public:
             reset();
             return &_value;
         }
+    }
+
+    T local() {
+        return _value;
     }
 
     operator T () {

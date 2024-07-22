@@ -2,12 +2,17 @@
 
 void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int8_t index, BlowgunValue curr_value)
 {
-    if (!do_gurgling)
-        trigger_must_be_reloaded = false;
+    if (!do_gurgling && !is_runned)
+    {
+        if (!is_keypad_press)
+            trigger_must_be_reloaded = false;
+        else
+            keyboard_must_be_reloaded = false;
+    }
 
     uint32_t current_time_ms = millis();
-    
-    if (do_gurgling && !trigger_must_be_reloaded)
+
+    if (do_gurgling && ((!trigger_must_be_reloaded && !is_keypad_press) || (!keyboard_must_be_reloaded && is_keypad_press)))
     {
         if (is_runned && current_blow_index != index)
         {
@@ -26,6 +31,7 @@ void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int
                 selected_blowing_value = curr_value;
                 current_blow_index = index;
                 is_runned = true;
+                triggered_by = is_keypad_press ? BlowingTriggerType::KEYBOARD : BlowingTriggerType::PISTOL;
 
                 ml_per_ms = pump_power_lm / 60.f; // in 1ss => 1000ms i.e. 1l => 1000ml. we store power in l/m, that why after casting we would be do *1000ml and then /1000ms, that why we just do lm/60s
 
@@ -56,10 +62,17 @@ void BlowingControl::blowgun_stop(bool need_in_reload)
     stop_pump();
 
     if (need_in_reload)
-        trigger_must_be_reloaded = true;
+    {
+        if (triggered_by == BlowingTriggerType::PISTOL)
+            trigger_must_be_reloaded = true;
+        else
+        if (triggered_by == BlowingTriggerType::KEYBOARD)
+            keyboard_must_be_reloaded = true;
+    }
 
     timer_running = false;
     is_runned = false;
+    triggered_by = BlowingTriggerType::NONE;
     callback(0, 0, BlowingType::LITER, 0);
 }
 
@@ -90,12 +103,10 @@ void BlowingControl::do_blowing()
     }
 }
 
-void BlowingControl::start_pump()
-{
-    pump_on = true;
+void BlowingControl::start_pump() {
+    blowing_func(true);
 }
 
-void BlowingControl::stop_pump()
-{
-    pump_on = false;
+void BlowingControl::stop_pump() {
+    blowing_func(false);
 }

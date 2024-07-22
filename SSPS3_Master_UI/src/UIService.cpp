@@ -38,7 +38,7 @@ UIService::UIService()
 
     this->init_screens();
     this->UI_prog_selector_control->hide_ui_hierarchy();
-    //this->UI_task_roadmap_control->hide_ui_hierarchy();
+    this->UI_task_roadmap_control->hide_ui_hierarchy();
     this->UI_blowing_control->hide_ui_hierarchy();
     this->UI_menu_list_user->hide_ui_hierarchy();
     this->UI_menu_list_master->hide_ui_hierarchy();
@@ -47,10 +47,10 @@ UIService::UIService()
 void UIService::init_screens()
 {
     /* upper state bar init */
-    UI_date_time = new UIDateTime(this->screen);
-    UI_machine_state_bar = new UIMachineStateBar(this->screen);
-    UI_notify_bar = new UINotifyBar(this->screen);
-    UI_notification_bar = new UINotificationBar(this->screen);
+    UI_date_time            = new UIDateTime(this->screen);
+    UI_machine_state_bar    = new UIMachineStateBar(this->screen);
+    UI_notify_bar           = new UINotifyBar(this->screen);
+    UI_notification_bar     = new UINotificationBar(this->screen);
 
     /* task roadmap controls init */
     UI_task_roadmap_control = new UITaskRoadmapList(
@@ -60,11 +60,17 @@ void UIService::init_screens()
                 UI_task_roadmap_control->navi_prev();
                 UI_task_roadmap_control->update_task_steps_state();
             }),
+            KeyModel(KeyMap::TOP, [this]()
+            {
+                if (!prog_runned.get().is_runned)
+                    UI_manager->set_control(ScreenType::PROGRAM_SELECTOR);
+            }),
             KeyModel(KeyMap::BOTTOM, [this]()
             {
                 UI_task_roadmap_control->navi_next();
                 UI_task_roadmap_control->update_task_steps_state();
             }),
+            KeyModel(KeyMap::RIGHT_TOP, [this]() { UI_manager->set_control(ScreenType::MENU_USER); }),
             KeyModel(KeyMap::RIGHT_BOT, [this]()
             {
                 prog_runned.ptr()->pause_task();
@@ -80,6 +86,11 @@ void UIService::init_screens()
 
                 UI_task_roadmap_control->update_ui_context();
                 UI_task_roadmap_control->update_task_steps_state();
+            }),
+            KeyModel(KeyMap::LEFT_TOP, [this]()
+            {
+                if (!prog_runned.local().is_runned)
+                    UI_manager->set_control(ScreenType::PROGRAM_SELECTOR);
             })
         },
         this->screen
@@ -130,7 +141,12 @@ void UIService::init_screens()
         this->screen,
         {
             KeyModel(KeyMap::BOTTOM,    [this]() { UI_prog_selector_control->navi_next(); }),
-            KeyModel(KeyMap::TOP,       [this]() { UI_prog_selector_control->navi_prev(); })
+            KeyModel(KeyMap::TOP,       [this]() { UI_prog_selector_control->navi_prev(); }),
+            KeyModel(KeyMap::RIGHT_TOP, [this]() { UI_manager->set_control(ScreenType::MENU_USER); }),
+            KeyModel(KeyMap::R_STACK_4, [this]() { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(0); }),
+            KeyModel(KeyMap::R_STACK_3, [this]() { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(1); }),
+            KeyModel(KeyMap::R_STACK_2, [this]() { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(2); }),
+            KeyModel(KeyMap::R_STACK_1, [this]() { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(3); }),
         }
     );
     init_prog_selector_part_tmpe();
@@ -145,10 +161,22 @@ void UIService::init_screens()
             {
                 if (Blowing_control->is_runned)
                     Blowing_control->blowgun_stop();
-                else
+                else if (UI_blowing_control->get_selected() != UI_blowing_control)
                     UI_blowing_control->navi_back();
+                else
+                {
+                    if (prog_runned.get().is_runned)
+                        UI_manager->set_control(ScreenType::TASK_ROADMAP);
+                    else
+                        UI_manager->set_control(ScreenType::PROGRAM_SELECTOR);
+                }
             }),
-            KeyModel(KeyMap::RIGHT_BOT_REL, [this]() { Blowing_control->blowgun_trigger(false, true); })
+            KeyModel(KeyMap::RIGHT_TOP, [this]() { UI_manager->set_control(ScreenType::MENU_USER); }),
+            KeyModel(KeyMap::RIGHT_BOT_REL, [this]() { Blowing_control->blowgun_trigger(false, true); }),
+            KeyModel(KeyMap::R_STACK_4, [this]() { UI_blowing_control->focus_on(0); }),
+            KeyModel(KeyMap::R_STACK_3, [this]() { UI_blowing_control->focus_on(1); }),
+            KeyModel(KeyMap::R_STACK_2, [this]() { UI_blowing_control->focus_on(2); }),
+            KeyModel(KeyMap::R_STACK_1, [this]() { UI_blowing_control->focus_on(3); }),
         },
         this->screen
     );
@@ -160,8 +188,19 @@ void UIService::init_screens()
         {
             KeyModel(KeyMap::TOP, [this]() { UI_menu_list_user->navi_prev(); }),
             KeyModel(KeyMap::BOTTOM, [this]() { UI_menu_list_user->navi_next(); }),
-            KeyModel(KeyMap::LEFT_TOP,  [this]() { UI_menu_list_user->navi_back(); }),
-            KeyModel(KeyMap::LEFT_BOT,  [this]() { UI_menu_list_user->navi_ok(); })
+            KeyModel(KeyMap::LEFT_BOT,  [this]() { UI_menu_list_user->navi_ok(); }),
+            KeyModel(KeyMap::LEFT_TOP,  [this]()
+            {
+                if (UI_menu_list_user->get_focused_index() >= 0)
+                    UI_menu_list_user->navi_back();
+                else
+                {
+                    if (prog_runned.get().is_runned)
+                        UI_manager->set_control(ScreenType::TASK_ROADMAP);
+                    else
+                        UI_manager->set_control(ScreenType::PROGRAM_SELECTOR);
+                }
+            })
         }
     );
     init_settings_user_controls();
@@ -172,8 +211,14 @@ void UIService::init_screens()
         {
             KeyModel(KeyMap::TOP, [this]() { UI_menu_list_master->navi_prev(); }),
             KeyModel(KeyMap::BOTTOM, [this]() { UI_menu_list_master->navi_next(); }),
-            KeyModel(KeyMap::LEFT_TOP,  [this]() { UI_menu_list_master->navi_back(); }),
-            KeyModel(KeyMap::LEFT_BOT,  [this]() { UI_menu_list_master->navi_ok(); })
+            KeyModel(KeyMap::LEFT_BOT,  [this]() { UI_menu_list_master->navi_ok(); }),
+            KeyModel(KeyMap::LEFT_TOP,  [this]()
+            {
+                if (UI_menu_list_master->get_focused_index() >= 0)
+                    UI_menu_list_master->navi_back();
+                else
+                    UI_manager->set_control(ScreenType::MENU_USER);
+            })
         }
     );
     init_settings_master_controls();
@@ -181,25 +226,18 @@ void UIService::init_screens()
 
 void UIService::init_blowing_controls()
 {
-    /*
-    b_vars - были тестовые данные для обкатки контрола раздачи. будет во FRAM 
-    в UIService проинициализирован demo-вектор vector<BlowgunValue> b_vars для тестов с var в RAM, пока не во FRAM
-    */
-
-    /*
     for (uint8_t i = 0; i < 4; i++)
     {
         Blow_vars.push_back(new UIBlowValListItem(UI_blowing_control, i < 3 ? BlowVarTypeEnum::LITRES : BlowVarTypeEnum::TIMER));
         UIBlowValListItem * blow_ptr = Blow_vars.back();
 
-        blow_ptr->add_ui_context_action([=]() { blow_ptr->set_value(b_vars.at(i).val, i != 3 ? " л." : ""); });
+        blow_ptr->add_ui_context_action([=]() { blow_ptr->set_value(blowing_vals->at(i)->get().val, i != 3 ? " л." : ""); });
         blow_ptr->set_extra_button_logic({
-            [=]() { b_vars.at(i).val += (i != 3 ? 250 : 5); },
-            [=]() { b_vars.at(i).val -= (i != 3 ? 250 : 5); },
-            [=]() { Blowing_control->blowgun_trigger(true, true, i, b_vars.at(i)); }
+            [=]() { blowing_vals->at(i)->ptr()->val += (i != 3 ? 250 : 5); blowing_vals->at(i)->accept(); },
+            [=]() { blowing_vals->at(i)->ptr()->val -= (i != 3 ? 250 : 5); blowing_vals->at(i)->accept(); },
+            [=]() { Blowing_control->blowgun_trigger(true, true, i, blowing_vals->at(i)->local()); }
         });
     }
-    */
 }
 
 void UIService::init_settings_user_controls()
@@ -809,7 +847,7 @@ void UIService::init_settings_master_controls()
         : "нет"
     ); });
 
-    UI_S_M_plc_language = new UIValueSetter(UI_settings_master_machine, true, 40, "язык системы");
+    UI_S_M_plc_language = new UIValueSetter(UI_settings_master_machine, true, 40, "язык");
     UI_S_M_plc_language->set_extra_button_logic({
         [this]() { var_plc_language.set(var_plc_language.get() + 1); },
         [this]() { var_plc_language.set(var_plc_language.get() - 1); },
@@ -817,7 +855,7 @@ void UIService::init_settings_master_controls()
     });
     UI_S_M_plc_language->add_ui_context_action([this]() { UI_S_M_plc_language->set_value(var_plc_language.get()); });
 
-    UI_S_M_equip_have_wJacket_tempC_sensor = new UIValueSetter(UI_settings_master_machine, false, 40, "Датч. в рубашке");
+    UI_S_M_equip_have_wJacket_tempC_sensor = new UIValueSetter(UI_settings_master_machine, false, 40, "датчик t°C в рубашке");
     UI_S_M_equip_have_wJacket_tempC_sensor->set_extra_button_logic({
         [this]() { var_equip_have_wJacket_tempC_sensor.set(var_equip_have_wJacket_tempC_sensor.get() - 1); },
         [this]() { var_equip_have_wJacket_tempC_sensor.set(var_equip_have_wJacket_tempC_sensor.get() - 1); },
@@ -836,12 +874,22 @@ void UIService::init_settings_master_controls()
         []() { ESP.restart(); }
     });
 
-    UI_S_M_reset_system = new UIValueSetter(UI_settings_master_machine, 1, 265, 10, 95, false, "Полный сброс + перезапуск", nullptr, false, true);
+    UI_S_M_reset_system = new UIValueSetter(UI_settings_master_machine, 1, 265, 10, 95, false, "Сброс шаблонов + перезапуск", nullptr, false, true);
     UI_S_M_reset_system->set_extra_button_logic({
         []() {},
         []() {},
         []() {
             Storage::reset_all();
+            ESP.restart();
+        }
+    });
+
+    UI_S_M_hard_reset_system = new UIValueSetter(UI_settings_master_machine, 1, 265, 10, 150, false, "Полный сброс + перезапуск", nullptr, false, true);
+    UI_S_M_hard_reset_system->set_extra_button_logic({
+        []() {},
+        []() {},
+        []() {
+            Storage::reset_all(true);
             ESP.restart();
         }
     });
@@ -1120,8 +1168,8 @@ void UIService::init_settings_master_controls()
     UI_S_M_type_of_equipment_enum               ->set_position(0, 10, 40, 85);       
     UI_S_M_is_blowgun_by_rf                     ->set_position(0, 100, 40, 85);       
     UI_S_M_is_asyncM_rpm_float                  ->set_position(0, 190, 40, 85);
-    UI_S_M_plc_language                         ->set_position(0, 10, 140, 175);   
-    UI_S_M_equip_have_wJacket_tempC_sensor      ->set_position(0, 190, 140, 85);   
+    UI_S_M_plc_language                         ->set_position(0, 10, 140, 85);   
+    UI_S_M_equip_have_wJacket_tempC_sensor      ->set_position(0, 105, 140, 175);   
 
     /* master, page - 2 */    
     UI_S_M_sensor_batt_min_V                    ->set_position(0, 10, 40, 40);
