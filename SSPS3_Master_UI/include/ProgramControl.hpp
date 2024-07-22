@@ -132,7 +132,11 @@ struct __attribute__((packed)) ProgramControl
     void resume_task()
     {
         if (get_task_state() == TaskStateEnum::PAUSE)
+        {
             set_task_state(TaskStateEnum::RUNNED);
+            last_iteration.set_date(*dt_rt->get_date());
+            last_iteration.set_time(*dt_rt->get_time());
+        }
     }
 
     void pause_task(bool permanent_pause = false)
@@ -154,7 +158,7 @@ struct __attribute__((packed)) ProgramControl
 
     double get_prog_percentage();
     uint32_t sum_gone_ss();
-    ProgramStep do_task();
+    ProgramStep do_task(bool first_call_after_startup = false);
     ProgramStep start_task(ProgramAimEnum aim, uint16_t limit_ss_max_await_on_pause = 3600);
     
 private:

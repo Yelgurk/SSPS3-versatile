@@ -52,7 +52,7 @@ uint32_t ProgramControl::sum_gone_ss()
     return total_gone_ss;
 }
 
-ProgramStep ProgramControl::do_task()
+ProgramStep ProgramControl::do_task(bool first_call_after_startup)
 {
     switch (this->state)
     {
@@ -109,7 +109,7 @@ ProgramStep ProgramControl::do_task()
             last_iteration.set_date(*dt_rt->get_date());
             last_iteration.set_time(*dt_rt->get_time());
 
-            ss_from_last_iteration = ss_from_last_iteration >= limit_ss_max_await_on_pause ? 0 : ss_from_last_iteration;
+            ss_from_last_iteration = first_call_after_startup ? 0 : ss_from_last_iteration;
 
             this->state = TaskStateEnum::RUNNED;
             _step_curr.iteration_ss(ss_from_last_iteration);
@@ -130,11 +130,11 @@ ProgramStep ProgramControl::do_task()
             gone_ss = sum_gone_ss();
 
             prog_runned_steps->at(prog_active_step.get())->set(_step_curr);
-            prog_runned_steps->at(prog_next_step.get())->set(_step_next);
+            if (!is_last_step(prog_active_step.get()))
+                prog_runned_steps->at(prog_next_step.get())->set(_step_next);
         }
         else if (state == TaskStateEnum::PAUSE)
         {
-            this->state = TaskStateEnum::PAUSE;
             _step_curr.state = StepStateEnum::PAUSE;
 
             if (dt_rt->difference_in_seconds(last_iteration) >= limit_ss_max_await_on_pause)
@@ -149,7 +149,6 @@ ProgramStep ProgramControl::do_task()
         }
         else if (state == TaskStateEnum::ERROR)
         {
-            this->state = TaskStateEnum::ERROR;
             _step_curr.state = StepStateEnum::ERROR;
             this->is_runned = false;
 
