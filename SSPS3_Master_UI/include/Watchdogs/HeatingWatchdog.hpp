@@ -29,11 +29,11 @@ public:
     last_control_time_ms(0)
     {}
 
-    void get_aim(double needed_temp, double product_tempC) {
+    void set_aim(double needed_temp, double product_tempC) {
         current_state = product_tempC < needed_temp;
     }
 
-    void get_aim(double needed_temp, double product_tempC, double wJacket_tempC) {
+    void set_aim(double needed_temp, double product_tempC, double wJacket_tempC) {
         current_state = wJacket_tempC >= wJacket_max_tempC ? false : (product_tempC < needed_temp);
     }
 

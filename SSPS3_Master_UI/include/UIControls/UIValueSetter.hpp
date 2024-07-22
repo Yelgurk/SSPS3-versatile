@@ -95,8 +95,8 @@ public:
         lv_obj_set_height(get_container(), is_button ? 50 : 90);
         lv_obj_set_style_bg_color(get_container(), COLOR_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_pad_all(get_container(), 5, 0);
-        lv_obj_set_style_pad_all(get_container(), 1, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_set_style_bg_color(get_container(), COLOR_YELLOW, LV_PART_MAIN | LV_STATE_FOCUSED);
+        lv_obj_set_style_pad_all(get_container(), 1, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_set_style_pad_all(get_container(), 0, LV_PART_MAIN | LV_STATE_FOCUSED);
         lv_obj_set_style_border_width(get_container(), 0, LV_PART_MAIN | LV_STATE_FOCUSED);
 

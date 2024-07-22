@@ -17,6 +17,8 @@
 #include "UIControls/UINotificationBar.hpp"
 #include "UIControls/UINotifyBar.hpp"
 #include "UIControls/UIObject.hpp"
+#include "UIControls/UIProgramSelectorControl.hpp"
+#include "UIControls/UIProgramSelectorItem.hpp"
 #include "UIControls/UIScreen.hpp"
 #include "UIControls/UITaskListItem.hpp"
 #include "UIControls/UITaskRoadmapList.hpp"
@@ -26,6 +28,7 @@
 #include "ProgramControl.hpp"
 #include "FRAM_DB.hpp"
 #include "DS3231.h"
+#include "Watchdogs/ProgStartupWatchdog.hpp"
 
 #define LGFX_USE_V1
 #define SCREEN_WIDTH            480U
@@ -85,9 +88,10 @@ static void lcd_flush_cb(lv_display_t* display, const lv_area_t* area, unsigned 
     lv_display_flush_ready(display);
 }
 
-extern BlowingControl * Blowing_control;
-extern DS3231 * rtc;
-extern S_DateTime * dt_rt;
+extern ProgStartupWatchdog  * prog_stasrtup_wd;
+extern BlowingControl       * Blowing_control;
+extern DS3231               * rtc;
+extern S_DateTime           * dt_rt;
 
 template<typename T>
 class ValueComparator
@@ -115,12 +119,14 @@ public:
     UIDateTime * UI_date_time;
     UINotifyBar * UI_notify_bar;
     UINotificationBar * UI_notification_bar;
+    UIProgramSelectorControl * UI_prog_selector_control;
     UITaskRoadmapList * UI_task_roadmap_control;
     UIBlowingControl * UI_blowing_control;
 
     /* Prog and blowing buff lists */
     vector<UITaskListItem> * UI_task_steps;
     vector<UIBlowValListItem*> Blow_vars;
+    vector<UIProgramSelectorItem*> UI_program_selector_items;
 
     /* Settings - user */
     UIMenuList * UI_menu_list_user;
@@ -158,9 +164,10 @@ public:
 
     /* master, page - 1 */
     UIValueSetter * UI_S_M_type_of_equipment_enum;
-    UIValueSetter * UI_S_M_plc_language;          
     UIValueSetter * UI_S_M_is_blowgun_by_rf;       
     UIValueSetter * UI_S_M_is_asyncM_rpm_float;
+    UIValueSetter * UI_S_M_plc_language;
+    UIValueSetter * UI_S_M_equip_have_wJacket_tempC_sensor;
     UIValueSetter * UI_S_M_reboot_system;
     UIValueSetter * UI_S_M_reset_system;
 
@@ -259,6 +266,8 @@ private:
     void init_settings_part_tmpe_wd();
     void init_settings_part_chm_templates();
     void init_settings_master_controls();
+    void init_prog_selector_part_tmpe();
+    void init_prog_selector_part_chm();
     void display_rt_in_setters();
     void display_wd_in_setters();
 };

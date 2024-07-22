@@ -103,9 +103,13 @@ void loop()
 
         UI_service->UI_notification_bar->key_press(Pressed_key);
         
+        // prog_selector control
+        UI_service->UI_prog_selector_control->get_selected()->key_press(Pressed_key);
+        UI_service->UI_prog_selector_control->get_selected(true)->key_press(Pressed_key);
+
         // task control
-        UI_service->UI_task_roadmap_control->get_selected()->key_press(Pressed_key);
-        UI_service->UI_task_roadmap_control->get_selected(true)->key_press(Pressed_key);
+        //UI_service->UI_task_roadmap_control->get_selected()->key_press(Pressed_key);
+        //UI_service->UI_task_roadmap_control->get_selected(true)->key_press(Pressed_key);
 
         // user settings control
         //if (UI_service->UI_menu_list_user->is_selected_on_child())
@@ -224,24 +228,46 @@ void setup_task_manager()
     }, 1000);
 
     rt_task_manager.add_task("task_do_programm", []() {
-        ProgramStep x = prog_runned.ptr()->do_task(prog_wd_first_call);
+        ProgramStep to_do = prog_runned.ptr()->do_task(prog_wd_first_call);
         prog_runned.accept();
-
         prog_wd_first_call = false;
 
-        Serial.print("task - ");
-        Serial.println(prog_runned.get().is_runned ? "running" : "done");
-        Serial.print("fan = ");
-        Serial.println(x.fan);
-        Serial.print("tempC = ");
-        Serial.println(x.tempC);
-        Serial.print("ss_left = ");
-        Serial.println(x.duration_ss - x.gone_ss);
-        Serial.println();
+        async_motor_wd      ->set_async_motor_speed(to_do.fan);
+        chilling_wd         ->set_aim(to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 2, filter_tempC_product->get_physical_value());
+        if (var_equip_have_wJacket_tempC_sensor.get())
+            heating_wd      ->set_aim(
+                to_do.must_be_cooled ? to_do.tempC - 2: to_do.tempC,
+                filter_tempC_product->get_physical_value(),
+                filter_tempC_wJacket->get_physical_value()
+            );
+        else
+            heating_wd      ->set_aim(
+                to_do.must_be_cooled ? to_do.tempC - 2 : to_do.tempC,
+                filter_tempC_product->get_physical_value()
+            );
+        wJacket_drain_wd    ->water_in_jacket(!OptIn_state[DIN_WJACKET_SENS]); ////////////////////////////////////////////////// !
+    
+        if (!to_do.step_is_turned_on)
+        {
+            async_motor_wd  ->set_async_motor_speed(0);
+            chilling_wd     ->set_aim(0, 0);
+            heating_wd      ->set_aim(0, 0);
+            wJacket_drain_wd->water_in_jacket(true);
+        }
 
         UI_service->UI_task_roadmap_control->update_task_steps_state();
         UI_service->UI_task_roadmap_control->update_ui_context();
     }, 500);
+
+    rt_task_manager.add_task("task_call_watchdogs", []() {
+        //if (!prog_runned.get().is_runned)
+        //    async_motor_wd  ->set_async_motor_speed(0);
+        
+        chilling_wd         ->do_control();
+        heating_wd          ->do_control();
+        v380_supply_wd      ->do_control(!OptIn_state[DIN_380V_SIGNAL]); //////////////////////////////////////////////////////// !
+        wJacket_drain_wd    ->do_control();
+    }, 200);
 }
 
 void setup_watchdogs()
@@ -275,36 +301,20 @@ void setup_watchdogs()
     );
 
     v380_supply_wd      = new V380SupplyWatchdog([](bool state){
-        if (state)
-        {
-            prog_runned.ptr()->pause_task(true);
-            prog_runned.accept();
-        }
-        else
-        {
-            prog_runned.ptr()->resume_task();
-            prog_runned.accept();
-        }
+        prog_runned.ptr()->pause_state_by_wd_380v(state);
+        prog_runned.accept();
     });
 
     wJacket_drain_wd    = new WaterJacketDrainWatchdog(
         [](bool state)      { STM32->set(COMM_SET::RELAY, REL_WJACKET_VALVE, rt_out_state_wJacket = state); },
         [](bool state)
         {
-            if (state)
-            {
-                prog_runned.ptr()->pause_task(true);
-                prog_runned.accept();
-            }
-            else
-            {
-                prog_runned.ptr()->resume_task();
-                prog_runned.accept();
-            }
+            prog_runned.ptr()->pause_state_by_wd_wJacket_drain(state);
+            prog_runned.accept();
         },
         var_prog_wJacket_drain_max_ss.get()
     );
 
-    prog_stasrtup_wd    = new ProgStartupWatchdog(var_prog_await_spite_of_already_runned_ss.get());
+    prog_stasrtup_wd    = new ProgStartupWatchdog(UI_service->UI_task_roadmap_control, var_prog_await_spite_of_already_runned_ss.get());
     prog_stasrtup_wd->fill_ui_task_contol();
 }

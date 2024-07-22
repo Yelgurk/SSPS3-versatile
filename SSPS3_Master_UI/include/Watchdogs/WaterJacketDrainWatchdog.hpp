@@ -52,8 +52,7 @@ public:
             last_control_time_ms = current_time_ms;
         else
         {
-            if (!valve_state)
-                turn_wJacket_valve(valve_state = true);
+            turn_wJacket_valve(valve_state = true);
 
             if (!draining_started && (current_time_ms - last_control_time_ms >= time_span_ss_toggle_wJacket_valve_interval * 1000))
             {

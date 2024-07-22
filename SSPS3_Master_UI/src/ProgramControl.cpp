@@ -70,6 +70,21 @@ ProgramStep ProgramControl::do_task(bool first_call_after_startup)
     static ProgramStep _step_curr;
     static ProgramStep _step_next;
     static ProgramStep _response;
+    static boolean _was_on_pause;
+
+    _was_on_pause = this->state == TaskStateEnum::PAUSE;
+
+    if (this->state == TaskStateEnum::RUNNED || this->state == TaskStateEnum::PAUSE)
+        this->state =
+            !on_pause_by_user && !on_pause_by_wd_wJacket_drain && !on_pause_by_wd_380v
+            ? TaskStateEnum::RUNNED
+            : TaskStateEnum::PAUSE;
+
+    if (_was_on_pause && this->state == TaskStateEnum::RUNNED)
+    {
+        last_iteration.set_date(*dt_rt->get_date());
+        last_iteration.set_time(*dt_rt->get_time());
+    }
 
     if (is_runned)
     {
@@ -148,7 +163,7 @@ ProgramStep ProgramControl::do_task(bool first_call_after_startup)
             }
 
             prog_runned_steps->at(prog_active_step.get())->set(_step_curr);
-            _response = _step_curr;
+            _response = prog_null_step;
         }
         else if (state == TaskStateEnum::ERROR)
         {
@@ -156,7 +171,7 @@ ProgramStep ProgramControl::do_task(bool first_call_after_startup)
             this->is_runned = false;
 
             prog_runned_steps->at(prog_active_step.get())->set(_step_curr);
-            _response = _step_curr;
+            _response = prog_null_step;
         }
     }
     else

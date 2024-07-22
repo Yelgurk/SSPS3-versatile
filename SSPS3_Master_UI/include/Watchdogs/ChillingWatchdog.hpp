@@ -34,7 +34,7 @@ public:
         is_water_safe_mode(is_water_safe_mode)
     {}
 
-    void get_aim(double needed_temp, double current_temp) {
+    void set_aim(double needed_temp, double current_temp) {
         expected_state = current_temp > needed_temp;
     }
 

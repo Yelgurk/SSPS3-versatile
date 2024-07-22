@@ -66,9 +66,10 @@ FRAMObject<S_DateTime>& var_last_rt                             = Storage::alloc
 
 // master settings - page 1
 FRAMObject<EquipmentType>& var_type_of_equipment_enum           = Storage::allocate<EquipmentType>(EquipmentType::DairyTaxi);
-FRAMObject<uint8_t>& var_plc_language                           = Storage::allocate<uint8_t>(0);
 FRAMObject<bool>&   var_is_blowgun_by_rf                        = Storage::allocate<bool>(false);
 FRAMObject<bool>&   var_is_asyncM_rpm_float                     = Storage::allocate<bool>(false);
+FRAMObject<uint8_t>& var_plc_language                           = Storage::allocate<uint8_t>(0);
+FRAMObject<bool>& var_equip_have_wJacket_tempC_sensor           = Storage::allocate<bool>(false);
 
 // master settings - page 2
 FRAMObject<float>& var_sensor_batt_min_V                        = Storage::allocate<float>(MIN_BATT_VOLTAGE, ALLOC_SENS_VAR_BEGIN);     // ok

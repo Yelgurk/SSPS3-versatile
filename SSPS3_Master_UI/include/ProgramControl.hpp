@@ -106,6 +106,9 @@ struct __attribute__((packed)) ProgramControl
     TaskStateEnum state = TaskStateEnum::AWAIT;
 
     boolean is_runned = false;
+    boolean on_pause_by_user = false;
+    boolean on_pause_by_wd_wJacket_drain = false;
+    boolean on_pause_by_wd_380v = false;
     S_DateTime started_at;
     S_DateTime last_iteration;
     uint32_t gone_ss;
@@ -131,30 +134,37 @@ struct __attribute__((packed)) ProgramControl
 
     void resume_task()
     {
-        if (get_task_state() == TaskStateEnum::PAUSE)
-        {
-            set_task_state(TaskStateEnum::RUNNED);
-
-            last_iteration.set_date(*dt_rt->get_date());
-            last_iteration.set_time(*dt_rt->get_time());
-        }
+        if (this->is_runned)
+            on_pause_by_user = false;
     }
 
     void pause_task(bool permanent_pause = false)
     {
-        if (!permanent_pause)
+        if (this->is_runned)
         {
-            if (get_task_state() == TaskStateEnum::RUNNED)
-                set_task_state(TaskStateEnum::PAUSE);
-            else if (get_task_state() == TaskStateEnum::PAUSE)
-                resume_task();
+            if (!permanent_pause)
+                on_pause_by_user = !on_pause_by_user;
+            else
+                on_pause_by_user = true;
         }
-        else
-            set_task_state(TaskStateEnum::PAUSE);
     }
 
-    void end_task_by_user() {
-        set_task_state(TaskStateEnum::ERROR);
+    void end_task_by_user()
+    {
+        if (this->is_runned)
+            this->state = TaskStateEnum::ERROR;
+    }
+
+    void pause_state_by_wd_wJacket_drain(boolean must_be_on_pause)
+    {
+        if (this->is_runned)
+            on_pause_by_wd_wJacket_drain = must_be_on_pause;
+    }
+
+    void pause_state_by_wd_380v(boolean must_be_on_pause)
+    {
+        if (this->is_runned)
+            on_pause_by_wd_380v = must_be_on_pause;
     }
 
     double get_prog_percentage();
@@ -163,12 +173,6 @@ struct __attribute__((packed)) ProgramControl
     ProgramStep start_task(ProgramAimEnum aim, uint16_t limit_ss_max_await_on_pause = 3600);
     
 private:
-    void set_task_state(TaskStateEnum task_new_state)
-    {
-        if (this->is_runned)
-            this->state = task_new_state;
-    }
-
     TaskStateEnum get_task_state() {
         return this->state;
     }

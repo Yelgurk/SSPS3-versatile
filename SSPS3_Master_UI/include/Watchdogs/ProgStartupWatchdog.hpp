@@ -4,21 +4,22 @@
 
 #include <Arduino.h>
 #include "../FRAM_DB.hpp"
-#include "UIService.hpp"
+#include "../UIControls/UITaskRoadmapList.hpp"
 
 using namespace std;
 
 extern S_DateTime * dt_rt;
-extern UIService * UI_service;
 
 class ProgStartupWatchdog
 {
 private:
+    UITaskRoadmapList * UI_task_roadmap_control;
     uint16_t time_span_ss_await_spite_of_already_runned_prog;
     bool ui_task_control_was_inited = false;
 
 public:
-    ProgStartupWatchdog(uint16_t var_prog_await_spite_of_already_runned_ss) : 
+    ProgStartupWatchdog(UITaskRoadmapList * UI_task_roadmap_control, uint16_t var_prog_await_spite_of_already_runned_ss) : 
+    UI_task_roadmap_control(UI_task_roadmap_control),
     time_span_ss_await_spite_of_already_runned_prog(var_prog_await_spite_of_already_runned_ss)
     {}
 
@@ -185,7 +186,7 @@ public:
             {
                 ProgramStep* step = prog_runned_steps->at(i)->ptr();
 
-                UITaskListItem* ui_step = UI_service->UI_task_roadmap_control->add_task_step(i == 0);
+                UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
                 ui_step->set_extra_button_logic({
                     [=](){ prog_runned_steps->at(i)->ptr()->fan++;              prog_runned_steps->at(i)->accept(); },
                     [=](){ prog_runned_steps->at(i)->ptr()->fan--;              prog_runned_steps->at(i)->accept(); },
@@ -225,8 +226,8 @@ public:
                 });
             } 
 
-            UI_service->UI_task_roadmap_control->update_ui_base();
-            UI_service->UI_task_roadmap_control->update_ui_context();
+            UI_task_roadmap_control->update_ui_base();
+            UI_task_roadmap_control->update_ui_context();
         }
 
         ui_task_control_was_inited = true;

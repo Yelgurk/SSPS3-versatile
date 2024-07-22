@@ -37,6 +37,7 @@ UIService::UIService()
     lv_disp_load_scr(screen);
 
     this->init_screens();
+    this->UI_prog_selector_control->hide_ui_hierarchy();
     //this->UI_task_roadmap_control->hide_ui_hierarchy();
     this->UI_blowing_control->hide_ui_hierarchy();
     this->UI_menu_list_user->hide_ui_hierarchy();
@@ -123,6 +124,17 @@ void UIService::init_screens()
                 );
         }
     );
+
+    /* program selector control init */
+    UI_prog_selector_control = new UIProgramSelectorControl(
+        this->screen,
+        {
+            KeyModel(KeyMap::BOTTOM,    [this]() { UI_prog_selector_control->navi_next(); }),
+            KeyModel(KeyMap::TOP,       [this]() { UI_prog_selector_control->navi_prev(); })
+        }
+    );
+    init_prog_selector_part_tmpe();
+    init_prog_selector_part_chm();
 
     /* blowing panel init */
     UI_blowing_control = new UIBlowingControl(
@@ -805,6 +817,18 @@ void UIService::init_settings_master_controls()
     });
     UI_S_M_plc_language->add_ui_context_action([this]() { UI_S_M_plc_language->set_value(var_plc_language.get()); });
 
+    UI_S_M_equip_have_wJacket_tempC_sensor = new UIValueSetter(UI_settings_master_machine, false, 40, "Датч. в рубашке");
+    UI_S_M_equip_have_wJacket_tempC_sensor->set_extra_button_logic({
+        [this]() { var_equip_have_wJacket_tempC_sensor.set(var_equip_have_wJacket_tempC_sensor.get() - 1); },
+        [this]() { var_equip_have_wJacket_tempC_sensor.set(var_equip_have_wJacket_tempC_sensor.get() - 1); },
+        []() {}
+    });
+    UI_S_M_equip_have_wJacket_tempC_sensor->add_ui_context_action([this]() { UI_S_M_equip_have_wJacket_tempC_sensor->set_value(
+        var_equip_have_wJacket_tempC_sensor.get()
+        ? "есть"
+        : "нет"
+    ); });
+
     UI_S_M_reboot_system = new UIValueSetter(UI_settings_master_machine, 1, 265, 10, 40, false, "Перезапуск системы", nullptr, false, true);
     UI_S_M_reboot_system->set_extra_button_logic({
         []() {},
@@ -1097,6 +1121,7 @@ void UIService::init_settings_master_controls()
     UI_S_M_is_blowgun_by_rf                     ->set_position(0, 100, 40, 85);       
     UI_S_M_is_asyncM_rpm_float                  ->set_position(0, 190, 40, 85);
     UI_S_M_plc_language                         ->set_position(0, 10, 140, 175);   
+    UI_S_M_equip_have_wJacket_tempC_sensor      ->set_position(0, 190, 140, 85);   
 
     /* master, page - 2 */    
     UI_S_M_sensor_batt_min_V                    ->set_position(0, 10, 40, 40);
@@ -1133,6 +1158,48 @@ void UIService::init_settings_master_controls()
     UI_S_M_prog_coolign_water_safe_mode           ->set_position(0, 80, 280, 65);            
     UI_S_M_prog_heaters_toggle_delay_ss         ->set_position(0, 150, 280, 65);           
     UI_S_M_prog_wJacket_toggle_delay_ss         ->set_position(0, 220, 280, 65);           
+}
+
+void UIService::init_prog_selector_part_tmpe()
+{
+    static vector<std::string> tmpe_templ_menu_items_name = {
+        "программа \"Пастеризация\"",
+        "программа \"Охлаждение\"",
+        "программа \"Нагрев\""
+    };
+
+    for (uint8_t i = 0; i < TEMPLATES_COUNT_TMPE; i++)
+    {
+        UI_program_selector_items.push_back(new UIProgramSelectorItem(
+            UI_prog_selector_control,
+            i < tmpe_templ_menu_items_name.size()
+                ? tmpe_templ_menu_items_name.at(i) :
+                "Авто прогр. #" + to_string(i - tmpe_templ_menu_items_name.size() + 1),
+            [](uint8_t index) { prog_stasrtup_wd->start_program(EquipmentType::Pasteurizer, index); },
+            i
+        ));
+    }
+}
+
+void UIService::init_prog_selector_part_chm()
+{
+    static vector<std::string> chm_templ_menu_items_name = {
+        "сыр \"Пармезан\"",
+        "сыр \"Тильзитский\"",
+        "сыр \"Адыгейский\""
+    };
+
+    for (uint8_t i = 0; i < TEMPLATES_COUNT_CHM; i++)
+    {
+        UI_program_selector_items.push_back(new UIProgramSelectorItem(
+            UI_prog_selector_control,
+            i < chm_templ_menu_items_name.size()
+                ? chm_templ_menu_items_name.at(i) :
+                "свой рецепт #" + to_string(i - chm_templ_menu_items_name.size() + 1),
+            [](uint8_t index) { prog_stasrtup_wd->start_program(EquipmentType::Cheesemaker, index); },
+            i
+        ));
+    }
 }
 
 void UIService::display_rt_in_setters()
