@@ -25,8 +25,11 @@ public:
     time_span_ss_await_spite_of_already_runned_prog(var_prog_await_spite_of_already_runned_ss)
     {}
 
-    void do_control()
+    bool do_control(bool is_menu_page)
     {
+        if (is_menu_page)
+            return false;
+
         static EquipmentType equipment_type;
         equipment_type = var_type_of_equipment_enum.get();
 
@@ -51,7 +54,7 @@ public:
                 bool _can_be_runned =
                     _time_span_ss > 0
                     && _on_off
-                    && _executed;
+                    && !_executed;
                 
                 if (_can_be_runned)
                 {
@@ -75,6 +78,8 @@ public:
                 }
             }
         }
+
+        return false;
     }
 
     bool start_program(EquipmentType equipment_type, uint8_t prog_index)
@@ -195,9 +200,11 @@ public:
         {
             fill_ui_task_contol(true);
             UI_manager->set_control(ScreenType::TASK_ROADMAP);
+            
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     bool fill_ui_task_contol(bool reset_existed_history = false)
@@ -213,12 +220,60 @@ public:
 
                 UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
                 ui_step->set_extra_button_logic({
-                    [=](){ prog_runned_steps->at(i)->ptr()->fan++;              prog_runned_steps->at(i)->accept(); },
-                    [=](){ prog_runned_steps->at(i)->ptr()->fan--;              prog_runned_steps->at(i)->accept(); },
-                    [=](){ prog_runned_steps->at(i)->ptr()->tempC++;            prog_runned_steps->at(i)->accept(); },
-                    [=](){ prog_runned_steps->at(i)->ptr()->tempC--;            prog_runned_steps->at(i)->accept(); },
-                    [=](){ prog_runned_steps->at(i)->ptr()->duration_ss += 10;  prog_runned_steps->at(i)->accept(); },
-                    [=](){ prog_runned_steps->at(i)->ptr()->duration_ss -= 10;  prog_runned_steps->at(i)->accept(); },
+                    [=](){
+                        if (prog_runned_steps->at(i)->ptr()->fan < var_sensor_dac_asyncM_rpm_max.local())
+                            prog_runned_steps->at(i)->ptr()->fan += 1;
+                        else
+                            prog_runned_steps->at(i)->ptr()->fan = var_sensor_dac_asyncM_rpm_max.local();
+                        prog_runned_steps->at(i)->accept();
+                    },
+                    [=](){
+                        int16_t x = prog_runned_steps->at(i)->ptr()->fan;
+                        --x;
+
+                        if (x < 0)
+                            prog_runned_steps->at(i)->ptr()->fan = 0;
+                        else
+                            prog_runned_steps->at(i)->ptr()->fan = x;                            
+
+                        prog_runned_steps->at(i)->accept();
+                    },
+                    [=](){
+                        if (step->must_be_cooled)
+                        {
+                            if (prog_runned_steps->at(i)->ptr()->tempC < var_prog_limit_chill_tempC_max.local())
+                                prog_runned_steps->at(i)->ptr()->tempC++;
+                        }
+                        else
+                        {
+                            if (prog_runned_steps->at(i)->ptr()->tempC < var_prog_limit_heat_tempC_max.local())
+                                prog_runned_steps->at(i)->ptr()->tempC++;
+                        }
+                        prog_runned_steps->at(i)->accept();
+                    },
+                    [=](){
+                        if (step->must_be_cooled)
+                        {
+                            if (prog_runned_steps->at(i)->ptr()->tempC > var_prog_limit_chill_tempC_min.local())
+                                prog_runned_steps->at(i)->ptr()->tempC--;
+                        }
+                        else
+                        {
+                            if (prog_runned_steps->at(i)->ptr()->tempC > var_prog_limit_heat_tempC_min.local())
+                                prog_runned_steps->at(i)->ptr()->tempC--;
+                        }
+                        prog_runned_steps->at(i)->accept();
+                    },
+                    [=](){
+                        prog_runned_steps->at(i)->ptr()->duration_ss += 10;  prog_runned_steps->at(i)->accept();
+                    },
+                    [=](){
+                        if (prog_runned_steps->at(i)->ptr()->duration_ss >= 10)
+                            prog_runned_steps->at(i)->ptr()->duration_ss -= 10;
+                        else
+                            prog_runned_steps->at(i)->ptr()->duration_ss -= prog_runned_steps->at(i)->ptr()->duration_ss;
+                          prog_runned_steps->at(i)->accept();
+                    },
                 });
 
                 ui_step->add_ui_base_action([ui_step, step]()

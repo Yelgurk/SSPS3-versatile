@@ -66,6 +66,8 @@ void setup()
 
     //Storage::reset_all(true);   
     
+    read_input_signals();
+
     setup_filters();
     setup_UI();
     setup_controllers();
@@ -123,10 +125,10 @@ void blowing_proc(bool pistol_trigger)
             BlowgunValue val = blowing_vals->at(blow_index)->local();
 
             if (!Blowing_control->is_runned && pistol_trigger)
-                Blowing_control->blowgun_trigger(true, false, blow_index, val);
+                Blowing_control->blowgun_trigger(true, false, var_blow_pump_calibration_lm.local(), blow_index, val);
             else
             if (Blowing_control->is_runned && !pistol_trigger)
-                Blowing_control->blowgun_trigger(false, false, blow_index, val);
+                Blowing_control->blowgun_trigger(false, false, var_blow_pump_calibration_lm.local(), blow_index, val);
         }
 }
 
@@ -222,6 +224,8 @@ void setup_task_manager()
         UI_service->UI_machine_state_bar->control_set_values_state_bar(
             rt_out_speed_async_m,
             filter_tempC_product->get_physical_value(),
+            filter_tempC_wJacket->get_physical_value(),
+            var_equip_have_wJacket_tempC_sensor.local(),
             OptIn_state[DIN_WJACKET_SENS] ?
                 WaterJacketStateEnum::FILLED : (rt_out_state_wJacket ?
                     WaterJacketStateEnum::FILLING : WaterJacketStateEnum::EMPTY
@@ -241,6 +245,14 @@ void setup_task_manager()
             dt_rt->get_date()->get_month(),
             dt_rt->get_date()->get_year()
         );
+
+        if (var_last_rt.local().get_date()->get_day() != dt_rt->get_date()->get_day())
+            for (uint i = 0; i < 3; i++)
+            {
+                prog_tmpe_templates_wd_state->at(i)->ptr()->executed = false;
+                prog_tmpe_templates_wd_state->at(i)->accept();
+            }
+
         var_last_rt.set(*dt_rt);
     }, 1000);
 
@@ -287,15 +299,17 @@ void setup_task_manager()
     }, 200);
 
     rt_task_manager.add_task("task_do_another_lazy_things", []() {
-        prog_stasrtup_wd->do_control();
+        prog_stasrtup_wd->do_control(
+            UI_manager->is_current_control(ScreenType::MENU_USER) ||
+            UI_manager->is_current_control(ScreenType::MENU_MASTER)
+        );
 
-        if (filter_tempC_product->get_filtered_value() >= 105 || filter_tempC_product->get_filtered_value() < -10)
+        if (filter_tempC_product->get_physical_value() >= 105 || filter_tempC_product->get_physical_value() < -10)
             UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN);
 
         if (var_equip_have_wJacket_tempC_sensor.local())
-            if (filter_tempC_wJacket->get_filtered_value() >= 105 || filter_tempC_wJacket->get_filtered_value() < -10)
+            if (filter_tempC_wJacket->get_physical_value() >= 105 || filter_tempC_wJacket->get_physical_value() < -10)
                 UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN);
-
         
     }, 30000);
 }
@@ -330,11 +344,11 @@ void setup_watchdogs()
         var_wJacket_tempC_limit_max.get()
     );
 
-    v380_supply_wd      = new V380SupplyWatchdog([](bool state){
-        prog_runned.ptr()->pause_state_by_wd_380v(state);
+    v380_supply_wd      = new V380SupplyWatchdog([](bool is_error){
+        prog_runned.ptr()->pause_state_by_wd_380v(is_error);
         prog_runned.accept();
 
-        if (prog_runned.local().is_runned && !state)
+        if (prog_runned.local().is_runned && is_error)
             UI_service->UI_notification_bar->push_info(SystemNotification::WARNING_380V_NO_POWER);
     });
 

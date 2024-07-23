@@ -57,10 +57,10 @@ public:
             0
         );
 
-        control_set_values_state_bar(30, 85, WaterJacketStateEnum::EMPTY, 101, ChargeStateEnum::ERROR);
+        control_set_values_state_bar(30, 85, 85, true, WaterJacketStateEnum::EMPTY, 101, ChargeStateEnum::ERROR);
     }
 
-    void control_set_values_state_bar(int16_t fan, int16_t tempC, WaterJacketStateEnum water_jacket_state, int16_t charge_value, ChargeStateEnum charge_state)
+    void control_set_values_state_bar(int16_t fan, int16_t tempC, int16_t tempC_wJ, bool is_wJ_sensor, WaterJacketStateEnum water_jacket_state, int16_t charge_value, ChargeStateEnum charge_state)
     {
         static char buffer[20];
         charge_value = charge_value < 0 ? 0 : (charge_value > 100 ? 100 : charge_value);
@@ -70,16 +70,35 @@ public:
         sprintf(buffer, "%d", tempC);
         lv_label_set_text(get_container_content("[context_tempC]"), buffer);
 
-        switch (water_jacket_state)
+        if (!is_wJ_sensor)
         {
-            case WaterJacketStateEnum::FILLING: lv_label_set_text(get_container_content("[context_wJacket]"), "набор"); break;
-            case WaterJacketStateEnum::FILLED: lv_label_set_text(get_container_content("[context_wJacket]"), "заполн."); break;
-            default: lv_label_set_text(get_container_content("[context_wJacket]"), "пусто"); break;
+            lv_obj_set_style_text_font(get_container_content("[context_wJacket]"), &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
+            switch (water_jacket_state)
+            {
+                case WaterJacketStateEnum::FILLING: lv_label_set_text(get_container_content("[context_wJacket]"), "набор"); break;
+                case WaterJacketStateEnum::FILLED: lv_label_set_text(get_container_content("[context_wJacket]"), "заполн."); break;
+                default: lv_label_set_text(get_container_content("[context_wJacket]"), "пусто"); break;
+            }
+        }
+        else
+        {
+            lv_obj_set_style_text_font(get_container_content("[context_wJacket]"), &OpenSans_bold_16px, LV_PART_MAIN | LV_STATE_DEFAULT);
+            string wj_tempC_str = "";
+
+            switch (water_jacket_state)
+            {
+                case WaterJacketStateEnum::FILLING: wj_tempC_str = "набор, "; break;
+                case WaterJacketStateEnum::FILLED: wj_tempC_str = "заполн, "; break;
+                default: wj_tempC_str = "пусто, "; break;
+            }
+
+            lv_label_set_text(get_container_content("[context_wJacket]"), (wj_tempC_str + to_string(tempC_wJ) + "°").c_str());
         }
 
         lv_obj_t * bar_ptr = get_container_content("[context_charge_bar]");
 
         lv_clear_states(bar_ptr);
+
         switch (charge_state)
         {
         case ChargeStateEnum::CHARGERING: {

@@ -99,8 +99,8 @@ private:
             case SystemNotification::WARNING_WATER_JACKET_NO_WATER:             lv_label_set_text(text, "ВНИМАНИЕ! Нет воды в рубашке!"); break;
             case SystemNotification::WARNING_380V_NO_POWER:                     lv_label_set_text(text, "ВНИМАНИЕ! Нет сети 380В!"); break;
             case SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN:             lv_label_set_text(text, "ОШИБКА! Авария мешалки!"); break;
-            case SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN:                lv_label_set_text(text, "ОШИБКА! Температурный дачтик вышел из строя!"); break;
-            case SystemNotification::ERROR_TASK_ENDED_30_MIN_SOLVING_AWAIT:     lv_label_set_text(text, "ОШИБКА! Завершение программы: 30 минут простоя!"); break;
+            case SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN:                lv_label_set_text(text, "ОШИБКА! Вероятная поломка датчика температуры!"); break;
+            case SystemNotification::ERROR_TASK_ENDED_30_MIN_SOLVING_AWAIT:     lv_label_set_text(text, "ОШИБКА! 30 минут простоя!"); break;
             
             default:
                 lv_label_set_text(text, "Тут будут уведомления!");

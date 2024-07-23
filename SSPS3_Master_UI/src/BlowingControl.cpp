@@ -1,6 +1,6 @@
 #include "../include/BlowingControl.hpp"
 
-void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int8_t index, BlowgunValue curr_value)
+void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, float blowing_calibration_value, int8_t index, BlowgunValue curr_value)
 {
     if (!do_gurgling && !is_runned)
     {
@@ -33,10 +33,10 @@ void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int
                 current_blow_index = index;
                 is_runned = true;
                 triggered_by = is_keypad_press ? BlowingTriggerType::KEYBOARD : BlowingTriggerType::PISTOL;
-                ml_per_ms = pump_power_lm / 60.f; // in 1ss => 1000ms i.e. 1l => 1000ml. we store power in l/m, that why after casting we would be do *1000ml and then /1000ms, that why we just do lm/60s
+                ml_per_ms = (pump_power_lm - blowing_calibration_value) / 60.f; // in 1ss => 1000ms i.e. 1l => 1000ml. we store power in l/m, that why after casting we would be do *1000ml and then /1000ms, that why we just do lm/60s
                 
                 if (!selected_blowing_value.is_timer)
-                    ms_aim = (curr_value.val / (pump_power_lm * 1000)) * (60 * 1000);
+                    ms_aim = (curr_value.val / ((pump_power_lm - blowing_calibration_value) * 1000)) * (60 * 1000);
                 else
                     ms_aim = curr_value.val * 1000;
                 

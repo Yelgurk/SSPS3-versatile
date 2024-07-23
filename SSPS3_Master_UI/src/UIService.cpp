@@ -194,7 +194,7 @@ void UIService::init_screens()
                 }
             }),
             KeyModel(KeyMap::RIGHT_TOP, [this]() { UI_manager->set_control(ScreenType::MENU_USER); }),
-            KeyModel(KeyMap::RIGHT_BOT_REL, [this]() { Blowing_control->blowgun_trigger(false, true); }),
+            KeyModel(KeyMap::RIGHT_BOT_REL, [this]() { Blowing_control->blowgun_trigger(false, true, var_blow_pump_calibration_lm.local()); }),
             KeyModel(KeyMap::R_STACK_4, [this]() { UI_blowing_control->focus_on(0); }),
             KeyModel(KeyMap::R_STACK_3, [this]() { UI_blowing_control->focus_on(1); }),
             KeyModel(KeyMap::R_STACK_2, [this]() { UI_blowing_control->focus_on(2); }),
@@ -257,7 +257,7 @@ void UIService::init_blowing_controls()
         blow_ptr->set_extra_button_logic({
             [=]() { blowing_vals->at(i)->ptr()->val += (i != 3 ? 250 : 5); blowing_vals->at(i)->accept(); },
             [=]() { blowing_vals->at(i)->ptr()->val -= (i != 3 ? 250 : 5); blowing_vals->at(i)->accept(); },
-            [=]() { Blowing_control->blowgun_trigger(true, true, i, blowing_vals->at(i)->local()); }
+            [=]() { Blowing_control->blowgun_trigger(true, true, var_blow_pump_calibration_lm.local(), i, blowing_vals->at(i)->local()); }
         });
     }
 }
@@ -995,19 +995,27 @@ void UIService::init_settings_master_controls()
 
     UI_S_M_sensor_dac_rpm_limit_min_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "Мотор\nmin цап", nullptr, &OpenSans_bold_14px);
     UI_S_M_sensor_dac_rpm_limit_min_12bit->set_extra_button_logic({
-        [this]() { uint16_t val = var_sensor_dac_rpm_limit_min_12bit.get() + 1; var_sensor_dac_rpm_limit_min_12bit.set(val > 4095 ? 0 : val); },
-        [this]() { uint16_t val = var_sensor_dac_rpm_limit_min_12bit.get() - 1; var_sensor_dac_rpm_limit_min_12bit.set(val > 4095 ? 4095 : val); },
+        [this]() { uint16_t val = var_sensor_dac_rpm_limit_min_12bit.get() + 5; var_sensor_dac_rpm_limit_min_12bit.set(val > 4095 ? 0 : val); },
+        [this]() { uint16_t val = var_sensor_dac_rpm_limit_min_12bit.get() - 5; var_sensor_dac_rpm_limit_min_12bit.set(val > 4095 ? 4095 : val); },
         []() {}
     });
-    UI_S_M_sensor_dac_rpm_limit_min_12bit->add_ui_context_action([this]() { UI_S_M_sensor_dac_rpm_limit_min_12bit->set_value(var_sensor_dac_rpm_limit_min_12bit.get()); });
+    UI_S_M_sensor_dac_rpm_limit_min_12bit->add_ui_context_action([this]() {
+        static char buffer[8];
+        sprintf(buffer, "%.2fв", 10.f / 4095.f * (float)var_sensor_dac_rpm_limit_min_12bit.get());
+        UI_S_M_sensor_dac_rpm_limit_min_12bit->set_value(std::string(buffer));
+    });
 
     UI_S_M_sensor_dac_rpm_limit_max_12bit = new UIValueSetter(UI_settings_master_sensors, true, 40, "Мотор\nmax цап", nullptr, &OpenSans_bold_14px);
     UI_S_M_sensor_dac_rpm_limit_max_12bit->set_extra_button_logic({
-        [this]() { uint16_t val = var_sensor_dac_rpm_limit_max_12bit.get() + 1; var_sensor_dac_rpm_limit_max_12bit.set(val > 4095 ? 0 : val); },
-        [this]() { uint16_t val = var_sensor_dac_rpm_limit_max_12bit.get() - 1; var_sensor_dac_rpm_limit_max_12bit.set(val > 4095 ? 4095 : val); },
+        [this]() { uint16_t val = var_sensor_dac_rpm_limit_max_12bit.get() + 5; var_sensor_dac_rpm_limit_max_12bit.set(val > 4095 ? 0 : val); },
+        [this]() { uint16_t val = var_sensor_dac_rpm_limit_max_12bit.get() - 5; var_sensor_dac_rpm_limit_max_12bit.set(val > 4095 ? 4095 : val); },
         []() {}
     });
-    UI_S_M_sensor_dac_rpm_limit_max_12bit->add_ui_context_action([this]() { UI_S_M_sensor_dac_rpm_limit_max_12bit->set_value(var_sensor_dac_rpm_limit_max_12bit.get()); });
+    UI_S_M_sensor_dac_rpm_limit_max_12bit->add_ui_context_action([this]() {
+        static char buffer[8];
+        sprintf(buffer, "%.2fв", 10.f / 4095.f * (float)var_sensor_dac_rpm_limit_max_12bit.get());
+        UI_S_M_sensor_dac_rpm_limit_max_12bit->set_value(std::string(buffer));
+    });
 
     UI_S_M_sensor_dac_asyncM_rpm_min = new UIValueSetter(UI_settings_master_sensors, true, 40, "Мотор\nmin об.", nullptr, &OpenSans_bold_14px);
     UI_S_M_sensor_dac_asyncM_rpm_min->set_extra_button_logic({

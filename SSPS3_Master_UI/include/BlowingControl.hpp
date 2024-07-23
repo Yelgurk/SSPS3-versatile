@@ -80,7 +80,7 @@ public:
         this->callback = callback;
     }
 
-    void blowgun_trigger(bool do_gurgling, bool is_keypad_press, int8_t index = -1, BlowgunValue curr_value = BlowgunValue());
+    void blowgun_trigger(bool do_gurgling, bool is_keypad_press, float blowing_calibration_value, int8_t index = -1, BlowgunValue curr_value = BlowgunValue());
     void blowgun_stop(bool need_in_reload = false);
     void do_blowing();
 };
