@@ -12,13 +12,13 @@ using namespace std;
 class MedianFilter : public Filter
 {
 private:
-    std::vector<uint16_t> values;
+    std::vector<float> values;
     size_t max_size;
     
 public:
     MedianFilter(size_t size) : max_size(size) {}
     
-    void add_value(uint16_t value) override
+    void add_value(float value) override
     {
         values.push_back(value);
 
@@ -26,11 +26,11 @@ public:
             values.erase(values.begin());
     }
     
-    uint16_t get_filtered_value() const override
+    float get_filtered_value() const override
     {
         if (values.empty()) return 0;
 
-        vector<uint16_t> sorted_values = values;
+        vector<float> sorted_values = values;
         sort(sorted_values.begin(), sorted_values.end());
         
         return sorted_values[sorted_values.size() / 2];

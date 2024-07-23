@@ -11,16 +11,17 @@ class WaterJacketDrainWatchdog
 {
 private:
     function<void(bool)> turn_wJacket_valve;
-    function<void(bool)> set_pause;
+    function<bool(bool)> set_pause;
     uint16_t time_span_ss_toggle_wJacket_valve_interval;
     uint32_t last_control_time_ms;
     bool has_water_in_jacket;
     bool draining_started;
     bool valve_state;
+    bool is_wJacket_step;
 
 public:
     WaterJacketDrainWatchdog(
-        function<void(bool)> turn_wJacket_valve_func, function<void(bool)> set_pause_func,
+        function<void(bool)> turn_wJacket_valve_func, function<bool(bool)> set_pause_func,
         uint16_t time_span_ss_toggle_wJacket_valve_interval
     ) :
     turn_wJacket_valve(turn_wJacket_valve_func),
@@ -29,11 +30,14 @@ public:
     last_control_time_ms(0),
     has_water_in_jacket(false),
     draining_started(false),
-    valve_state(false)
+    valve_state(false),
+    is_wJacket_step(false)
     {}
 
-    void water_in_jacket(bool state)
+    void water_in_jacket(bool state, bool is_wJacket_step = false)
     {
+        this->is_wJacket_step = is_wJacket_step;
+
         if (!has_water_in_jacket && state)
         {
             set_pause(false);
@@ -54,10 +58,10 @@ public:
         {
             turn_wJacket_valve(valve_state = true);
 
-            if (!draining_started && (current_time_ms - last_control_time_ms >= time_span_ss_toggle_wJacket_valve_interval * 1000))
+            if (!is_wJacket_step && !draining_started && (current_time_ms - last_control_time_ms >= time_span_ss_toggle_wJacket_valve_interval * 1000))
             {
-                set_pause(true);
-                draining_started = true;
+                if (set_pause(true))
+                    draining_started = true;
             }
         }
     }

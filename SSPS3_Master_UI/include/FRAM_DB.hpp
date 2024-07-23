@@ -25,6 +25,9 @@ static auto& mem_TDS_3 = Storage::allocate<TaskDataStruct>(defaultTaskData);
 static auto& mem_String = Storage::allocate<std::string>("err");
 */
 
+/* 31.2ma => 3378 */
+/* 3.30ma => 362 */
+
 /* Prog conf defines */
 #define PROG_RUNNED_STEPS_NCT_MAX   24
 
@@ -33,8 +36,8 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 #define BATT_V_TO_12BIT     79.5f   //69.76744f
 #define MIN_BATT_VOLTAGE    22.8f
 #define MAX_BATT_VOLTAGE    25.0f
-#define MIN_ADC_4ma         373
-#define MAX_ADC_20ma        1865
+#define MIN_ADC_4ma         432
+#define MAX_ADC_20ma        2162
 #define MIN_ADC_TEMPC       -50
 #define MAX_ADC_TEMPC       150
 

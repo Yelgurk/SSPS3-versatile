@@ -92,7 +92,7 @@ private:
             case SystemNotification::INFO_TURN_ON_380V_FIRST:                   lv_label_set_text(text, "Сначала ВКЛючите 380В"); break;
             case SystemNotification::INFO_BLOWING_RESET_2_SS_AWAIT:             lv_label_set_text(text, "Сброс раздачи, долгая пауза"); break;
             case SystemNotification::INFO_BLOWING_CANCELED_BY_USER:             lv_label_set_text(text, "Сброс задачи пользователем"); break;
-            case SystemNotification::INFO_TASK_AWAIT_PROBLEM_SOLVING:           lv_label_set_text(text, "Ожидание разрешения проблем пользователем"); break;
+            case SystemNotification::INFO_TASK_AWAIT_PROBLEM_SOLVING:           lv_label_set_text(text, "Ожидание разрешения проблем оборудования"); break;
             case SystemNotification::INFO_TASK_RESUME_AFTER_PROBLEM_SOLVING:    lv_label_set_text(text, "Программа продолжена после разрешения проблем"); break;
             case SystemNotification::INFO_TASK_RESUME_AFTER_PLC_REBOOT:         lv_label_set_text(text, "Программа продолжена после перезагрузки ПЛК"); break;
             case SystemNotification::INFO_TASK_CANCELED_BY_USER:                lv_label_set_text(text, "Программа преравана пользователем по кнопке"); break;
@@ -107,8 +107,7 @@ private:
                 break;
             }
 
-            if ((notifications[index].must_be_closed) ||
-                (notifications[index].info >= SystemNotification::_WARNING_BEGIN && notifications[index].info <= SystemNotification::_WARNING_END))
+            if ((notifications[index].must_be_closed))// || (notifications[index].info >= SystemNotification::_WARNING_BEGIN && notifications[index].info <= SystemNotification::_WARNING_END))
                 notifications.erase(notifications.begin() + index);
             else
                 ++index;
@@ -195,10 +194,12 @@ public:
         );
 
         if (it == notifications.end())
+        {
             notifications.push_back(SystemNotificationContainer(type));
 
-        if (!animation_in_action)
             display();
+            show_next();
+        }
     }
 
     void display(bool button_pressed = false)

@@ -11,13 +11,13 @@ using namespace std;
 class MovingAverage : public Filter
 {
 private:
-    deque<uint16_t> values;
+    deque<float> values;
     size_t max_size;
     
 public:
     MovingAverage(size_t size) : max_size(size) {}
     
-    void add_value(uint16_t value) override
+    void add_value(float value) override
     {
         values.push_back(value);
 
@@ -25,15 +25,15 @@ public:
             values.pop_front();
     }
     
-    uint16_t get_filtered_value() const override
+    float get_filtered_value() const override
     {
         if (values.empty()) return 0;
 
-        uint32_t sum = 0;
-        for (uint16_t v : values)
+        float sum = 0;
+        for (float v : values)
             sum += v;
 
-        return sum / values.size();
+        return sum / (float)values.size();
     }
 };
 

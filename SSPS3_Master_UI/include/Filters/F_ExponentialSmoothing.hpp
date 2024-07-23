@@ -16,7 +16,7 @@ public:
     ExponentialSmoothing(float alpha) : alpha(alpha), filtered_value(0), initialized(false)
     {}
 
-    void add_value(uint16_t value) override
+    void add_value(float value) override
     {
         if (!initialized)
         {
@@ -27,8 +27,8 @@ public:
             filtered_value = alpha * value + (1 - alpha) * filtered_value;
     }
 
-    uint16_t get_filtered_value() const override {
-        return static_cast<uint16_t>(filtered_value);
+    float get_filtered_value() const override {
+        return static_cast<float>(filtered_value);
     }
 };
 

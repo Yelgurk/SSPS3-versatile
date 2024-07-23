@@ -60,14 +60,14 @@ public:
         control_set_values_state_bar(30, 85, 85, true, WaterJacketStateEnum::EMPTY, 101, ChargeStateEnum::ERROR);
     }
 
-    void control_set_values_state_bar(int16_t fan, int16_t tempC, int16_t tempC_wJ, bool is_wJ_sensor, WaterJacketStateEnum water_jacket_state, int16_t charge_value, ChargeStateEnum charge_state)
+    void control_set_values_state_bar(int16_t fan, float tempC, int16_t tempC_wJ, bool is_wJ_sensor, WaterJacketStateEnum water_jacket_state, int16_t charge_value, ChargeStateEnum charge_state)
     {
         static char buffer[20];
         charge_value = charge_value < 0 ? 0 : (charge_value > 100 ? 100 : charge_value);
 
         sprintf(buffer, "%d", fan);
         lv_label_set_text(get_container_content("[context_fan]"), buffer);
-        sprintf(buffer, "%d", tempC);
+        sprintf(buffer, "%.1f", tempC);
         lv_label_set_text(get_container_content("[context_tempC]"), buffer);
 
         if (!is_wJ_sensor)

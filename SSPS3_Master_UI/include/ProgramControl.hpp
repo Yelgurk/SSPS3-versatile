@@ -67,7 +67,7 @@ struct __attribute__((packed)) ProgramStep
     StepStateEnum state = StepStateEnum::AWAIT;
     uint32_t gone_ss = 0;
 
-    ProgramStep() : ProgramStep(ProgramStepAimEnum::WATER_JACKET, 0, 0, 0, 0, 0, 0, 0) {}
+    ProgramStep() : ProgramStep(ProgramStepAimEnum::TO_TEMPERATURE, 0, 0, 0, 0, 0, 0, 0) {}
 
     ProgramStep(
         ProgramStepAimEnum aim,

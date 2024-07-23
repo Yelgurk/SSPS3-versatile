@@ -8,8 +8,8 @@ class Filter
 {
 public:
     virtual ~Filter() {}
-    virtual void add_value(uint16_t value) = 0;
-    virtual uint16_t get_filtered_value() const = 0;
+    virtual void add_value(float value) = 0;
+    virtual float get_filtered_value() const = 0;
 };
 
 #endif

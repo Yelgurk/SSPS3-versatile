@@ -65,8 +65,6 @@ void setup()
     rtc_recovery_by_FRAM();
 
     //Storage::reset_all(true);   
-    
-    read_input_signals();
 
     setup_filters();
     setup_UI();
@@ -74,26 +72,19 @@ void setup()
     setup_task_manager();
     setup_watchdogs();
 
+    read_input_signals(false, true);
+
     dt_rt->get_rt();
 }
 
 void loop()
 {
     Blowing_control->do_blowing();
-    rt_task_manager.run();
 
     if (interrupted_by_slave)
     {
         interrupted_by_slave = false;
         read_input_signals();
-
-        /* fake demo vals begin */
-
-        OptIn_state[DIN_380V_SIGNAL] = true;
-        OptIn_state[DIN_WJACKET_SENS] = true;
-        AnIn_state[ADC_TEMPC_PRODUCT] = (float)MIN_ADC_4ma + (float)(MAX_ADC_20ma - MIN_ADC_4ma) / (float)200 * (float)((float)50 + (float)32);
-
-        /* fake demo vals end */
 
         UI_service->UI_notification_bar->key_press(Pressed_key);
         UI_manager->handle_key_press(Pressed_key);
@@ -113,6 +104,7 @@ void loop()
             Blowing_control->blowgun_stop();
     }
 
+    rt_task_manager.run();
     lv_task_handler();
 }
 
@@ -223,7 +215,7 @@ void setup_task_manager()
     rt_task_manager.add_task("task_update_UI_state_bar", [](){
         UI_service->UI_machine_state_bar->control_set_values_state_bar(
             rt_out_speed_async_m,
-            filter_tempC_product->get_physical_value(),
+            filter_tempC_product->get_physical_value(),// - 24.f,
             filter_tempC_wJacket->get_physical_value(),
             var_equip_have_wJacket_tempC_sensor.local(),
             OptIn_state[DIN_WJACKET_SENS] ?
@@ -265,23 +257,25 @@ void setup_task_manager()
         chilling_wd         ->set_aim(to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1, filter_tempC_product->get_physical_value());
         if (var_equip_have_wJacket_tempC_sensor.get())
             heating_wd      ->set_aim(
-                to_do.must_be_cooled ? to_do.tempC - 1: to_do.tempC,
+                to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1,
                 filter_tempC_product->get_physical_value(),
                 filter_tempC_wJacket->get_physical_value()
             );
         else
             heating_wd      ->set_aim(
-                to_do.must_be_cooled ? to_do.tempC - 1 : to_do.tempC,
+                to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1,
                 filter_tempC_product->get_physical_value()
             );
-        wJacket_drain_wd    ->water_in_jacket(OptIn_state[DIN_WJACKET_SENS]);
+        wJacket_drain_wd    ->water_in_jacket(OptIn_state[DIN_WJACKET_SENS], to_do.aim == ProgramStepAimEnum::WATER_JACKET);
     
         if (!to_do.step_is_turned_on)
         {
             async_motor_wd  ->set_async_motor_speed(0);
             chilling_wd     ->set_aim(0, 0);
             heating_wd      ->set_aim(0, 0);
-            //wJacket_drain_wd->water_in_jacket(true);
+            
+            if (!prog_runned.local().is_runned)
+                wJacket_drain_wd->water_in_jacket(true);
         }
 
         UI_service->UI_task_roadmap_control->update_task_steps_state();
@@ -311,7 +305,9 @@ void setup_task_manager()
             if (filter_tempC_wJacket->get_physical_value() >= 105 || filter_tempC_wJacket->get_physical_value() < -10)
                 UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN);
         
-    }, 30000);
+        if (prog_runned.local().state == TaskStateEnum::RUNNED)
+            UI_notification_bar->key_press(0);
+    }, 10000);
 }
 
 void setup_watchdogs()
@@ -356,11 +352,18 @@ void setup_watchdogs()
         [](bool state)      { STM32->set(COMM_SET::RELAY, REL_WJACKET_VALVE, rt_out_state_wJacket = state); },
         [](bool state)
         {
-            prog_runned.ptr()->pause_state_by_wd_wJacket_drain(state);
-            prog_runned.accept();
-
             if (prog_runned.local().is_runned)
+            {
+                prog_runned.ptr()->pause_state_by_wd_wJacket_drain(state);
+                prog_runned.accept();
+
+                UI_service->UI_notification_bar->push_info(SystemNotification::INFO_TASK_AWAIT_PROBLEM_SOLVING);
                 UI_service->UI_notification_bar->push_info(SystemNotification::WARNING_WATER_JACKET_NO_WATER);
+
+                return true;
+            }
+
+            return false;
         },
         var_prog_wJacket_drain_max_ss.get()
     );
