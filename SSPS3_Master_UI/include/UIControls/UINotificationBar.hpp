@@ -90,7 +90,7 @@ private:
             case SystemNotification::OK_BLOWING_DONE:                           lv_label_set_text(text, "Раздача завершена!"); break;
             case SystemNotification::INFO_TURN_OFF_380V_FIRST:                  lv_label_set_text(text, "Сначала ВЫКЛючите 380В"); break;
             case SystemNotification::INFO_TURN_ON_380V_FIRST:                   lv_label_set_text(text, "Сначала ВКЛючите 380В"); break;
-            case SystemNotification::INFO_BLOWING_RESET_2_SS_AWAIT:             lv_label_set_text(text, "Сброс раздачи, 2 секунды ожидания"); break;
+            case SystemNotification::INFO_BLOWING_RESET_2_SS_AWAIT:             lv_label_set_text(text, "Сброс раздачи, долгая пауза"); break;
             case SystemNotification::INFO_BLOWING_CANCELED_BY_USER:             lv_label_set_text(text, "Сброс задачи пользователем"); break;
             case SystemNotification::INFO_TASK_AWAIT_PROBLEM_SOLVING:           lv_label_set_text(text, "Ожидание разрешения проблем пользователем"); break;
             case SystemNotification::INFO_TASK_RESUME_AFTER_PROBLEM_SOLVING:    lv_label_set_text(text, "Программа продолжена после разрешения проблем"); break;
@@ -100,7 +100,7 @@ private:
             case SystemNotification::WARNING_380V_NO_POWER:                     lv_label_set_text(text, "ВНИМАНИЕ! Нет сети 380В!"); break;
             case SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN:             lv_label_set_text(text, "ОШИБКА! Авария мешалки!"); break;
             case SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN:                lv_label_set_text(text, "ОШИБКА! Температурный дачтик вышел из строя!"); break;
-            case SystemNotification::ERROR_TASK_ENDED_30_MIN_SOLVING_AWAIT:     lv_label_set_text(text, "ОШИБКА! Принудительное завершение программы: 30 минут простоя без решения проблем!"); break;
+            case SystemNotification::ERROR_TASK_ENDED_30_MIN_SOLVING_AWAIT:     lv_label_set_text(text, "ОШИБКА! Завершение программы: 30 минут простоя!"); break;
             
             default:
                 lv_label_set_text(text, "Тут будут уведомления!");

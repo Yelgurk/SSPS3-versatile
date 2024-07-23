@@ -1,5 +1,7 @@
 #include "../include/main.hpp"
 
+UINotificationBar * UI_notification_bar;
+
 FilterValue * filter_tempC_product;
 FilterValue * filter_tempC_wJacket;
 FilterValue * filter_24v_batt;
@@ -70,11 +72,6 @@ void setup()
     setup_task_manager();
     setup_watchdogs();
 
-    UI_service->UI_notification_bar->push_info(SystemNotification::OK_TASK_DONE);
-    UI_service->UI_notification_bar->push_info(SystemNotification::INFO_BLOWING_RESET_2_SS_AWAIT);
-    UI_service->UI_notification_bar->push_info(SystemNotification::WARNING_380V_NO_POWER);
-    UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN);
-
     dt_rt->get_rt();
 }
 
@@ -90,6 +87,7 @@ void loop()
 
         /* fake demo vals begin */
 
+        OptIn_state[DIN_380V_SIGNAL] = true;
         OptIn_state[DIN_WJACKET_SENS] = true;
         AnIn_state[ADC_TEMPC_PRODUCT] = (float)MIN_ADC_4ma + (float)(MAX_ADC_20ma - MIN_ADC_4ma) / (float)200 * (float)((float)50 + (float)32);
 
@@ -100,6 +98,12 @@ void loop()
 
         if (prog_runned.local().is_runned)
             Pressed_key_accept_for_prog = Pressed_key == static_cast<uint8_t>(KeyMap::LEFT_BOT);
+
+        if (prog_runned.local().is_runned && (bool)OptIn_state[DIN_ASYNC_M_ERROR])
+        {
+            prog_runned.ptr()->end_task_by_user();
+            UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN);
+        }
 
         if (UI_manager->is_current_control(ScreenType::BLOWING_CONTROL))
             blowing_proc(OptIn_state[DIN_BLOWGUN_SENS]);
@@ -186,11 +190,14 @@ void setup_UI()
         UI_manager->set_control(ScreenType::PROGRAM_SELECTOR);
     else
         UI_manager->set_control(ScreenType::TASK_ROADMAP);
+
+    UI_notification_bar = UI_service->UI_notification_bar;
 }
 
 void setup_controllers()
 {
     Blowing_control = new BlowingControl(
+        UI_service->UI_notification_bar,
         [](bool state) { STM32->set(COMM_SET::RELAY, REL_BLOWGUN_PUMP, state); },
         var_blowing_await_ss.get(),
         var_blowing_pump_power_lm.get()
@@ -243,16 +250,16 @@ void setup_task_manager()
         prog_wd_first_call = false;
 
         async_motor_wd      ->set_async_motor_speed(to_do.fan);
-        chilling_wd         ->set_aim(to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 2, filter_tempC_product->get_physical_value());
+        chilling_wd         ->set_aim(to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1, filter_tempC_product->get_physical_value());
         if (var_equip_have_wJacket_tempC_sensor.get())
             heating_wd      ->set_aim(
-                to_do.must_be_cooled ? to_do.tempC - 2: to_do.tempC,
+                to_do.must_be_cooled ? to_do.tempC - 1: to_do.tempC,
                 filter_tempC_product->get_physical_value(),
                 filter_tempC_wJacket->get_physical_value()
             );
         else
             heating_wd      ->set_aim(
-                to_do.must_be_cooled ? to_do.tempC - 2 : to_do.tempC,
+                to_do.must_be_cooled ? to_do.tempC - 1 : to_do.tempC,
                 filter_tempC_product->get_physical_value()
             );
         wJacket_drain_wd    ->water_in_jacket(OptIn_state[DIN_WJACKET_SENS]);
@@ -275,12 +282,21 @@ void setup_task_manager()
         
         chilling_wd         ->do_control();
         heating_wd          ->do_control();
-        v380_supply_wd      ->do_control(!OptIn_state[DIN_380V_SIGNAL]); //////////////////////////////////////////////////////// !
+        v380_supply_wd      ->do_control(OptIn_state[DIN_380V_SIGNAL]);
         wJacket_drain_wd    ->do_control();
     }, 200);
 
-    rt_task_manager.add_task("task_check_autoprogs", []() {
+    rt_task_manager.add_task("task_do_another_lazy_things", []() {
         prog_stasrtup_wd->do_control();
+
+        if (filter_tempC_product->get_filtered_value() >= 105 || filter_tempC_product->get_filtered_value() < -10)
+            UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN);
+
+        if (var_equip_have_wJacket_tempC_sensor.local())
+            if (filter_tempC_wJacket->get_filtered_value() >= 105 || filter_tempC_wJacket->get_filtered_value() < -10)
+                UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN);
+
+        
     }, 30000);
 }
 
@@ -317,6 +333,9 @@ void setup_watchdogs()
     v380_supply_wd      = new V380SupplyWatchdog([](bool state){
         prog_runned.ptr()->pause_state_by_wd_380v(state);
         prog_runned.accept();
+
+        if (prog_runned.local().is_runned && !state)
+            UI_service->UI_notification_bar->push_info(SystemNotification::WARNING_380V_NO_POWER);
     });
 
     wJacket_drain_wd    = new WaterJacketDrainWatchdog(
@@ -325,6 +344,9 @@ void setup_watchdogs()
         {
             prog_runned.ptr()->pause_state_by_wd_wJacket_drain(state);
             prog_runned.accept();
+
+            if (prog_runned.local().is_runned)
+                UI_service->UI_notification_bar->push_info(SystemNotification::WARNING_WATER_JACKET_NO_WATER);
         },
         var_prog_wJacket_drain_max_ss.get()
     );

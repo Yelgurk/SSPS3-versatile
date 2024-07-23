@@ -191,8 +191,11 @@ public:
         prog_runned.ptr()->start_task(_task_aim, var_prog_on_pause_max_await_ss.get());
         prog_runned.accept();
 
-        fill_ui_task_contol(true);
-        UI_manager->set_control(ScreenType::TASK_ROADMAP);
+        if (prog_runned.get().is_runned)
+        {
+            fill_ui_task_contol(true);
+            UI_manager->set_control(ScreenType::TASK_ROADMAP);
+        }
 
         return true;
     }

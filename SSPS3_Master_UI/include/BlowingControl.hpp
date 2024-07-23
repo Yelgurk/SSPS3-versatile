@@ -5,6 +5,8 @@
 
 #include <Arduino.h>
 #include "../include/UIControls/UIBlowingControl.hpp"
+#include "../include/UIControls/UINotificationBar.hpp"
+#include "STM32Pinouts.hpp"
 
 struct __attribute__((packed)) BlowgunValue
 {
@@ -22,6 +24,8 @@ enum class BlowingTriggerType : uint8_t {
     PISTOL
 };
 
+extern uint8_t      OptIn_state[8];
+
 class BlowingControl
 {
 public:
@@ -32,6 +36,7 @@ public:
     using ControlBlowingFunc = std::function<void(bool)>;
 
 private:
+    UINotificationBar * UI_notification_bar;
     CallbackFunc callback;
     ControlBlowingFunc blowing_func;
 
@@ -56,10 +61,12 @@ private:
 
 public:
     BlowingControl(
+        UINotificationBar * UI_notification_bar,
         ControlBlowingFunc blowing_func,
         uint8_t time_span_ss_on_pause_await_limit,
         float var_blowing_pump_power_lm
     ) :
+    UI_notification_bar(UI_notification_bar),
     blowing_func(blowing_func),
     pump_power_lm(var_blowing_pump_power_lm),
     time_span_ss_on_pause_await_limit(time_span_ss_on_pause_await_limit),

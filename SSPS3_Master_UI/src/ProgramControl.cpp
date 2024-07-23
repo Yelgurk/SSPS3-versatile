@@ -15,9 +15,11 @@ double ProgramControl::get_prog_percentage()
     return aim_ss <= 0 ? 0 : 100.0 / (double)aim_ss * done_ss;
 }
 
-ProgramStep ProgramControl:: start_task(ProgramAimEnum aim, uint16_t limit_ss_max_await_on_pause)
+ProgramStep ProgramControl::start_task(ProgramAimEnum aim, uint16_t limit_ss_max_await_on_pause)
 {
-    if (!is_runned)
+    if (OptIn_state[DIN_380V_SIGNAL] == 0)
+        UI_notification_bar->push_info(SystemNotification::INFO_TURN_ON_380V_FIRST);
+    else if (!is_runned)
     {
         this->aim = aim;
         this->limit_ss_max_await_on_pause = limit_ss_max_await_on_pause;
@@ -171,6 +173,7 @@ ProgramStep ProgramControl::do_task(bool first_call_after_startup)
                 this->state = TaskStateEnum::ERROR;
                 _step_curr.state = StepStateEnum::ERROR;
                 this->is_runned = false;
+                UI_notification_bar->push_info(SystemNotification::ERROR_TASK_ENDED_30_MIN_SOLVING_AWAIT);
             }
 
             prog_runned_steps->at(prog_active_step.get())->set(_step_curr);

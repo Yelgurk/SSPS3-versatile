@@ -36,6 +36,9 @@ ExponentialSmoothing exp_filter_24v_batt(0.02);
 /* Task manager */
 RtTaskManager rt_task_manager;
 
+/* Extern UI controls (scratch in ProgramControl for Notify) */
+extern UINotificationBar * UI_notification_bar;
+
 /* Extern values */
 extern FilterValue * filter_tempC_product;
 extern FilterValue * filter_tempC_wJacket;

@@ -6,6 +6,7 @@
 #include <Arduino.h>
 #include "../../SSPS3_Master_Domain/include/DateTime/S_DateTime.hpp"
 #include "../include/UIControls/UITaskRoadmapList.hpp"
+#include "../include/UIControls/UINotificationBar.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_Storage.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_Object.hpp"
 #include "../../SSPS3_Master_Domain/include/FRAM/FRAM_RW.hpp"
@@ -101,6 +102,7 @@ struct __attribute__((packed)) ProgramStep
     }
 };
 
+extern UINotificationBar * UI_notification_bar;
 extern S_DateTime * dt_rt;
 
 extern FRAMObject<uint16_t>&                prog_runned_steps_count;

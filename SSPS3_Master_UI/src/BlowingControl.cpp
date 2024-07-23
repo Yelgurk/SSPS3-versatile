@@ -12,7 +12,8 @@ void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int
 
     uint32_t current_time_ms = millis();
 
-    if (do_gurgling && ((!trigger_must_be_reloaded && !is_keypad_press) || (!keyboard_must_be_reloaded && is_keypad_press)))
+
+    if (OptIn_state[DIN_380V_SIGNAL] == 0 && do_gurgling && ((!trigger_must_be_reloaded && !is_keypad_press) || (!keyboard_must_be_reloaded && is_keypad_press)))
     {
         if (is_runned && current_blow_index != index)
         {
@@ -32,14 +33,13 @@ void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int
                 current_blow_index = index;
                 is_runned = true;
                 triggered_by = is_keypad_press ? BlowingTriggerType::KEYBOARD : BlowingTriggerType::PISTOL;
-
                 ml_per_ms = pump_power_lm / 60.f; // in 1ss => 1000ms i.e. 1l => 1000ml. we store power in l/m, that why after casting we would be do *1000ml and then /1000ms, that why we just do lm/60s
-
+                
                 if (!selected_blowing_value.is_timer)
                     ms_aim = (curr_value.val / (pump_power_lm * 1000)) * (60 * 1000);
                 else
                     ms_aim = curr_value.val * 1000;
-
+                
                 ms_gone = 0;
             }
 
@@ -52,6 +52,9 @@ void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, int
     }
     else
     {
+        if ((bool)OptIn_state[DIN_380V_SIGNAL])
+            UI_notification_bar->push_info(SystemNotification::INFO_TURN_OFF_380V_FIRST);
+
         stop_pump();
         timer_running = false;
     }
@@ -84,6 +87,8 @@ void BlowingControl::do_blowing()
 
     if (current_time_ms - last_call_time_ms > time_span_ss_on_pause_await_limit * 1000)
     {
+        UI_notification_bar->push_info(SystemNotification::INFO_BLOWING_RESET_2_SS_AWAIT);
+        
         blowgun_stop();
         return;
     }
