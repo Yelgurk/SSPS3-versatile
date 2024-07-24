@@ -48,6 +48,11 @@ void setup()
     itcw    ->begin(SDA, SCL, 400000);
     STM32   = new STM32_slave(STM_I2C_ADDR);
 
+    if (!var_startup_key.get().compare(startup_key))
+        Storage::reset_all(true);
+
+    Storage::print_list_of_addr();
+
     rtc     = new DS3231(*itcw);
     dt_rt   = new S_DateTime(0, 0, 0, 0, 0, 0);
     dt_rt   ->set_rt_lambda([]()
@@ -63,8 +68,6 @@ void setup()
     });
     dt_rt->get_rt();
     rtc_recovery_by_FRAM();
-
-    //Storage::reset_all(true);   
 
     setup_filters();
     setup_UI();
@@ -215,7 +218,7 @@ void setup_task_manager()
     rt_task_manager.add_task("task_update_UI_state_bar", [](){
         UI_service->UI_machine_state_bar->control_set_values_state_bar(
             rt_out_speed_async_m,
-            filter_tempC_product->get_physical_value(),// - 24.f,
+            filter_tempC_product->get_physical_value(),
             filter_tempC_wJacket->get_physical_value(),
             var_equip_have_wJacket_tempC_sensor.local(),
             OptIn_state[DIN_WJACKET_SENS] ?
@@ -305,7 +308,7 @@ void setup_task_manager()
             if (filter_tempC_wJacket->get_physical_value() >= 105 || filter_tempC_wJacket->get_physical_value() < -10)
                 UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN);
         
-        if (prog_runned.local().state == TaskStateEnum::RUNNED)
+        if (prog_runned.local().is_runned && prog_runned.local().state == TaskStateEnum::RUNNED)
             UI_notification_bar->key_press(0);
     }, 10000);
 }

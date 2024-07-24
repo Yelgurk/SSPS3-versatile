@@ -42,10 +42,15 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 #define MAX_ADC_TEMPC       150
 
 /* FRAM addr */
-#define ALLOC_SYS_VAR_BEGIN     0
-#define ALLOC_SENS_VAR_BEGIN    200
-#define ALLOC_CONF_VAR_BEGIN    1000
-#define ALLOC_USER_VAR_BEGIN    2000
+#define ALLOC_STARTUP_KEY           0
+#define ALLOC_SYS_VAR_BEGIN         100
+#define ALLOC_SETTINGS_MASTER       300
+#define ALLOC_SETTINGS_USER         900
+#define ALLOC_TEMPLATES_BEGIN       1200
+#define ALLOC_FREE_at_24_07_2024    4000
+
+/* KEY */
+static const std::string startup_key = string("Maxim Krugley, yelgurk@gmail.com");
 
 /* Const physical limitations by company */
 #define LIMIT_WATER_BOILING_POINT_TEMPC     90
@@ -61,7 +66,8 @@ struct __attribute__((packed)) AutoProgStates
     {}
 };
 
-// Объявляем переменные как extern
+extern FRAMObject<std::string>& var_startup_key;
+
 extern FRAMObject<S_DateTime>& var_last_rt;
 
 extern FRAMObject<EquipmentType>& var_type_of_equipment_enum;

@@ -22,6 +22,9 @@ protected:
 public:
     virtual ~FRAMObjectBase() = default;
     virtual void reset() = 0;
+    virtual void print_addr() = 0;
+    virtual void print_size() = 0;
+    virtual void print_end_addr() = 0;
 
     void set_is_resetable(bool state) {
         is_resetable = state;
@@ -134,6 +137,18 @@ public:
         return _value;
     }
 
+    void print_addr() override {
+        Serial.print(this->address);
+    }
+
+    void print_size() override {
+        Serial.print(this->full_size);
+    }
+
+    void print_end_addr() override {
+        Serial.print(this->address + this->full_size);
+    }
+
     operator T () {
         return this->get();
     }
@@ -184,7 +199,7 @@ public:
         FRAM::fill(address, unset_val, full_size);
     }
 
-    void reset() {
+    void reset() override {
         set(_default_value);
     }
 
@@ -207,6 +222,18 @@ public:
             reset();
             return _default_value;
         }
+    }
+
+    void print_addr() override {
+        Serial.print(this->address);
+    }
+
+    void print_size() override {
+        Serial.print(this->full_size);
+    }
+
+    void print_end_addr() override {
+        Serial.print(this->address + this->full_size);
     }
 
     operator std::string () {

@@ -69,6 +69,19 @@ public:
             if (pair.second->get_is_resetable() || hard_reset)
                 pair.second->reset();
     }
+
+    static void print_list_of_addr()
+    {
+        for (auto& pair : addressMap)
+        {
+            pair.second->print_addr();
+            Serial.print("(");
+            pair.second->print_size();
+            Serial.print(") -> ");
+            pair.second->print_end_addr();
+            Serial.println();
+        }
+    }
 };
 
 #endif

@@ -62,17 +62,20 @@ static ProgramControl def_prog_runned_null = ProgramControl();
 static ProgramStep def_prog_runned_step_null = ProgramStep();
 
 // Vars init in FRAM using Storage::allocate
+FRAMObject<std::string>& var_startup_key                        = Storage::allocate<std::string>(startup_key, true, ALLOC_STARTUP_KEY, 40, "plc_startup_key");
+
+// last rtc clock
 FRAMObject<S_DateTime>& var_last_rt                             = Storage::allocate<S_DateTime>(S_DateTime(), true, ALLOC_SYS_VAR_BEGIN);
 
 // master settings - page 1
-FRAMObject<EquipmentType>& var_type_of_equipment_enum           = Storage::allocate<EquipmentType>(EquipmentType::DairyTaxiPasteurizerFlowgun, false);
+FRAMObject<EquipmentType>& var_type_of_equipment_enum           = Storage::allocate<EquipmentType>(EquipmentType::DairyTaxiPasteurizerFlowgun, false, ALLOC_SETTINGS_MASTER);
 FRAMObject<bool>&   var_is_blowgun_by_rf                        = Storage::allocate<bool>(false, false);
 FRAMObject<bool>&   var_is_asyncM_rpm_float                     = Storage::allocate<bool>(false, false);
 FRAMObject<uint8_t>& var_plc_language                           = Storage::allocate<uint8_t>(0, false);
 FRAMObject<bool>& var_equip_have_wJacket_tempC_sensor           = Storage::allocate<bool>(false, false);
 
 // master settings - page 2
-FRAMObject<float>& var_sensor_batt_min_V                        = Storage::allocate<float>(MIN_BATT_VOLTAGE, false, ALLOC_SENS_VAR_BEGIN);     // ok
+FRAMObject<float>& var_sensor_batt_min_V                        = Storage::allocate<float>(MIN_BATT_VOLTAGE, false);   // ok
 FRAMObject<float>& var_sensor_batt_max_V                        = Storage::allocate<float>(MAX_BATT_VOLTAGE, false);                           // ok
 FRAMObject<uint16_t>& var_sensor_batt_V_min_12bit               = Storage::allocate<uint16_t>(BATT_V_TO_12BIT * MIN_BATT_VOLTAGE, false);      // ok
 FRAMObject<uint16_t>& var_sensor_batt_V_max_12bit               = Storage::allocate<uint16_t>(BATT_V_TO_12BIT * MAX_BATT_VOLTAGE, false);      // ok
@@ -86,7 +89,7 @@ FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_min              = Storage::alloc
 FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_max              = Storage::allocate<uint8_t>(30, false);               // ok
  
 // master settings - page 3
-FRAMObject<uint8_t>& var_blowing_await_ss                       = Storage::allocate<uint8_t>(2, false, ALLOC_CONF_VAR_BEGIN);  // ok
+FRAMObject<uint8_t>& var_blowing_await_ss                       = Storage::allocate<uint8_t>(2, false);  // ok
 FRAMObject<float>& var_blowing_pump_power_lm                    = Storage::allocate<float>(36, false);                         // ok
 FRAMObject<uint16_t>& var_blowing_limit_ml_max                  = Storage::allocate<uint16_t>(5000, false);                    // в настройки юзера лимиты
 FRAMObject<uint16_t>& var_blowing_limit_ml_min                  = Storage::allocate<uint16_t>(250, false);                     // в настройки юзера лимиты
@@ -108,7 +111,7 @@ FRAMObject<uint8_t>& var_prog_heaters_toggle_delay_ss           = Storage::alloc
 FRAMObject<uint8_t>& var_prog_wJacket_toggle_delay_ss           = Storage::allocate<uint8_t>(10, false);                               // ok
 
 // user settings - page 1
-FRAMObject<S_DateTime>& var_rt_setter                           = Storage::allocate<S_DateTime>(S_DateTime());
+FRAMObject<S_DateTime>& var_rt_setter                           = Storage::allocate<S_DateTime>(S_DateTime(), true, ALLOC_SETTINGS_USER);
 
 // user settings - page 2
 FRAMObject<float>& var_blow_pump_calibration_lm                 = Storage::allocate<float>(0.f);
@@ -118,7 +121,7 @@ FRAMObject<BlowgunValue> var_blowiong_val_ml_3                  = Storage::alloc
 FRAMObject<BlowgunValue> var_blowiong_val_timer                 = Storage::allocate<BlowgunValue>(BlowgunValue(true, 180));
 
 // user settings - another pages
-FRAMObject<TMPEProgramTemplate>& prog_tmpe_main                 = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_full);
+FRAMObject<TMPEProgramTemplate>& prog_tmpe_main                 = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_full, true, ALLOC_TEMPLATES_BEGIN);
 FRAMObject<TMPEProgramTemplate>& prog_tmpe_cooling              = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_chilling);
 FRAMObject<TMPEProgramTemplate>& prog_tmpe_heating              = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_heating);
 FRAMObject<TMPEProgramTemplate>& prog_tmpe_wd_1                 = Storage::allocate<TMPEProgramTemplate>(def_prog_tmpe_full);
