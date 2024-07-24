@@ -107,7 +107,7 @@ private:
                 break;
             }
 
-            if ((notifications[index].must_be_closed))// || (notifications[index].info >= SystemNotification::_WARNING_BEGIN && notifications[index].info <= SystemNotification::_WARNING_END))
+            if (notifications[index].must_be_closed)
                 notifications.erase(notifications.begin() + index);
             else
                 ++index;
@@ -194,21 +194,16 @@ public:
         );
 
         if (it == notifications.end())
-        {
             notifications.push_back(SystemNotificationContainer(type));
 
-            display();
-            show_next();
-        }
+        display();
     }
 
     void display(bool button_pressed = false)
     {
         if (button_pressed)
             for (auto& container : notifications)
-                if ((container.info >= SystemNotification::_OK_BEGIN && container.info <= SystemNotification::_INFO_END) ||
-                    (container.info >= SystemNotification::_ERROR_BEGIN && container.info <= SystemNotification::_ERROR_END))
-                    container.must_be_closed = true;
+                container.must_be_closed = true;
 
         if (!animation_in_action)
             show_next();

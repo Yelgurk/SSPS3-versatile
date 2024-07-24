@@ -73,14 +73,14 @@ String kbMsg = "";
 
 uint8_t Relay[8]
 {
-    STM_RELAY_1,
-    STM_RELAY_2,
-    STM_RELAY_3,
-    STM_RELAY_4,
-    STM_RELAY_5,
-    STM_RELAY_6,
+    STM_RELAY_8,
     STM_RELAY_7,
-    STM_RELAY_8
+    STM_RELAY_6,
+    STM_RELAY_5,
+    STM_RELAY_4,
+    STM_RELAY_3,
+    STM_RELAY_2,
+    STM_RELAY_1
 };
 
 uint8_t Dac[1]

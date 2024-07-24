@@ -50,6 +50,15 @@ public:
         }
     }
 
+    void execute_task(const string& name)
+    {
+        if (tasks.find(name) != tasks.end())
+        {
+            tasks[name].task();
+            tasks[name].last_run = millis();
+        }
+    }
+
     void resume_task(const string& name)
     {
         if (tasks.find(name) != tasks.end())

@@ -48,10 +48,16 @@ void setup()
     itcw    ->begin(SDA, SCL, 400000);
     STM32   = new STM32_slave(STM_I2C_ADDR);
 
-    if (!var_startup_key.get().compare(startup_key))
+    try
+    {
+        if (!var_startup_key.get().compare(startup_key))
+            Storage::reset_all(true);
+    }
+    catch(const std::exception& e)
+    {
         Storage::reset_all(true);
-
-    Storage::print_list_of_addr();
+        ESP.restart();
+    }
 
     rtc     = new DS3231(*itcw);
     dt_rt   = new S_DateTime(0, 0, 0, 0, 0, 0);
@@ -76,6 +82,7 @@ void setup()
     setup_watchdogs();
 
     read_input_signals(false, true);
+    rt_task_manager.execute_task("task_do_programm");
 
     dt_rt->get_rt();
 }
@@ -88,6 +95,13 @@ void loop()
     {
         interrupted_by_slave = false;
         read_input_signals();
+
+        Serial.print(prog_runned.get().on_pause_by_wd_380v);
+        Serial.print(" - ");
+        Serial.print(prog_runned.get().on_pause_by_wd_wJacket_drain);
+        Serial.print(" - ");
+        Serial.print(prog_runned.get().on_pause_by_user);
+        Serial.println();
 
         UI_service->UI_notification_bar->key_press(Pressed_key);
         UI_manager->handle_key_press(Pressed_key);
@@ -255,32 +269,36 @@ void setup_task_manager()
         ProgramStep to_do = prog_runned.ptr()->do_task(prog_wd_first_call);
         prog_runned.accept();
         prog_wd_first_call = false;
-
-        async_motor_wd      ->set_async_motor_speed(to_do.fan);
-        chilling_wd         ->set_aim(to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1, filter_tempC_product->get_physical_value());
-        if (var_equip_have_wJacket_tempC_sensor.get())
-            heating_wd      ->set_aim(
-                to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1,
-                filter_tempC_product->get_physical_value(),
-                filter_tempC_wJacket->get_physical_value()
-            );
+        
+        if (to_do.step_is_turned_on)
+        {
+            async_motor_wd      ->set_async_motor_speed(to_do.fan);
+            chilling_wd         ->set_aim(to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1, filter_tempC_product->get_physical_value());
+            if (var_equip_have_wJacket_tempC_sensor.get())
+                heating_wd      ->set_aim(
+                    to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1,
+                    filter_tempC_product->get_physical_value(),
+                    filter_tempC_wJacket->get_physical_value()
+                );
+            else
+                heating_wd      ->set_aim(
+                    to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1,
+                    filter_tempC_product->get_physical_value()
+                );
+        }
         else
-            heating_wd      ->set_aim(
-                to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1,
-                filter_tempC_product->get_physical_value()
-            );
-        wJacket_drain_wd    ->water_in_jacket(OptIn_state[DIN_WJACKET_SENS], to_do.aim == ProgramStepAimEnum::WATER_JACKET);
-    
-        if (!to_do.step_is_turned_on)
         {
             async_motor_wd  ->set_async_motor_speed(0);
             chilling_wd     ->set_aim(0, 0);
             heating_wd      ->set_aim(0, 0);
-            
-            if (!prog_runned.local().is_runned)
-                wJacket_drain_wd->water_in_jacket(true);
         }
-
+        
+        wJacket_drain_wd    ->water_in_jacket(
+            OptIn_state[DIN_WJACKET_SENS],
+            prog_runned.local().is_runned,
+            to_do.aim == ProgramStepAimEnum::WATER_JACKET
+        );
+        
         UI_service->UI_task_roadmap_control->update_task_steps_state();
         UI_service->UI_task_roadmap_control->update_ui_context();
     }, 500);
@@ -309,7 +327,7 @@ void setup_task_manager()
                 UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN);
         
         if (prog_runned.local().is_runned && prog_runned.local().state == TaskStateEnum::RUNNED)
-            UI_notification_bar->key_press(0);
+            UI_service->UI_notification_bar->display();
     }, 10000);
 }
 
@@ -355,18 +373,13 @@ void setup_watchdogs()
         [](bool state)      { STM32->set(COMM_SET::RELAY, REL_WJACKET_VALVE, rt_out_state_wJacket = state); },
         [](bool state)
         {
-            if (prog_runned.local().is_runned)
+            prog_runned.ptr()->pause_state_by_wd_wJacket_drain(state);
+            prog_runned.accept();
+
+            if (state)
             {
-                prog_runned.ptr()->pause_state_by_wd_wJacket_drain(state);
-                prog_runned.accept();
-
-                UI_service->UI_notification_bar->push_info(SystemNotification::INFO_TASK_AWAIT_PROBLEM_SOLVING);
                 UI_service->UI_notification_bar->push_info(SystemNotification::WARNING_WATER_JACKET_NO_WATER);
-
-                return true;
             }
-
-            return false;
         },
         var_prog_wJacket_drain_max_ss.get()
     );

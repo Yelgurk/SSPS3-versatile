@@ -33,6 +33,8 @@ ProgramStep ProgramControl::start_task(ProgramAimEnum aim, uint16_t limit_ss_max
         prog_active_step.set(0);
         prog_next_step.set(0);
 
+        on_pause_by_user = on_pause_by_wd_380v = on_pause_by_wd_wJacket_drain = false;
+
         state = TaskStateEnum::RUNNED;
         is_runned = true;
     }
