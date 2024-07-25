@@ -96,13 +96,6 @@ void loop()
         interrupted_by_slave = false;
         read_input_signals();
 
-        Serial.print(prog_runned.get().on_pause_by_wd_380v);
-        Serial.print(" - ");
-        Serial.print(prog_runned.get().on_pause_by_wd_wJacket_drain);
-        Serial.print(" - ");
-        Serial.print(prog_runned.get().on_pause_by_user);
-        Serial.println();
-
         UI_service->UI_notification_bar->key_press(Pressed_key);
         UI_manager->handle_key_press(Pressed_key);
 
@@ -228,13 +221,13 @@ void setup_task_manager()
     rt_task_manager.add_task("task_update_UI_state_bar", [](){
         UI_service->UI_machine_state_bar->control_set_values_state_bar(
             rt_out_speed_async_m,
+            var_is_asyncM_rpm_float.local(),
             filter_tempC_product->get_physical_value(),
             filter_tempC_wJacket->get_physical_value(),
             var_equip_have_wJacket_tempC_sensor.local(),
-            OptIn_state[DIN_WJACKET_SENS] ?
-                WaterJacketStateEnum::FILLED : (rt_out_state_wJacket ?
-                    WaterJacketStateEnum::FILLING : WaterJacketStateEnum::EMPTY
-                ),
+            OptIn_state[DIN_WJACKET_SENS]
+            ? (rt_out_state_wJacket ? WaterJacketStateEnum::COOLING : WaterJacketStateEnum::FILLED)
+            : (rt_out_state_wJacket ? WaterJacketStateEnum::FILLING : WaterJacketStateEnum::EMPTY),
             filter_24v_batt->get_percentage_value(),
             OptIn_state[DIN_380V_SIGNAL] ? ChargeStateEnum::CHARGERING : ChargeStateEnum::STABLE
         );
@@ -340,9 +333,16 @@ void setup_watchdogs()
                     / var_sensor_dac_asyncM_rpm_max.get()
                     * speed_rpm
             );
-            rt_out_speed_async_m = speed_rpm;
+
+            if (var_is_asyncM_rpm_float.local())
+                rt_out_speed_async_m = speed_rpm;
+            else
+                rt_out_speed_async_m = rt_out_state_async_m
+                    ? var_sensor_dac_asyncM_rpm_max.local()
+                    : 0;
         },
-        var_sensor_dac_asyncM_rpm_max.get()
+        var_sensor_dac_asyncM_rpm_max.get(),
+        var_is_asyncM_rpm_float.get()
     );
 
     chilling_wd         = new ChillingWatchdog(

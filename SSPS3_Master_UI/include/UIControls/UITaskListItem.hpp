@@ -157,13 +157,16 @@ public:
         lv_label_set_text(get_container_content("[header]"), task_step_name.c_str());
     }
 
-    void set_step_values(int32_t val_fan, int32_t val_tempC, int32_t val_durat, StepStateEnum state)
+    void set_step_values(int32_t val_fan, bool is_fan_flex_speed, int32_t val_tempC, int32_t val_durat, StepStateEnum state)
     {
         static char buffer[50];
 
         sprintf(buffer, "%02d:%02d", (uint32_t)abs(val_durat) / 60, (uint32_t)abs(val_durat) % 60);
 
-        lv_label_set_text(get_container_content("[val1]"), to_string(val_fan).c_str());
+        if (is_fan_flex_speed)
+            lv_label_set_text(get_container_content("[val1]"), to_string(val_fan).c_str());
+        else
+            lv_label_set_text(get_container_content("[val1]"), val_fan > 0 ? "да" : "нет");
         lv_label_set_text(get_container_content("[val2]"), to_string(val_tempC).c_str());
         lv_label_set_text(get_container_content("[val3]"), val_durat == 0 ? "" : ((val_durat < 0 ? "-" : "") + string(buffer)).c_str());
 

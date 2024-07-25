@@ -221,20 +221,41 @@ public:
                 UITaskListItem* ui_step = UI_task_roadmap_control->add_task_step(i == 0);
                 ui_step->set_extra_button_logic({
                     [=](){
-                        if (prog_runned_steps->at(i)->ptr()->fan < var_sensor_dac_asyncM_rpm_max.local())
-                            prog_runned_steps->at(i)->ptr()->fan += 1;
+                        if (var_is_asyncM_rpm_float.local())
+                        {
+                            if (prog_runned_steps->at(i)->ptr()->fan < var_sensor_dac_asyncM_rpm_max.local())
+                                prog_runned_steps->at(i)->ptr()->fan += 1;
+                            else
+                                prog_runned_steps->at(i)->ptr()->fan = var_sensor_dac_asyncM_rpm_max.local();
+                        }
                         else
-                            prog_runned_steps->at(i)->ptr()->fan = var_sensor_dac_asyncM_rpm_max.local();
+                        {
+                            if (prog_runned_steps->at(i)->ptr()->fan != 0)
+                                prog_runned_steps->at(i)->ptr()->fan = 0;
+                            else
+                                prog_runned_steps->at(i)->ptr()->fan = var_sensor_dac_asyncM_rpm_max.local();
+                        }
+
                         prog_runned_steps->at(i)->accept();
                     },
                     [=](){
-                        int16_t x = prog_runned_steps->at(i)->ptr()->fan;
-                        --x;
+                        if (var_is_asyncM_rpm_float.local())
+                        {
+                            int16_t x = prog_runned_steps->at(i)->ptr()->fan;
+                            --x;
 
-                        if (x < 0)
-                            prog_runned_steps->at(i)->ptr()->fan = 0;
+                            if (x < 0)
+                                prog_runned_steps->at(i)->ptr()->fan = 0;
+                            else
+                                prog_runned_steps->at(i)->ptr()->fan = x;               
+                        }
                         else
-                            prog_runned_steps->at(i)->ptr()->fan = x;                            
+                        {
+                            if (prog_runned_steps->at(i)->ptr()->fan != 0)
+                                prog_runned_steps->at(i)->ptr()->fan = 0;
+                            else
+                                prog_runned_steps->at(i)->ptr()->fan = var_sensor_dac_asyncM_rpm_max.local();
+                        }
 
                         prog_runned_steps->at(i)->accept();
                     },
@@ -299,6 +320,7 @@ public:
                 {
                     ui_step->set_step_values(
                         prog_runned_steps->at(i)->local().fan,
+                        var_is_asyncM_rpm_float.local(),
                         prog_runned_steps->at(i)->local().tempC,
                         prog_runned_steps->at(i)->local().state == StepStateEnum::DONE
                             ? -((int32_t)prog_runned_steps->at(i)->local().gone_ss)

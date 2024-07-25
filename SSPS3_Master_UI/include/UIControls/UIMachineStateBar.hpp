@@ -2,10 +2,11 @@
 #define UIMachineStateBar_hpp
 
 #include "../UIElement.hpp"
+#include "FRAM_DB.hpp"
 
 enum class ChargeStateEnum : uint8_t { ERROR, STABLE, CHARGERING };
 
-enum class WaterJacketStateEnum : uint8_t { EMPTY, FILLING, FILLED };
+enum class WaterJacketStateEnum : uint8_t { EMPTY, FILLING, FILLED, COOLING };
 
 class UIMachineStateBar : public UIElement
 {
@@ -57,15 +58,15 @@ public:
             0
         );
 
-        control_set_values_state_bar(30, 85, 85, true, WaterJacketStateEnum::EMPTY, 101, ChargeStateEnum::ERROR);
+        control_set_values_state_bar(30, true, 85, 85, true, WaterJacketStateEnum::EMPTY, 101, ChargeStateEnum::ERROR);
     }
 
-    void control_set_values_state_bar(int16_t fan, int16_t tempC, int16_t tempC_wJ, bool is_wJ_sensor, WaterJacketStateEnum water_jacket_state, int16_t charge_value, ChargeStateEnum charge_state)
+    void control_set_values_state_bar(int16_t fan, bool is_fan_flex_speed, int16_t tempC, int16_t tempC_wJ, bool is_wJ_sensor, WaterJacketStateEnum water_jacket_state, int16_t charge_value, ChargeStateEnum charge_state)
     {
         static char buffer[20];
         charge_value = charge_value < 0 ? 0 : (charge_value > 100 ? 100 : charge_value);
 
-        sprintf(buffer, "%d", fan);
+        sprintf(buffer, "%d", is_fan_flex_speed ? fan : (fan > 0 ? var_sensor_dac_asyncM_rpm_max.local() : 0));
         lv_label_set_text(get_container_content("[context_fan]"), buffer);
         sprintf(buffer, "%d", tempC);
         lv_label_set_text(get_container_content("[context_tempC]"), buffer);
@@ -77,6 +78,7 @@ public:
             {
                 case WaterJacketStateEnum::FILLING: lv_label_set_text(get_container_content("[context_wJacket]"), "набор"); break;
                 case WaterJacketStateEnum::FILLED: lv_label_set_text(get_container_content("[context_wJacket]"), "заполн."); break;
+                case WaterJacketStateEnum::COOLING: lv_label_set_text(get_container_content("[context_wJacket]"), "охлажд."); break;
                 default: lv_label_set_text(get_container_content("[context_wJacket]"), "пусто"); break;
             }
         }
