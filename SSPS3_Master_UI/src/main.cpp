@@ -248,10 +248,12 @@ void setup_task_manager()
             filter_tempC_wJacket->get_physical_value(),
             var_equip_have_wJacket_tempC_sensor.local(),
             OptIn_state[DIN_WJACKET_SENS]
-            ? (rt_out_state_wJacket ? WaterJacketStateEnum::COOLING : WaterJacketStateEnum::FILLED)
-            : (rt_out_state_wJacket ? WaterJacketStateEnum::FILLING : WaterJacketStateEnum::EMPTY),
+                ? (rt_out_state_wJacket ? WaterJacketStateEnum::COOLING : WaterJacketStateEnum::FILLED)
+                : (rt_out_state_wJacket ? WaterJacketStateEnum::FILLING : WaterJacketStateEnum::EMPTY),
             filter_24v_batt->get_percentage_value(),
-            OptIn_state[DIN_380V_SIGNAL] ? ChargeStateEnum::CHARGERING : ChargeStateEnum::STABLE
+            OptIn_state[DIN_380V_SIGNAL]
+                ? ChargeStateEnum::CHARGERING
+                : ChargeStateEnum::STABLE
         );
     }, 500);
 
@@ -284,16 +286,16 @@ void setup_task_manager()
         if (to_do.step_is_turned_on)
         {
             async_motor_wd      ->set_async_motor_speed(to_do.fan);
-            chilling_wd         ->set_aim(to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1, filter_tempC_product->get_physical_value());
+            chilling_wd         ->set_aim(to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 2, filter_tempC_product->get_physical_value());
             if (var_equip_have_wJacket_tempC_sensor.get())
                 heating_wd      ->set_aim(
-                    to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1,
+                    to_do.must_be_cooled ? min(to_do.tempC, (uint8_t)(to_do.tempC - 2)) : to_do.tempC,
                     filter_tempC_product->get_physical_value(),
                     filter_tempC_wJacket->get_physical_value()
                 );
             else
                 heating_wd      ->set_aim(
-                    to_do.must_be_cooled ? to_do.tempC : to_do.tempC + 1,
+                    to_do.must_be_cooled ? min(to_do.tempC, (uint8_t)(to_do.tempC - 2)) : to_do.tempC,
                     filter_tempC_product->get_physical_value()
                 );
         }
@@ -315,9 +317,6 @@ void setup_task_manager()
     }, 500);
 
     rt_task_manager.add_task("task_call_watchdogs", []() {
-        //if (!prog_runned.get().is_runned)
-        //    async_motor_wd  ->set_async_motor_speed(0);
-        
         chilling_wd         ->do_control();
         heating_wd          ->do_control();
         v380_supply_wd      ->do_control(OptIn_state[DIN_380V_SIGNAL]);
