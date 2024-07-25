@@ -133,11 +133,7 @@ void blowing_proc(bool pistol_trigger)
             uint8_t blow_index = min(UI_service->UI_blowing_control->get_focused_index(), (int16_t)3);
             BlowgunValue val = blowing_vals->at(blow_index)->local();
 
-            if (!Blowing_control->is_runned && pistol_trigger)
-                Blowing_control->blowgun_trigger(true, false, var_blow_pump_calibration_lm.local(), blow_index, val);
-            else
-            if (Blowing_control->is_runned && !pistol_trigger)
-                Blowing_control->blowgun_trigger(false, false, var_blow_pump_calibration_lm.local(), blow_index, val);
+            Blowing_control->blowgun_trigger(pistol_trigger, false, var_blow_pump_calibration_lm.local(), blow_index, val);
         }
 }
 
