@@ -100,12 +100,34 @@ void loop()
         UI_manager->handle_key_press(Pressed_key);
 
         if (prog_runned.local().is_runned)
+        {
             Pressed_key_accept_for_prog = Pressed_key == static_cast<uint8_t>(KeyMap::LEFT_BOT);
 
-        if (prog_runned.local().is_runned && (bool)OptIn_state[DIN_ASYNC_M_ERROR])
+            if (OptIn_state[DIN_ASYNC_M_ERROR])
+            {
+                prog_runned.ptr()->end_task_by_user();
+                prog_runned.accept();
+                UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN);
+            }
+
+            if (OptIn_state[DIN_STOP_SENS])
+            {
+                prog_runned.ptr()->end_task_by_user();
+                prog_runned.accept();
+                UI_service->UI_notification_bar->push_info(SystemNotification::INFO_TASK_CANCELED_BY_USER);
+            }
+        }
+
+        if (!prog_runned.local().is_runned && UI_manager->is_current_control(ScreenType::PROGRAM_SELECTOR))
         {
-            prog_runned.ptr()->end_task_by_user();
-            UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN);
+            switch (static_cast<KeyMap>(Pressed_key))
+            {
+            case KeyMap::L_STACK_4: prog_stasrtup_wd->start_program(var_type_of_equipment_enum.local(), 0); break ;
+            case KeyMap::L_STACK_3: prog_stasrtup_wd->start_program(var_type_of_equipment_enum.local(), 1); break ;
+            case KeyMap::L_STACK_2: prog_stasrtup_wd->start_program(var_type_of_equipment_enum.local(), 2); break ;
+            default:
+                break;
+            }
         }
 
         if (UI_manager->is_current_control(ScreenType::BLOWING_CONTROL))

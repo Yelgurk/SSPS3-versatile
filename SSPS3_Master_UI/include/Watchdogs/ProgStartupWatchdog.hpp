@@ -182,6 +182,8 @@ public:
                 }
             }
         }
+        else
+            return false;
 
         /* saving prog steps count */
         prog_runned_steps_count.set(step_index);
