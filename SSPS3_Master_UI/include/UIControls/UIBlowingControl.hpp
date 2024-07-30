@@ -37,10 +37,10 @@ public:
         create_support_icons(support_container, &img_arrow_back, -45, 110, 176);
         create_support_icons(support_container, &img_flag, -45, 175, 176);
         
-        lv_obj_t * info_label_1 = create_support_label(support_container, "Выбор", 12);
-        lv_obj_t * info_label_2 = create_support_label(support_container, "- / +", 62);
-        lv_obj_t * info_label_3 = create_support_label(support_container, "Отмена или\nНазад", 107);
-        lv_obj_t * info_label_4 = create_support_label(support_container, "Старт\nраздачи", 172);
+        lv_obj_t * info_label_1 = create_support_label(support_container, Translator::get("[раздача_инфо_1]"), 12);
+        lv_obj_t * info_label_2 = create_support_label(support_container, Translator::get("[раздача_инфо_2]"), 62);
+        lv_obj_t * info_label_3 = create_support_label(support_container, Translator::get("[раздача_инфо_3]"), 107);
+        lv_obj_t * info_label_4 = create_support_label(support_container, Translator::get("[раздача_инфо_4]"), 172);
 
         /* BLOWING VAL SELECTOR CONTAINER */
         lv_obj_t * blow_val_list_container = lv_obj_create(get_container());
@@ -49,7 +49,7 @@ public:
         lv_obj_t * blow_selector_header =  lv_label_create(blow_val_list_container);
         lv_obj_set_style_text_font(blow_selector_header, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_align(blow_selector_header, LV_ALIGN_TOP_MID, 0, 8);
-        lv_label_set_text(blow_selector_header, "Шаблоны раздачи");
+        lv_label_set_text(blow_selector_header, Translator::get("[шаблоны_раздачи]").c_str());
 
         lv_obj_t * blow_val_list = lv_list_create(blow_val_list_container);
         lv_obj_set_width(blow_val_list, 210);
@@ -100,7 +100,7 @@ public:
         static char buffer[50];
 
         if (type == BlowingType::LITER)
-            sprintf(buffer, "%.3f л.", (ml_per_ms * (ms_aim - ms_gone)) / 1000.f);
+            sprintf(buffer, ("%.3f " + Translator::get("[литр_буква]")).c_str(), (ml_per_ms * (ms_aim - ms_gone)) / 1000.f);
         else
         if (type == BlowingType::TIMER)
         {

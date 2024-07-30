@@ -45,15 +45,15 @@ public:
         create_splitter(get_container(), 130);
         create_splitter(get_container(), 225);
 
-        create_state_bar(get_container(), 65, 0, "fan", "об/мин", &img_fan);
-        create_state_bar(get_container(), 65, 65, "tempC", "молоко °C", &img_tempC);
-        create_state_bar(get_container(), 95, 130, "wJacket", "рубашка", &img_water_hose);
+        create_state_bar(get_container(), 65, 0, "fan", Translator::get("[бар_об_мин]"), &img_fan);
+        create_state_bar(get_container(), 65, 65, "tempC", Translator::get("[бар_темп_ц_молоко]"), &img_tempC);
+        create_state_bar(get_container(), 95, 130, "wJacket", Translator::get("[бар_рубашка]"), &img_water_hose);
         create_state_bar(
             create_charge_progress_bar(get_container(), 95, 225, "charge_bar"),
             95,
             0,
             "charge",
-            "батарея",
+            Translator::get("[бар_батарея]"),
             &img_charge,
             0
         );
@@ -76,10 +76,10 @@ public:
             lv_obj_set_style_text_font(get_container_content("[context_wJacket]"), &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
             switch (water_jacket_state)
             {
-                case WaterJacketStateEnum::FILLING: lv_label_set_text(get_container_content("[context_wJacket]"), "набор"); break;
-                case WaterJacketStateEnum::FILLED: lv_label_set_text(get_container_content("[context_wJacket]"), "заполн."); break;
-                case WaterJacketStateEnum::COOLING: lv_label_set_text(get_container_content("[context_wJacket]"), "охлажд."); break;
-                default: lv_label_set_text(get_container_content("[context_wJacket]"), "пусто"); break;
+                case WaterJacketStateEnum::FILLING: lv_label_set_text(get_container_content("[context_wJacket]"), Translator::get("[рубашка_набор]").c_str()); break;
+                case WaterJacketStateEnum::FILLED: lv_label_set_text(get_container_content("[context_wJacket]"), Translator::get("[рубашка_готов]").c_str()); break;
+                case WaterJacketStateEnum::COOLING: lv_label_set_text(get_container_content("[context_wJacket]"), Translator::get("[рубашка_охлажд]").c_str()); break;
+                default: lv_label_set_text(get_container_content("[context_wJacket]"), Translator::get("[рубашка_пусто]").c_str()); break;
             }
         }
         else
@@ -89,11 +89,13 @@ public:
 
             switch (water_jacket_state)
             {
-                case WaterJacketStateEnum::FILLING: wj_tempC_str = "набор, "; break;
-                case WaterJacketStateEnum::FILLED: wj_tempC_str = "заполн, "; break;
-                default: wj_tempC_str = "пусто, "; break;
+                case WaterJacketStateEnum::FILLING: wj_tempC_str = Translator::get("[рубашка_набор]"); break;
+                case WaterJacketStateEnum::FILLED:  wj_tempC_str = Translator::get("[рубашка_готов]"); break;
+                case WaterJacketStateEnum::COOLING: wj_tempC_str = Translator::get("[рубашка_охлажд]"); break;
+                default: wj_tempC_str = Translator::get("[рубашка_пусто]"); break;
             }
 
+            wj_tempC_str += ", ";
             lv_label_set_text(get_container_content("[context_wJacket]"), (wj_tempC_str + to_string(tempC_wJ) + "°").c_str());
         }
 
@@ -104,7 +106,7 @@ public:
         switch (charge_state)
         {
         case ChargeStateEnum::CHARGERING: {
-            lv_label_set_text(get_container_content("[context_charge]"), "зарядка");
+            lv_label_set_text(get_container_content("[context_charge]"), Translator::get("[аккум_зарядка]").c_str());
             }; break;
         
         case ChargeStateEnum::STABLE: {
@@ -123,7 +125,7 @@ public:
         
         default: {
             lv_obj_set_state(bar_ptr, LV_STATE_USER_3, true);
-            lv_label_set_text(get_container_content("[context_charge]"), "ошибка");
+            lv_label_set_text(get_container_content("[context_charge]"), Translator::get("[аккум_ошибка]").c_str());
             lv_bar_set_value(bar_ptr, 100, LV_ANIM_OFF);
             }; break;
         }

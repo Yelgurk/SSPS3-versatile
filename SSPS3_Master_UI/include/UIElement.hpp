@@ -10,6 +10,7 @@
 #include <lvgl.h>
 #include "UIAccess.hpp"
 #include "KeyModel.hpp"
+#include "LangDictionary.hpp"
 
 using namespace std;
 

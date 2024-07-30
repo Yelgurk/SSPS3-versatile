@@ -48,6 +48,8 @@ void setup()
     itcw    ->begin(SDA, SCL, 400000);
     STM32   = new STM32_slave(STM_I2C_ADDR);
 
+    Translator::setLanguage(var_plc_language.get());
+
     try
     {
         if (!var_startup_key.get().compare(startup_key))
