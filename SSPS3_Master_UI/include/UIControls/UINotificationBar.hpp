@@ -92,14 +92,14 @@ private:
             case SystemNotification::INFO_TURN_ON_380V_FIRST:                   lv_label_set_text(text, "Сначала ВКЛючите 380В"); break;
             case SystemNotification::INFO_BLOWING_RESET_2_SS_AWAIT:             lv_label_set_text(text, "Сброс раздачи, долгая пауза"); break;
             case SystemNotification::INFO_BLOWING_CANCELED_BY_USER:             lv_label_set_text(text, "Сброс задачи пользователем"); break;
-            case SystemNotification::INFO_TASK_AWAIT_PROBLEM_SOLVING:           lv_label_set_text(text, "Ожидание разрешения проблем оборудования"); break;
-            case SystemNotification::INFO_TASK_RESUME_AFTER_PROBLEM_SOLVING:    lv_label_set_text(text, "Программа продолжена после разрешения проблем"); break;
-            case SystemNotification::INFO_TASK_RESUME_AFTER_PLC_REBOOT:         lv_label_set_text(text, "Программа продолжена после перезагрузки ПЛК"); break;
-            case SystemNotification::INFO_TASK_CANCELED_BY_USER:                lv_label_set_text(text, "Программа преравана пользователем по кнопке"); break;
+            case SystemNotification::INFO_TASK_AWAIT_PROBLEM_SOLVING:           lv_label_set_text(text, "Ожидание разрешения проблем"); break;
+            case SystemNotification::INFO_TASK_RESUME_AFTER_PROBLEM_SOLVING:    lv_label_set_text(text, "Программа продолжена"); break;
+            case SystemNotification::INFO_TASK_RESUME_AFTER_PLC_REBOOT:         lv_label_set_text(text, "Программа продолжена после перезагрузки"); break;
+            case SystemNotification::INFO_TASK_CANCELED_BY_USER:                lv_label_set_text(text, "Программа преравана по кнопке"); break;
             case SystemNotification::WARNING_WATER_JACKET_NO_WATER:             lv_label_set_text(text, "ВНИМАНИЕ! Нет воды в рубашке!"); break;
             case SystemNotification::WARNING_380V_NO_POWER:                     lv_label_set_text(text, "ВНИМАНИЕ! Нет сети 380В!"); break;
+            case SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN:                lv_label_set_text(text, "Вероятная поломка датчика температуры!"); break;
             case SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN:             lv_label_set_text(text, "ОШИБКА! Авария мешалки!"); break;
-            case SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN:                lv_label_set_text(text, "ОШИБКА! Вероятная поломка датчика температуры!"); break;
             case SystemNotification::ERROR_TASK_ENDED_30_MIN_SOLVING_AWAIT:     lv_label_set_text(text, "ОШИБКА! 30 минут простоя!"); break;
             
             default:

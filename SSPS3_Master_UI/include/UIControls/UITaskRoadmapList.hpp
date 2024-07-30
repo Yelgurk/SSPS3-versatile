@@ -208,7 +208,7 @@ public:
         lv_obj_set_height(lv_col_header_label_name, LV_SIZE_CONTENT);    /// 1
         lv_obj_set_x(lv_col_header_label_name, -105);
         lv_obj_set_y(lv_col_header_label_name, -78);
-        lv_label_set_text(lv_col_header_label_name, "\"mozarella\"");
+        lv_label_set_text(lv_col_header_label_name, "Шаблон");
         lv_obj_set_align(lv_col_header_label_name, LV_ALIGN_CENTER);
         lv_obj_set_style_text_font(lv_col_header_label_name, &OpenSans_bold_24px, LV_PART_MAIN | LV_STATE_DEFAULT);
 

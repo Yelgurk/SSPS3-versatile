@@ -303,16 +303,16 @@ public:
                 {
                     switch (step->aim)
                     {
-                    case ProgramStepAimEnum::WATER_JACKET:  ui_step->set_step_name("Набор воды"); break;
-                    case ProgramStepAimEnum::PASTEUR:       ui_step->set_step_name("Пастеризация"); break;
-                    case ProgramStepAimEnum::CHILLING:      ui_step->set_step_name("Охлаждение"); break;
-                    case ProgramStepAimEnum::CUTTING:       ui_step->set_step_name("Резка"); break;
-                    case ProgramStepAimEnum::MIXING:        ui_step->set_step_name("Замешивание"); break;
-                    case ProgramStepAimEnum::HEATING:       ui_step->set_step_name("Нагрев"); break;
-                    case ProgramStepAimEnum::DRYING:        ui_step->set_step_name("Сушка"); break;
-                    case ProgramStepAimEnum::EXPOSURE:      ui_step->set_step_name("Выдержка"); break;
-                    case ProgramStepAimEnum::TO_TEMPERATURE:ui_step->set_step_name("*подгонка температуры*"); break;
-                    case ProgramStepAimEnum::USER_AWAIT:    ui_step->set_step_name("Ожидание: нажмите кнопку"); break;
+                    case ProgramStepAimEnum::WATER_JACKET:  ui_step->set_step_name(Translator::get("[этап_набор_воды]")); break;
+                    case ProgramStepAimEnum::PASTEUR:       ui_step->set_step_name(Translator::get("[этап_пастеризация]")); break;
+                    case ProgramStepAimEnum::CHILLING:      ui_step->set_step_name(Translator::get("[этап_охлаждение]")); break;
+                    case ProgramStepAimEnum::CUTTING:       ui_step->set_step_name(Translator::get("[этап_резка]")); break;
+                    case ProgramStepAimEnum::MIXING:        ui_step->set_step_name(Translator::get("[этап_замешивание]")); break;
+                    case ProgramStepAimEnum::HEATING:       ui_step->set_step_name(Translator::get("[этап_нагрев]")); break;
+                    case ProgramStepAimEnum::DRYING:        ui_step->set_step_name(Translator::get("[этап_сушка]")); break;
+                    case ProgramStepAimEnum::EXPOSURE:      ui_step->set_step_name(Translator::get("[этап_выдержка]")); break;
+                    case ProgramStepAimEnum::TO_TEMPERATURE:ui_step->set_step_name(Translator::get("[этап_подгонка]")); break;
+                    case ProgramStepAimEnum::USER_AWAIT:    ui_step->set_step_name(Translator::get("[этап_ожидание]")); break;
 
                     default:
                         break;

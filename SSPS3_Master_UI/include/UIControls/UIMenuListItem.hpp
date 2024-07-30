@@ -12,7 +12,7 @@ private:
     const uint16_t width_setter_container = 295;
 
 public:
-    UIMenuListItem(UIElement * parent_navi, string name = "Настройка # $ # $ #", bool create_childs_presenter = true)
+    UIMenuListItem(UIElement * parent_navi, string name = "Настройка", bool create_childs_presenter = true)
     : UIElement
     {
         { EquipmentType::All },
