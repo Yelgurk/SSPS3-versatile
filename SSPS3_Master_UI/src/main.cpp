@@ -48,18 +48,10 @@ void setup()
     itcw    ->begin(SDA, SCL, 400000);
     STM32   = new STM32_slave(STM_I2C_ADDR);
 
-    Translator::setLanguage(var_plc_language.get());
-
-    try
-    {
-        if (!var_startup_key.get().compare(startup_key))
-            Storage::reset_all(true);
-    }
-    catch(const std::exception& e)
-    {
+    if (var_startup_key.get() != startup_key)
         Storage::reset_all(true);
-        ESP.restart();
-    }
+
+    Translator::set_lang(var_plc_language.get());
 
     rtc     = new DS3231(*itcw);
     dt_rt   = new S_DateTime(0, 0, 0, 0, 0, 0);

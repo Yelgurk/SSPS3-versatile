@@ -1,63 +1,151 @@
+#ifndef TRANSLATOR_HPP
+#define TRANSLATOR_HPP
+
 #include <Arduino.h>
 #include <iostream>
-#include <map>
+#include <string>
 #include <vector>
+#include <map>
 
-using namespace std;
-
-enum class UI_LANGUAGE : uint8_t
+enum UI_LANGUAGE : uint8_t
 {
     RUSSIAN,
     ENGLISH,
     POLISH,
-    SPANISH,
     _END
 };
 
-class Translator
+enum UI_WORD_KEY : uint16_t
 {
+    LANG_NAME,
+    DOSING_INFO_1,
+    DOSING_INFO_2,
+    DOSING_INFO_3,
+    DOSING_INFO_4,
+    DOSING_TEMPLATES,
+    L_LETTER,
+    BAR_RPM,
+    BAR_TEMPC_MILK,
+    BAR_TEMPC_JACKET,
+    BAR_BATTERY,
+    JACKET_FILLING,
+    JACKET_DONE,
+    JACKET_COOLING,
+    JACKET_EMPTY,
+    BAT_CHARGERING,
+    BAT_ERROR,
+    YES,
+    NO,
+    NAME_PASTEUR,
+    NAME_HEATING,
+    NAME_COOLING,
+    NAME_AUTOPROG,
+    CHZ_PARMESAN,
+    CHZ_ADIGEJ,
+    CHZ_TILSIT,
+    CHZ_OWN_REC,
+    PASTEUR_DOESNT_SUPPORTED,
+    DATE_TIME,
+    SETTINGS_DATE_TIME,
+    HOUR,
+    MIN,
+    SEC,
+    DAY,
+    MONTH,
+    YEAR,
+    OK_BUTTON,
+    SETTINGS_DOSAGE,
+    SETTINGS_CALIBR,
+    SETTINGS_VAL_L_M,
+    TASK_PASTEUR,
+    TASK_COOLING,
+    TASK_HEATING,
+    PAUSE,
+    ON,
+    OFF,
+    TASK_AUTOPROG,
+    TASK_AUTOPTOG_NUM,
+    SETTINGS_WATCHDOG,
+    STATE_RUNNED,
+    STAGE_1,
+    STAGE_2,
+    STAGE_3_CHM,
+    STAGE_3_TMPE,
+    STAGE_4,
+    STAGE_5,
+    STAGE_6,
+    TASK_OWN,
+    EDIT_TEMPLATE,
+    STAGE_WJACKET_FILLING,
+    STAGE_PASTEUR,
+    STAGE_COOLING,
+    STAGE_CUTTING,
+    STAGE_MIXING,
+    STAGE_HEATING,
+    STAGE_DRYING,
+    STAGE_EXPOSURE,
+    STAGE_TO_AIM,
+    STAGE_AWAIT_USER,
+    _WORD_KEY_END
+};
+
+struct WordEntry
+{
+    UI_WORD_KEY key;
+    const char* translations[UI_LANGUAGE::_END];
+};
+
+extern const std::vector<WordEntry> wordEntries;
+
+class Translator {
+private:
+    uint8_t currentLanguage;
+
+protected:
+    void _set_lang(uint8_t lang) {
+        this->currentLanguage = lang;
+    }
+
 public:
-    static const std::map<std::string, std::vector<std::string>> translations;
-    uint8_t currentLanguage = 0;
+    Translator() {
+        currentLanguage = UI_LANGUAGE::RUSSIAN;
+    }
 
-    Translator() {}
-
-public:
-    static Translator& getInstance()
+    static Translator& instance()
     {
-        static Translator instance;
-        return instance;
+        static Translator inst;
+        return inst;
     }
 
-    static void setLanguage(uint8_t lang)
+    uint8_t get_lang() {
+        return this->currentLanguage;
+    }
+
+    static void set_lang(uint8_t lang)
     {
-        if (lang < static_cast<uint8_t>(UI_LANGUAGE::_END))
-            getInstance().currentLanguage = lang;
+        if (lang < UI_LANGUAGE::_END)
+            instance()._set_lang(lang);
     }
 
-    static void setLanguage(UI_LANGUAGE lang) {
-        getInstance().currentLanguage = static_cast<uint8_t>(lang);
+    static std::string get(UI_WORD_KEY key) {
+        return get(key, instance().get_lang());
     }
 
-    static std::string get(const std::string& key, const UI_LANGUAGE& lang) {
-        return get(key, static_cast<uint8_t>(lang));
-    }
-
-    static std::string get(const std::string& key, const uint8_t& lang)
+    static std::string get(UI_WORD_KEY key, uint8_t lang)
     {
-        auto& instance = getInstance();
-        auto it = instance.translations.find(key);
-        if (it != instance.translations.end() && instance.currentLanguage < it->second.size())
-            return it->second[lang >= static_cast<uint8_t>(UI_LANGUAGE::_END) ? static_cast<uint8_t>(UI_LANGUAGE::RUSSIAN) : lang];
-        return "_=-*-=_";
-    }
+        if (lang >= UI_LANGUAGE::_END)
+        return "UI_ERR";
 
-    static std::string get(const std::string& key)
-    {
-        auto& instance = getInstance();
-        auto it = instance.translations.find(key);
-        if (it != instance.translations.end() && instance.currentLanguage < it->second.size())
-            return it->second[instance.currentLanguage];
-        return "_=-*-=_";
+        for (size_t i = 0; i < wordEntries.size(); ++i)
+        {
+            WordEntry entry;
+            memcpy_P(&entry, &wordEntries[i], sizeof(WordEntry));
+
+            if (entry.key == key)
+                return std::string(entry.translations[lang]);
+        }
+        return "UI_ERR";
     }
 };
+
+#endif

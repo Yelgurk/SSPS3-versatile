@@ -112,22 +112,22 @@ void UIService::init_screens()
         {
             switch (prog_runned.get().aim)
             {
-            case ProgramAimEnum::TMP_PASTEUR:       UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_пастер]")); break;
-            case ProgramAimEnum::TMP_HEAT:          UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_нагрев]")); break;
-            case ProgramAimEnum::TMP_CHILL:         UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_охлажд]")); break;
-            case ProgramAimEnum::TMP_WATCHDOG_1:    UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_автопрог]") + " #1"); break;
-            case ProgramAimEnum::TMP_WATCHDOG_2:    UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_автопрог]") + " #2"); break;
-            case ProgramAimEnum::TMP_WATCHDOG_3:    UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_автопрог]") + " #3"); break;
-            case ProgramAimEnum::CHM_MAIN_1:        UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_сыр_пармезан]")); break;
-            case ProgramAimEnum::CHM_MAIN_2:        UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_сыр_адыгейский]")); break;
-            case ProgramAimEnum::CHM_MAIN_3:        UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_сыр_тильзитский]")); break;
-            case ProgramAimEnum::CHM_TEMPL_1:       UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_сыр_свой]") + " #1"); break;
-            case ProgramAimEnum::CHM_TEMPL_2:       UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_сыр_свой]") + " #2"); break;
-            case ProgramAimEnum::CHM_TEMPL_3:       UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_сыр_свой]") + " #3"); break;
-            case ProgramAimEnum::CHM_TEMPL_4:       UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_сыр_свой]") + " #4"); break;
-            case ProgramAimEnum::CHM_TEMPL_5:       UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_сыр_свой]") + " #5"); break;
-            case ProgramAimEnum::CHM_TEMPL_6:       UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_сыр_свой]") + " #6"); break;
-            case ProgramAimEnum::CHM_TEMPL_7:       UI_task_roadmap_control->set_task_header_name(Translator::get("[имя_сыр_свой]") + " #7"); break;
+            case ProgramAimEnum::TMP_PASTEUR:       UI_task_roadmap_control->set_task_header_name(Translator::get(NAME_PASTEUR)); break;
+            case ProgramAimEnum::TMP_HEAT:          UI_task_roadmap_control->set_task_header_name(Translator::get(NAME_HEATING)); break;
+            case ProgramAimEnum::TMP_CHILL:         UI_task_roadmap_control->set_task_header_name(Translator::get(NAME_COOLING)); break;
+            case ProgramAimEnum::TMP_WATCHDOG_1:    UI_task_roadmap_control->set_task_header_name(Translator::get(NAME_AUTOPROG) + " #1"); break;
+            case ProgramAimEnum::TMP_WATCHDOG_2:    UI_task_roadmap_control->set_task_header_name(Translator::get(NAME_AUTOPROG) + " #2"); break;
+            case ProgramAimEnum::TMP_WATCHDOG_3:    UI_task_roadmap_control->set_task_header_name(Translator::get(NAME_AUTOPROG) + " #3"); break;
+            case ProgramAimEnum::CHM_MAIN_1:        UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_PARMESAN)); break;
+            case ProgramAimEnum::CHM_MAIN_2:        UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_ADIGEJ)); break;
+            case ProgramAimEnum::CHM_MAIN_3:        UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_TILSIT)); break;
+            case ProgramAimEnum::CHM_TEMPL_1:       UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #1"); break;
+            case ProgramAimEnum::CHM_TEMPL_2:       UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #2"); break;
+            case ProgramAimEnum::CHM_TEMPL_3:       UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #3"); break;
+            case ProgramAimEnum::CHM_TEMPL_4:       UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #4"); break;
+            case ProgramAimEnum::CHM_TEMPL_5:       UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #5"); break;
+            case ProgramAimEnum::CHM_TEMPL_6:       UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #6"); break;
+            case ProgramAimEnum::CHM_TEMPL_7:       UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #7"); break;
             
             default:
                 break;
@@ -168,7 +168,7 @@ void UIService::init_screens()
     {
         UI_program_selector_items.push_back(new UIProgramSelectorItem(
             UI_prog_selector_control,
-            Translator::get("[нет_поддержки_пастера]"),
+            Translator::get(PASTEUR_DOESNT_SUPPORTED),
             [](uint8_t index) { },
             0
         ));
@@ -281,52 +281,52 @@ void UIService::init_settings_user_controls()
 
 void UIService::init_settings_part_datetime()
 {
-    UI_settings_rt = new UIMenuListItem(UI_menu_list_user, Translator::get("[дата_и_время]"));
-    UI_settings_rt->set_page_header(Translator::get("[установить_время]"), 0);
+    UI_settings_rt = new UIMenuListItem(UI_menu_list_user, Translator::get(DATE_TIME));
+    UI_settings_rt->set_page_header(Translator::get(SETTINGS_DATE_TIME), 0);
 
-    UI_setter_hh = new UIValueSetter(UI_settings_rt, 0, 40, 10, 40, true, Translator::get("[час]"));
+    UI_setter_hh = new UIValueSetter(UI_settings_rt, 0, 40, 10, 40, true, Translator::get(HOUR));
     UI_setter_hh->set_extra_button_logic({
         [this]() { *var_rt_setter.ptr() += S_Time(1, 0, 0); var_rt_setter.accept(); },
         [this]() { *var_rt_setter.ptr() -= S_Time(1, 0, 0); var_rt_setter.accept(); },
         []() {}
     });
 
-    UI_setter_mm = new UIValueSetter(UI_settings_rt, 0, 40, 55, 40, true, Translator::get("[мин]"));
+    UI_setter_mm = new UIValueSetter(UI_settings_rt, 0, 40, 55, 40, true, Translator::get(MIN));
     UI_setter_mm->set_extra_button_logic({
         [this]() { *var_rt_setter.ptr() += S_Time(0, 1, 0); var_rt_setter.accept(); },
         [this]() { *var_rt_setter.ptr() -= S_Time(0, 1, 0); var_rt_setter.accept(); },
         []() {}
     });
 
-    UI_setter_ss = new UIValueSetter(UI_settings_rt, 0, 40, 100, 40, true, Translator::get("[сек]"));
+    UI_setter_ss = new UIValueSetter(UI_settings_rt, 0, 40, 100, 40, true, Translator::get(SEC));
     UI_setter_ss->set_extra_button_logic({
         [this]() { *var_rt_setter.ptr() += S_Time(0, 0, 1); var_rt_setter.accept(); },
         [this]() { *var_rt_setter.ptr() -= S_Time(0, 0, 1); var_rt_setter.accept(); },
         []() {}
     });
     
-    UI_setter_dd = new UIValueSetter(UI_settings_rt, 0, 40, 145, 40, true, Translator::get("[день]"));
+    UI_setter_dd = new UIValueSetter(UI_settings_rt, 0, 40, 145, 40, true, Translator::get(DAY));
     UI_setter_dd->set_extra_button_logic({
         [this]() { *var_rt_setter.ptr() += S_Date(1, 0, 0, true); var_rt_setter.accept(); },
         [this]() { *var_rt_setter.ptr() -= S_Date(1, 0, 0, true); var_rt_setter.accept(); },
         []() {}
     });
     
-    UI_setter_MM = new UIValueSetter(UI_settings_rt, 0, 40, 190, 40, true, Translator::get("[мес]"));
+    UI_setter_MM = new UIValueSetter(UI_settings_rt, 0, 40, 190, 40, true, Translator::get(MONTH));
     UI_setter_MM->set_extra_button_logic({
         [this]() { *var_rt_setter.ptr() += S_Date(0, 1, 0, true); var_rt_setter.accept(); },
         [this]() { *var_rt_setter.ptr() -= S_Date(0, 1, 0, true); var_rt_setter.accept(); },
         []() {}
     });
     
-    UI_setter_yyyy = new UIValueSetter(UI_settings_rt, 0, 50, 235, 40, true, Translator::get("[год]"));
+    UI_setter_yyyy = new UIValueSetter(UI_settings_rt, 0, 50, 235, 40, true, Translator::get(YEAR));
     UI_setter_yyyy->set_extra_button_logic({
         [this]() { *var_rt_setter.ptr() += S_Date(0, 0, 1, true); var_rt_setter.accept(); },
         [this]() { *var_rt_setter.ptr() -= S_Date(0, 0, 1, true); var_rt_setter.accept(); },
         []() {}
     });
 
-    UI_rt_setter_accept = new UIValueSetter(UI_settings_rt, 0, 275, 10, 140, false, Translator::get("[применить_ок]"), nullptr, false, true);
+    UI_rt_setter_accept = new UIValueSetter(UI_settings_rt, 0, 275, 10, 140, false, Translator::get(OK_BUTTON), nullptr, false, true);
     UI_rt_setter_accept->set_extra_button_logic({
         []() {},
         []() {},
@@ -352,10 +352,10 @@ void UIService::init_settings_part_datetime()
 
 void UIService::init_settings_part_pump_calibration()
 {
-    UI_settings_pump_calibr = new UIMenuListItem(UI_menu_list_user, Translator::get("[настройки_раздача]"));
-    UI_settings_pump_calibr->set_page_header(Translator::get("[настройки_калибровка]"), 0);
+    UI_settings_pump_calibr = new UIMenuListItem(UI_menu_list_user, Translator::get(SETTINGS_DOSAGE));
+    UI_settings_pump_calibr->set_page_header(Translator::get(SETTINGS_CALIBR), 0);
 
-    UI_setter_pump_calibr_lm = new UIValueSetter(UI_settings_pump_calibr, 0, 120, 90, 80, true, Translator::get("[настройки_доп_л_м]"));
+    UI_setter_pump_calibr_lm = new UIValueSetter(UI_settings_pump_calibr, 0, 120, 90, 80, true, Translator::get(SETTINGS_VAL_L_M));
     UI_setter_pump_calibr_lm->set_extra_button_logic({
         [this]() { *var_blow_pump_calibration_lm.ptr() += 0.1f; var_blow_pump_calibration_lm.accept(); },
         [this]() { *var_blow_pump_calibration_lm.ptr() -= 0.1f; var_blow_pump_calibration_lm.accept(); },
@@ -363,7 +363,7 @@ void UIService::init_settings_part_pump_calibration()
     });
     UI_setter_pump_calibr_lm->add_ui_context_action([this]() {
         static char str_buff[10];
-        sprintf(str_buff, ("%.3f " + Translator::get("[литр_буква]")).c_str(), var_blow_pump_calibration_lm.get());
+        sprintf(str_buff, ("%.3f " + Translator::get(L_LETTER)).c_str(), var_blow_pump_calibration_lm.get());
         UI_setter_pump_calibr_lm->set_value(std::string(str_buff));
     });
 }
@@ -374,15 +374,15 @@ void UIService::init_settings_part_tmpe_templates()
     menu_tmpe_local_start_at = UI_template_menu_items.size();
 
     static vector<std::string> tmpe_templ_menu_items_name = {
-        Translator::get("[задача_пастеризация]"), 
-        Translator::get("[задача_охлаждение]"), 
-        Translator::get("[задача_нагрев]") 
+        Translator::get(TASK_PASTEUR), 
+        Translator::get(TASK_COOLING), 
+        Translator::get(TASK_HEATING) 
     };
 
     static vector<std::string> tmpe_templ_step_name = {
-        Translator::get("[этап_1]"), 
-        Translator::get("[этап_2]"),
-        Translator::get("[этап_3_тмп]")
+        Translator::get(STAGE_1), 
+        Translator::get(STAGE_2),
+        Translator::get(STAGE_3_TMPE)
     };
 
     for (uint8_t i = 0; i < TEMPLATES_COUNT_TMPE; i++)
@@ -391,7 +391,7 @@ void UIService::init_settings_part_tmpe_templates()
             UI_menu_list_user,
             i < tmpe_templ_menu_items_name.size() ?
             tmpe_templ_menu_items_name.at(i) :
-            Translator::get("[задача_авто]") + to_string(i - tmpe_templ_menu_items_name.size() + 1),
+            Translator::get(TASK_AUTOPROG) + to_string(i - tmpe_templ_menu_items_name.size() + 1),
             i == 0
         ));
     }
@@ -402,7 +402,7 @@ void UIService::init_settings_part_tmpe_templates()
     UIValueSetter * setter_durat_ss;
     UIValueSetter * setter_pause_after;
 
-    UI_template_menu_items.at(menu_tmpe_local_start_at)->set_page_header(Translator::get("[настройка_шаблона]"), 0);
+    UI_template_menu_items.at(menu_tmpe_local_start_at)->set_page_header(Translator::get(EDIT_TEMPLATE), 0);
 
     for (uint8_t page = 0; page < 3; page++)
     {
@@ -418,7 +418,7 @@ void UIService::init_settings_part_tmpe_templates()
         UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 50, 185, 40 + (100 * page), page == 0, "", &img_sand_watch));
         setter_durat_ss = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 45, 240, 40 + (100 * page), page == 0, Translator::get("[пауза]"), nullptr, false));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_tmpe_local_start_at), 0, 45, 240, 40 + (100 * page), page == 0, Translator::get(PAUSE), nullptr, false));
         setter_pause_after = UI_template_setters.back();
         
         /* ON/OFF step processing setter */
@@ -433,7 +433,7 @@ void UIService::init_settings_part_tmpe_templates()
         });
         setter_turn_on_off->add_ui_context_action([=]() {
             bool state = prog_tmpe_templates->at(get_template_tmpe_index())->get().get_step(page)->step_is_turned_on;
-            setter_turn_on_off->set_value(state ? Translator::get("[ВКЛ]") : Translator::get("[ВЫКЛ]"));
+            setter_turn_on_off->set_value(state ? Translator::get(ON) : Translator::get(OFF));
         });
 
         /* Async motor RPM setter */
@@ -531,7 +531,7 @@ void UIService::init_settings_part_tmpe_templates()
         });
         setter_pause_after->add_ui_context_action([=]() {
             bool state = prog_tmpe_templates->at(get_template_tmpe_index())->get().get_step(page)->await_ok_button;
-            setter_pause_after->set_value(state ? Translator::get("[да]") : Translator::get("[нет]"));
+            setter_pause_after->set_value(state ? Translator::get(YES) : Translator::get(NO));
         });
     } 
 
@@ -545,19 +545,19 @@ void UIService::init_settings_part_tmpe_wd()
     menu_wd_local_start_at = UI_template_menu_items.size();
 
     for (uint8_t i = 0; i < TEMPLATES_COUNT_WD; i++)
-        UI_template_menu_items.push_back(new UIMenuListItem(UI_menu_list_user, Translator::get("[задача_авто_номер]") + to_string(i + 1), i == 0));
-    UI_template_menu_items.at(menu_wd_local_start_at)->set_page_header(Translator::get("[настройки_будильник]"), 0);
+        UI_template_menu_items.push_back(new UIMenuListItem(UI_menu_list_user, Translator::get(TASK_AUTOPTOG_NUM) + to_string(i + 1), i == 0));
+    UI_template_menu_items.at(menu_wd_local_start_at)->set_page_header(Translator::get(SETTINGS_WATCHDOG), 0);
 
-    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 80, 10, 40, true, Translator::get("[статус_запущено]"), nullptr, false));
+    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 80, 10, 40, true, Translator::get(STATE_RUNNED), nullptr, false));
     UI_setter_wd_turn_on_off = UI_template_setters.back();
     
-    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 40, 95, 40, true, Translator::get("[час]")));
+    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 40, 95, 40, true, Translator::get(HOUR)));
     UI_setter_wd_hh = UI_template_setters.back();
     
-    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 40, 140, 40, true, Translator::get("[мин]")));
+    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 40, 140, 40, true, Translator::get(MIN)));
     UI_setter_wd_mm = UI_template_setters.back();
     
-    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 40, 185, 40, true, Translator::get("[сек]")));
+    UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_wd_local_start_at), 0, 40, 185, 40, true, Translator::get(SEC)));
     UI_setter_wd_ss = UI_template_setters.back();
     
     /* ON/OFF template watchdog (auto startup by time) */
@@ -571,7 +571,7 @@ void UIService::init_settings_part_tmpe_wd()
         }
     });
     UI_setter_wd_turn_on_off->add_ui_context_action([=]() {
-        UI_setter_wd_turn_on_off->set_value(prog_tmpe_templates_wd_state->at(get_template_wd_index())->get().on_off? Translator::get("[да]") : Translator::get("[нет]"));
+        UI_setter_wd_turn_on_off->set_value(prog_tmpe_templates_wd_state->at(get_template_wd_index())->get().on_off? Translator::get(YES) : Translator::get(NO));
     });
 
     /* WD startup hours */
@@ -635,18 +635,18 @@ void UIService::init_settings_part_chm_templates()
     menu_chm_local_start_at = UI_template_menu_items.size();
 
     static vector<std::string> chm_templ_menu_items_name = {
-        Translator::get("[имя_сыр_пармезан]"),
-        Translator::get("[имя_сыр_тильзитский]"),
-        Translator::get("[имя_сыр_адыгейский]")
+        Translator::get(CHZ_PARMESAN),
+        Translator::get(CHZ_TILSIT),
+        Translator::get(CHZ_ADIGEJ)
     };
 
     static vector<std::string> chm_templ_step_name = {
-        Translator::get("[этап_1]"),
-        Translator::get("[этап_2]"),
-        Translator::get("[этап_3_сыр]"),
-        Translator::get("[этап_4]"),
-        Translator::get("[этап_5]"),
-        Translator::get("[этап_6")
+        Translator::get(STAGE_1),
+        Translator::get(STAGE_2),
+        Translator::get(STAGE_3_CHM),
+        Translator::get(STAGE_4),
+        Translator::get(STAGE_5),
+        Translator::get(STAGE_6)
     };
 
     for (uint8_t i = 0; i < TEMPLATES_COUNT_CHM; i++)
@@ -655,7 +655,7 @@ void UIService::init_settings_part_chm_templates()
             UI_menu_list_user,
             i < chm_templ_menu_items_name.size() ?
             chm_templ_menu_items_name.at(i) :
-            Translator::get("[задача_своя]") + to_string(i - chm_templ_menu_items_name.size() + 1),
+            Translator::get(TASK_OWN) + to_string(i - chm_templ_menu_items_name.size() + 1),
             i == 0
         ));
     }
@@ -666,7 +666,7 @@ void UIService::init_settings_part_chm_templates()
     UIValueSetter * setter_durat_ss;
     UIValueSetter * setter_pause_after;
 
-    UI_template_menu_items.at(menu_chm_local_start_at)->set_page_header(Translator::get("[настройка_шаблона]"), 0);
+    UI_template_menu_items.at(menu_chm_local_start_at)->set_page_header(Translator::get(EDIT_TEMPLATE), 0);
 
     for (uint8_t page = 0; page < 6; page++)
     {
@@ -682,7 +682,7 @@ void UIService::init_settings_part_chm_templates()
         UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 50, 185, 40 + (100 * page), page == 0, "", &img_sand_watch));
         setter_durat_ss = UI_template_setters.back();
 
-        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 45, 240, 40 + (100 * page), page == 0, Translator::get("[пауза]"), nullptr, false));
+        UI_template_setters.push_back(new UIValueSetter(UI_template_menu_items.at(menu_chm_local_start_at), 0, 45, 240, 40 + (100 * page), page == 0, Translator::get(PAUSE), nullptr, false));
         setter_pause_after = UI_template_setters.back();
 
         /* ON/OFF step processing setter */
@@ -697,7 +697,7 @@ void UIService::init_settings_part_chm_templates()
         });
         setter_turn_on_off->add_ui_context_action([=]() {
             bool state = prog_chm_templates->at(get_template_chm_index())->get().get_step(page)->step_is_turned_on;
-            setter_turn_on_off->set_value(state ? Translator::get("[ВКЛ]") : Translator::get("[ВЫКЛ]"));
+            setter_turn_on_off->set_value(state ? Translator::get(ON) : Translator::get(OFF));
         });
 
         /* Async motor RPM setter */
@@ -796,7 +796,7 @@ void UIService::init_settings_part_chm_templates()
         });
         setter_pause_after->add_ui_context_action([=]() {
             bool state = prog_chm_templates->at(get_template_chm_index())->get().get_step(page)->await_ok_button;
-            setter_pause_after->set_value(state ? Translator::get("[да]") : Translator::get("[нет]"));
+            setter_pause_after->set_value(state ? Translator::get(YES) : Translator::get(NO));
         });
     } 
 
@@ -879,11 +879,11 @@ void UIService::init_settings_master_controls()
 
     UI_S_M_plc_language = new UIValueSetter(UI_settings_master_machine, true, 40, "язык");
     UI_S_M_plc_language->set_extra_button_logic({
-        [this]() { var_plc_language.set(var_plc_language.get() + 1); },
-        [this]() { var_plc_language.set(var_plc_language.get() - 1); },
+        [this]() { var_plc_language.set(var_plc_language.get() + 1); if (var_plc_language.local() >= UI_LANGUAGE::_END) var_plc_language.set(0); },
+        [this]() { var_plc_language.set(var_plc_language.get() - 1); if (var_plc_language.local() >= UI_LANGUAGE::_END) var_plc_language.set(UI_LANGUAGE::_END - 1); },
         []() {}
     });
-    UI_S_M_plc_language->add_ui_context_action([this]() { UI_S_M_plc_language->set_value(var_plc_language.get()); });
+    UI_S_M_plc_language->add_ui_context_action([this]() { UI_S_M_plc_language->set_value(Translator::get(UI_WORD_KEY::LANG_NAME, var_plc_language.local())); });
 
     UI_S_M_equip_have_wJacket_tempC_sensor = new UIValueSetter(UI_settings_master_machine, false, 40, "датчик t°C в рубашке");
     UI_S_M_equip_have_wJacket_tempC_sensor->set_extra_button_logic({
@@ -1249,9 +1249,9 @@ void UIService::init_settings_master_controls()
 void UIService::init_prog_selector_part_tmpe()
 {
     static vector<std::string> tmpe_templ_menu_items_name = {
-        Translator::get("[задача_пастеризация]"),
-        Translator::get("[задача_охлаждение]"),
-        Translator::get("[задача_нагрев]")
+        Translator::get(TASK_PASTEUR),
+        Translator::get(TASK_COOLING),
+        Translator::get(TASK_HEATING)
     };
 
     for (uint8_t i = 0; i < TEMPLATES_COUNT_TMPE; i++)
@@ -1260,7 +1260,7 @@ void UIService::init_prog_selector_part_tmpe()
             UI_prog_selector_control,
             i < tmpe_templ_menu_items_name.size()
                 ? tmpe_templ_menu_items_name.at(i) :
-                Translator::get("[задача_авто]") + to_string(i - tmpe_templ_menu_items_name.size() + 1),
+                Translator::get(TASK_AUTOPROG) + to_string(i - tmpe_templ_menu_items_name.size() + 1),
             [](uint8_t index) { prog_stasrtup_wd->start_program(EquipmentType::Pasteurizer, index); },
             i
         ));
@@ -1270,9 +1270,9 @@ void UIService::init_prog_selector_part_tmpe()
 void UIService::init_prog_selector_part_chm()
 {
     static vector<std::string> chm_templ_menu_items_name = {
-        Translator::get("[имя_сыр_пармезан]"),
-        Translator::get("[имя_сыр_тильзитский]"),
-        Translator::get("[имя_сыр_адыгейский]"),
+        Translator::get(CHZ_PARMESAN),
+        Translator::get(CHZ_TILSIT),
+        Translator::get(CHZ_ADIGEJ),
     };
 
     for (uint8_t i = 0; i < TEMPLATES_COUNT_CHM; i++)
@@ -1281,7 +1281,7 @@ void UIService::init_prog_selector_part_chm()
             UI_prog_selector_control,
             i < chm_templ_menu_items_name.size()
                 ? chm_templ_menu_items_name.at(i) :
-                Translator::get("[задача_своя]") + to_string(i - chm_templ_menu_items_name.size() + 1),
+                Translator::get(TASK_AUTOPROG) + to_string(i - chm_templ_menu_items_name.size() + 1),
             [](uint8_t index) { prog_stasrtup_wd->start_program(EquipmentType::Cheesemaker, index); },
             i
         ));

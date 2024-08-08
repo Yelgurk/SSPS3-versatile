@@ -25,8 +25,8 @@ static auto& mem_TDS_3 = Storage::allocate<TaskDataStruct>(defaultTaskData);
 static auto& mem_String = Storage::allocate<std::string>("err");
 */
 
-/* 31.2ma => 3378 */
-/* 3.30ma => 362 */
+/* min - 0.046ma    => 0 */
+/* max - 38.13ma    => 4095 */
 
 /* Prog conf defines */
 #define PROG_RUNNED_STEPS_NCT_MAX   24
@@ -36,8 +36,8 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 #define BATT_V_TO_12BIT     79.5f   //69.76744f
 #define MIN_BATT_VOLTAGE    22.8f
 #define MAX_BATT_VOLTAGE    25.0f
-#define MIN_ADC_4ma         432
-#define MAX_ADC_20ma        2162
+#define MIN_ADC_4ma         388
+#define MAX_ADC_20ma        1995
 #define MIN_ADC_TEMPC       -50
 #define MAX_ADC_TEMPC       150
 
@@ -50,7 +50,8 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 #define ALLOC_FREE_at_24_07_2024    4000
 
 /* KEY */
-static const std::string startup_key = string("Maxim Krugley, yelgurk@gmail.com");
+static const std::string prog_rights = string("Maxim Krugley, yelgurk@gmail.com");
+static const uint32_t startup_key = 20001209;
 
 /* Const physical limitations by company */
 #define LIMIT_WATER_BOILING_POINT_TEMPC     90
@@ -66,7 +67,8 @@ struct __attribute__((packed)) AutoProgStates
     {}
 };
 
-extern FRAMObject<std::string>& var_startup_key;
+extern FRAMObject<std::string>& var_rights_key;
+extern FRAMObject<uint32_t>& var_startup_key;
 
 extern FRAMObject<S_DateTime>& var_last_rt;
 

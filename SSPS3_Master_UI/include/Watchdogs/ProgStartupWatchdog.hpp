@@ -303,16 +303,16 @@ public:
                 {
                     switch (step->aim)
                     {
-                    case ProgramStepAimEnum::WATER_JACKET:  ui_step->set_step_name(Translator::get("[этап_набор_воды]")); break;
-                    case ProgramStepAimEnum::PASTEUR:       ui_step->set_step_name(Translator::get("[этап_пастеризация]")); break;
-                    case ProgramStepAimEnum::CHILLING:      ui_step->set_step_name(Translator::get("[этап_охлаждение]")); break;
-                    case ProgramStepAimEnum::CUTTING:       ui_step->set_step_name(Translator::get("[этап_резка]")); break;
-                    case ProgramStepAimEnum::MIXING:        ui_step->set_step_name(Translator::get("[этап_замешивание]")); break;
-                    case ProgramStepAimEnum::HEATING:       ui_step->set_step_name(Translator::get("[этап_нагрев]")); break;
-                    case ProgramStepAimEnum::DRYING:        ui_step->set_step_name(Translator::get("[этап_сушка]")); break;
-                    case ProgramStepAimEnum::EXPOSURE:      ui_step->set_step_name(Translator::get("[этап_выдержка]")); break;
-                    case ProgramStepAimEnum::TO_TEMPERATURE:ui_step->set_step_name(Translator::get("[этап_подгонка]")); break;
-                    case ProgramStepAimEnum::USER_AWAIT:    ui_step->set_step_name(Translator::get("[этап_ожидание]")); break;
+                    case ProgramStepAimEnum::WATER_JACKET:  ui_step->set_step_name(Translator::get(STAGE_WJACKET_FILLING)); break;
+                    case ProgramStepAimEnum::PASTEUR:       ui_step->set_step_name(Translator::get(STAGE_PASTEUR)); break;
+                    case ProgramStepAimEnum::CHILLING:      ui_step->set_step_name(Translator::get(STAGE_COOLING)); break;
+                    case ProgramStepAimEnum::CUTTING:       ui_step->set_step_name(Translator::get(STAGE_CUTTING)); break;
+                    case ProgramStepAimEnum::MIXING:        ui_step->set_step_name(Translator::get(STAGE_MIXING)); break;
+                    case ProgramStepAimEnum::HEATING:       ui_step->set_step_name(Translator::get(STAGE_HEATING)); break;
+                    case ProgramStepAimEnum::DRYING:        ui_step->set_step_name(Translator::get(STAGE_DRYING)); break;
+                    case ProgramStepAimEnum::EXPOSURE:      ui_step->set_step_name(Translator::get(STAGE_EXPOSURE)); break;
+                    case ProgramStepAimEnum::TO_TEMPERATURE:ui_step->set_step_name(Translator::get(STAGE_TO_AIM)); break;
+                    case ProgramStepAimEnum::USER_AWAIT:    ui_step->set_step_name(Translator::get(STAGE_AWAIT_USER)); break;
 
                     default:
                         break;

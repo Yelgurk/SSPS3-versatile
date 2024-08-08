@@ -84,9 +84,7 @@ void read_input_signals(bool digital_only = false, bool is_startup_call = false)
 
     for (index = 0; index < 8; index++)
         OptIn_state[index] = STM32->get(COMM_GET::DGIN, index);
-
-    OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
-
+ 
     if (!digital_only)
     {
         for (index = 0; index < 4; index++)
@@ -100,4 +98,6 @@ void read_input_signals(bool digital_only = false, bool is_startup_call = false)
                 delay(10);
             }
     }
+
+    OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
 }

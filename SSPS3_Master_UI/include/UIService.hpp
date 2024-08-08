@@ -40,7 +40,7 @@
 #define TEMPLATES_COUNT_CHM     10
 
 #if INIT_BUFFER_IN_PSRAM == 0
-    #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 32 / 2    
+    #define SCREEN_BUFFER           (SCREEN_WIDTH * SCREEN_HEIGHT * LV_COLOR_DEPTH) / 16 / 2    
     static uint8_t lv_buff_1[SCREEN_BUFFER];
     static uint8_t lv_buff_2[SCREEN_BUFFER];
 #else

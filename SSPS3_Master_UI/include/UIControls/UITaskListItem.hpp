@@ -166,7 +166,7 @@ public:
         if (is_fan_flex_speed)
             lv_label_set_text(get_container_content("[val1]"), to_string(val_fan).c_str());
         else
-            lv_label_set_text(get_container_content("[val1]"), (val_fan > 0 ? Translator::get("[да]") : Translator::get("[нет]")).c_str());
+            lv_label_set_text(get_container_content("[val1]"), (val_fan > 0 ? Translator::get(YES) : Translator::get(NO)).c_str());
         lv_label_set_text(get_container_content("[val2]"), to_string(val_tempC).c_str());
         lv_label_set_text(get_container_content("[val3]"), val_durat == 0 ? "" : ((val_durat < 0 ? "-" : "") + string(buffer)).c_str());
 

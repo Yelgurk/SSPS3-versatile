@@ -62,7 +62,8 @@ static ProgramControl def_prog_runned_null = ProgramControl();
 static ProgramStep def_prog_runned_step_null = ProgramStep();
 
 // Vars init in FRAM using Storage::allocate
-FRAMObject<std::string>& var_startup_key                        = Storage::allocate<std::string>(startup_key, true, ALLOC_STARTUP_KEY, 40, "plc_startup_key");
+FRAMObject<std::string>& var_rights_key                         = Storage::allocate<std::string>(prog_rights, true, ALLOC_STARTUP_KEY, 40, "plc_startup_key");
+FRAMObject<uint32_t>& var_startup_key                           = Storage::allocate<uint32_t>(startup_key, true);
 
 // last rtc clock
 FRAMObject<S_DateTime>& var_last_rt                             = Storage::allocate<S_DateTime>(S_DateTime(), true, ALLOC_SYS_VAR_BEGIN);
