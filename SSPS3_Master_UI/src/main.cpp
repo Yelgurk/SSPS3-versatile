@@ -282,21 +282,26 @@ void setup_task_manager()
             async_motor_wd      ->set_async_motor_speed(to_do.fan);
 
             if (to_do.must_be_cooled)
+            {
                 chilling_wd     ->set_aim(to_do.tempC, filter_tempC_product->get_physical_value());
+                heating_wd      ->set_aim(0, 0);
+            }
             else
+            {
                 chilling_wd     ->set_aim(0, 0);
-
-            if (var_equip_have_wJacket_tempC_sensor.get())
-                heating_wd      ->set_aim(
-                    to_do.must_be_cooled ? min(to_do.tempC, (uint8_t)(to_do.tempC - 5)) : to_do.tempC,
-                    filter_tempC_product->get_physical_value(),
-                    filter_tempC_wJacket->get_physical_value()
-                );
-            else
-                heating_wd      ->set_aim(
-                    to_do.must_be_cooled ? min(to_do.tempC, (uint8_t)(to_do.tempC - 5)) : to_do.tempC,
-                    filter_tempC_product->get_physical_value()
-                );
+                
+                if (var_equip_have_wJacket_tempC_sensor.get())
+                    heating_wd      ->set_aim(
+                        min(to_do.tempC, (uint8_t)(to_do.tempC - 2)),
+                        filter_tempC_product->get_physical_value(),
+                        filter_tempC_wJacket->get_physical_value()
+                    );
+                else
+                    heating_wd  ->set_aim(
+                        min(to_do.tempC, (uint8_t)(to_do.tempC - 2)),
+                        filter_tempC_product->get_physical_value()
+                    );
+            }
         }
         else
         {
