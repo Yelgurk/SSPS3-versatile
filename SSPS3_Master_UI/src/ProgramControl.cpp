@@ -1,5 +1,7 @@
 #include "../include/ProgramControl.hpp"
 
+ProgramStep prev_step;
+
 double ProgramControl::get_prog_percentage()
 {
     int32_t aim_ss = 0,
@@ -56,8 +58,8 @@ uint32_t ProgramControl::sum_gone_ss()
     return total_gone_ss;
 }
 
-ProgramStep ProgramControl::get_prev_step() {
-    return prev_step;
+ProgramStep * ProgramControl::get_prev_step() {
+    return &prev_step;
 }
 
 ProgramStep ProgramControl::do_task(bool first_call_after_startup)

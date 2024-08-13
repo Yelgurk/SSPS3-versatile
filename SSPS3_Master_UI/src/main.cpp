@@ -276,9 +276,10 @@ void setup_task_manager()
 
     rt_task_manager.add_task("task_do_programm", []() {
         ProgramStep to_do = prog_runned.ptr()->do_task(prog_wd_first_call);
-        ProgramStep prev_step = prog_runned.ptr()->get_prev_step();
         prog_runned.accept();
         prog_wd_first_call = false;
+
+        ProgramStep prev_step = *prog_runned.ptr()->get_prev_step();
         
         if (to_do.step_is_turned_on)
         {
