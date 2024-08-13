@@ -89,7 +89,7 @@ public:
 
         uint8_t step_index = 0;
 
-        add_new_task_step(step_index++, ProgramStepAimEnum::WATER_JACKET, 0, 0, 0, true, false, false);
+        add_new_task_step(step_index++, ProgramStepAimEnum::WATER_JACKET, 1, 0, 0, true, false, false);
 
         bool is_pasteur_prog =
             equipment_type == EquipmentType::Pasteurizer ||

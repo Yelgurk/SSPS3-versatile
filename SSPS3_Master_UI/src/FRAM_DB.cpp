@@ -1,20 +1,20 @@
 #include "FRAM_DB.hpp"
 
 static TMPEProgramTemplate def_prog_tmpe_full = TMPEProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,    20, 85, 180, 0, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::CHILLING,   30, 40, 120, 0, 1, 0, 1),
-    ProgramStep(ProgramStepAimEnum::HEATING,    10, 60, 60,  0, 1, 0, 1)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,    20, 65, 1800, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING,   30, 42, 0,    0, 1, 0, 1),
+    ProgramStep(ProgramStepAimEnum::HEATING,    10, 42, 60,   0, 1, 0, 0)
 );
 
 static TMPEProgramTemplate def_prog_tmpe_heating = TMPEProgramTemplate(
     ProgramStep(ProgramStepAimEnum::PASTEUR,    0,  0,  0,   0, 0, 0, 0),
     ProgramStep(ProgramStepAimEnum::CHILLING,   0,  0,  0,   0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::HEATING,    10, 60, 60,  0, 1, 0, 1)
+    ProgramStep(ProgramStepAimEnum::HEATING,    10, 42, 0,   0, 1, 1, 1)
 );
 
 static TMPEProgramTemplate def_prog_tmpe_chilling = TMPEProgramTemplate(
     ProgramStep(ProgramStepAimEnum::PASTEUR,    0,  0,  0,   0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CHILLING,   30, 40, 120, 0, 1, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING,   30, 42, 0,   0, 1, 0, 1),
     ProgramStep(ProgramStepAimEnum::HEATING,    0,  0,  0,   0, 0, 0, 0)
 );
 
