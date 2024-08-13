@@ -114,6 +114,8 @@ extern FilterValue                        * filter_tempC_product;
 extern uint8_t                              OptIn_state[8];
 extern boolean                              Pressed_key_accept_for_prog;
 
+static ProgramStep                          prev_step;
+
 struct __attribute__((packed)) ProgramControl
 {
     ProgramAimEnum aim;
@@ -183,6 +185,7 @@ struct __attribute__((packed)) ProgramControl
 
     double get_prog_percentage();
     uint32_t sum_gone_ss();
+    ProgramStep get_prev_step();
     ProgramStep do_task(bool first_call_after_startup = false);
     ProgramStep start_task(ProgramAimEnum aim, uint16_t limit_ss_max_await_on_pause = 3600);
     

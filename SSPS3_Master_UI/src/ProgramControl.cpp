@@ -56,6 +56,10 @@ uint32_t ProgramControl::sum_gone_ss()
     return total_gone_ss;
 }
 
+ProgramStep ProgramControl::get_prev_step() {
+    return prev_step;
+}
+
 ProgramStep ProgramControl::do_task(bool first_call_after_startup)
 {
     if (!this->is_runned)
@@ -109,6 +113,7 @@ ProgramStep ProgramControl::do_task(bool first_call_after_startup)
 
                 if (_step_next.state == StepStateEnum::AWAIT)
                 {
+                    prev_step = prog_runned_steps->at(i <= 0 ? 0 : i - 1)->get();
                     prog_active_step.set(i);
                     prog_next_step.set(i + 1);
                     break;

@@ -29,8 +29,8 @@ bool h12Flag;
 bool pmFlag;
 
 /* Filters */
-ExponentialSmoothing exp_filter_tempC_product(0.1);
-ExponentialSmoothing exp_filter_tempC_wJacket(0.1);
+ExponentialSmoothing exp_filter_tempC_product(0.075);
+ExponentialSmoothing exp_filter_tempC_wJacket(0.075);
 ExponentialSmoothing exp_filter_24v_batt(0.02);
 
 /* Task manager */
@@ -76,7 +76,7 @@ void IRAM_ATTR interrupt_action() {
     interrupted_by_slave = true;
 }
 
-void read_input_signals(bool digital_only = false, bool is_startup_call = false)
+void read_digital_signals()
 {
     static uint8_t index = 0;
 
@@ -84,20 +84,22 @@ void read_input_signals(bool digital_only = false, bool is_startup_call = false)
 
     for (index = 0; index < 8; index++)
         OptIn_state[index] = STM32->get(COMM_GET::DGIN, index);
- 
-    if (!digital_only)
-    {
-        for (index = 0; index < 4; index++)
-            AnIn_state[index] = STM32->get(COMM_GET::ANIN, index);
-
-        if (is_startup_call)
-            for (uint8_t call = 0; call < 10; call++)
-            {
-                exp_filter_tempC_product.add_value(STM32->get(COMM_GET::ANIN, ADC_TEMPC_PRODUCT));
-                exp_filter_tempC_wJacket.add_value(STM32->get(COMM_GET::ANIN, ADC_TEMPC_WJACKET));
-                delay(10);
-            }
-    }
 
     OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
+}
+
+void read_analog_signals(bool is_startup_call = false)
+{
+    static uint8_t index = 0;
+
+    for (index = 0; index < 4; index++)
+        AnIn_state[index] = STM32->get(COMM_GET::ANIN, index);
+
+    if (is_startup_call)
+        for (uint8_t call = 0; call < 10; call++)
+        {
+            exp_filter_tempC_product.add_value(STM32->get(COMM_GET::ANIN, ADC_TEMPC_PRODUCT));
+            exp_filter_tempC_wJacket.add_value(STM32->get(COMM_GET::ANIN, ADC_TEMPC_WJACKET));
+            delay(10);
+        }
 }

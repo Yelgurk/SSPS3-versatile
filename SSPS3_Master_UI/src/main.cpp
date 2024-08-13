@@ -75,7 +75,8 @@ void setup()
     setup_task_manager();
     setup_watchdogs();
 
-    read_input_signals(false, true);
+    read_digital_signals();
+    read_analog_signals(true);
     rt_task_manager.execute_task("task_do_programm");
 
     dt_rt->get_rt();
@@ -88,7 +89,7 @@ void loop()
     if (interrupted_by_slave)
     {
         interrupted_by_slave = false;
-        read_input_signals();
+        read_digital_signals();
 
         UI_service->UI_notification_bar->key_press(Pressed_key);
         UI_manager->handle_key_press(Pressed_key);
@@ -229,10 +230,11 @@ void setup_controllers()
 void setup_task_manager()
 {
     rt_task_manager.add_task("task_update_filters", [](){
+        read_analog_signals();
         filter_tempC_product->add_value(AnIn_state[ADC_TEMPC_PRODUCT]);
         filter_tempC_wJacket->add_value(AnIn_state[ADC_TEMPC_WJACKET]);
         filter_24v_batt     ->add_value(AnIn_state[ADC_VOLTAGE_BATT]);
-    }, 1000);
+    }, 100);
     
     rt_task_manager.add_task("task_update_UI_state_bar", [](){
         UI_service->UI_machine_state_bar->control_set_values_state_bar(
@@ -274,6 +276,7 @@ void setup_task_manager()
 
     rt_task_manager.add_task("task_do_programm", []() {
         ProgramStep to_do = prog_runned.ptr()->do_task(prog_wd_first_call);
+        ProgramStep prev_step = prog_runned.ptr()->get_prev_step();
         prog_runned.accept();
         prog_wd_first_call = false;
         
@@ -285,6 +288,26 @@ void setup_task_manager()
             {
                 chilling_wd     ->set_aim(to_do.tempC, filter_tempC_product->get_physical_value());
                 heating_wd      ->set_aim(0, 0);
+            }
+            else if (
+                (to_do.aim == ProgramStepAimEnum::EXPOSURE
+                && prev_step.aim == ProgramStepAimEnum::HEATING)
+                || var_type_of_equipment_enum.local() == EquipmentType::Cheesemaker
+            )
+            {
+                chilling_wd     ->set_aim(to_do.tempC + 5, filter_tempC_product->get_physical_value());
+                
+                if (var_equip_have_wJacket_tempC_sensor.get())
+                    heating_wd      ->set_aim(
+                        min(to_do.tempC, (uint8_t)(to_do.tempC - 3)),
+                        filter_tempC_product->get_physical_value(),
+                        filter_tempC_wJacket->get_physical_value()
+                    );
+                else
+                    heating_wd  ->set_aim(
+                        min(to_do.tempC, (uint8_t)(to_do.tempC - 2)),
+                        filter_tempC_product->get_physical_value()
+                    );
             }
             else
             {
