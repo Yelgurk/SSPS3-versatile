@@ -172,7 +172,9 @@ public:
                         add_new_task_step(
                             step_index++,
                             ProgramStepAimEnum::USER_AWAIT,
-                            0,
+                            (is_pasteur_prog && _prep_step == ProgramStepAimEnum::HEATING && _main_step == ProgramStepAimEnum::EXPOSURE)
+                                ? source->fan
+                                : 0,
                             source->tempC,
                             0,
                             false,
