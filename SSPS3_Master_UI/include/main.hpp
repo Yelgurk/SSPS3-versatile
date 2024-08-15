@@ -85,7 +85,7 @@ void read_digital_signals()
     for (index = 0; index < 8; index++)
         OptIn_state[index] = STM32->get(COMM_GET::DGIN, index);
 
-    //OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
+    OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
 }
 
 void read_analog_signals(bool is_startup_call = false)
