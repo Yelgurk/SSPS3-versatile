@@ -19,13 +19,18 @@
 #define LCD_RS    20
 #define LCD_BL    9
 
+#define LCD_TYPE_V 1
+
 class LGFX : public lgfx::LGFX_Device
 {
 //lgfx::Panel_ILI9481     _panel_instance;
 //lgfx::Panel_ILI9486     _panel_instance;
 
-//lgfx::Panel_ILI9488     _panel_instance;
-lgfx::Panel_ST7796      _panel_instance;
+#if LCD_TYPE_V == 0
+  lgfx::Panel_ILI9488     _panel_instance;
+#elif LCD_TYPE_V == 1
+  lgfx::Panel_ST7796      _panel_instance;
+#endif
 
 //lgfx::Panel_ST7789      _panel_instance;
 
@@ -69,10 +74,16 @@ public:
       cfg.pin_busy        = -1;
       cfg.offset_rotation = 3;
       cfg.readable        = false;
-      cfg.invert          = true;
-      cfg.rgb_order       = false;
       cfg.dlen_16bit      = false;
       cfg.bus_shared      = false;
+
+#if LCD_TYPE_V == 0
+      cfg.invert          = false;
+      cfg.rgb_order       = false;
+#elif LCD_TYPE_V == 1
+      cfg.invert          = true;
+      cfg.rgb_order       = false;
+#endif
 
       _panel_instance.config(cfg);
     }

@@ -86,6 +86,7 @@ void read_digital_signals()
         OptIn_state[index] = STM32->get(COMM_GET::DGIN, index);
 
     OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
+
 }
 
 void read_analog_signals(bool is_startup_call = false)
@@ -100,6 +101,7 @@ void read_analog_signals(bool is_startup_call = false)
         {
             exp_filter_tempC_product.add_value(STM32->get(COMM_GET::ANIN, ADC_TEMPC_PRODUCT));
             exp_filter_tempC_wJacket.add_value(STM32->get(COMM_GET::ANIN, ADC_TEMPC_WJACKET));
+            
             delay(10);
         }
 }

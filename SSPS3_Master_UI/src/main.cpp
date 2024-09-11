@@ -281,7 +281,7 @@ void setup_task_manager()
 
         ProgramStep prev_step = *prog_runned.ptr()->get_prev_step();
         
-        if (to_do.step_is_turned_on)
+        if (to_do.step_is_turned_on && to_do.aim != ProgramStepAimEnum::WATER_JACKET)
         {
             async_motor_wd      ->set_async_motor_speed(to_do.fan);
 
@@ -326,6 +326,11 @@ void setup_task_manager()
                         filter_tempC_product->get_physical_value()
                     );
             }
+        }
+        else if (to_do.step_is_turned_on && to_do.aim == ProgramStepAimEnum::WATER_JACKET)
+        {
+            async_motor_wd  ->set_async_motor_speed(to_do.fan);
+            chilling_wd     ->set_water_intake();
         }
         else
         {
