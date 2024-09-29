@@ -98,18 +98,18 @@ void loop()
         {
             Pressed_key_accept_for_prog = Pressed_key == static_cast<uint8_t>(KeyMap::LEFT_BOT);
 
-            if (OptIn_state[DIN_ASYNC_M_ERROR])
+            if (OptIn_state[DIN_ASYNC_M_ERROR] || OptIn_state[DIN_STOP_SENS])
             {
-                prog_runned.ptr()->end_task_by_user();
-                prog_runned.accept();
-                UI_service->UI_notification_bar->push_info(SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN);
-            }
+                heating_wd->emergency_stop();
 
-            if (OptIn_state[DIN_STOP_SENS])
-            {
                 prog_runned.ptr()->end_task_by_user();
                 prog_runned.accept();
-                UI_service->UI_notification_bar->push_info(SystemNotification::INFO_TASK_CANCELED_BY_USER);
+
+                UI_service->UI_notification_bar->push_info(
+                    OptIn_state[DIN_ASYNC_M_ERROR] ?
+                    SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN :
+                    SystemNotification::INFO_TASK_CANCELED_BY_USER /* like if OptIn_state[DIN_STOP_SENS] is 1*/
+                );
             }
         }
 
@@ -234,7 +234,7 @@ void setup_task_manager()
         filter_tempC_product->add_value(AnIn_state[ADC_TEMPC_PRODUCT]);
         filter_tempC_wJacket->add_value(AnIn_state[ADC_TEMPC_WJACKET]);
         filter_24v_batt     ->add_value(AnIn_state[ADC_VOLTAGE_BATT]);
-    }, 100);
+    }, 300);
     
     rt_task_manager.add_task("task_update_UI_state_bar", [](){
         UI_service->UI_machine_state_bar->control_set_values_state_bar(

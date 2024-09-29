@@ -37,6 +37,12 @@ public:
         current_state = wJacket_tempC >= wJacket_max_tempC ? false : (product_tempC < needed_temp);
     }
 
+    void emergency_stop()
+    {
+        turn_heaters(current_state = false);
+        last_control_time_ms = millis();
+    }
+
     void do_control()
     {
         uint32_t current_time_ms = millis();

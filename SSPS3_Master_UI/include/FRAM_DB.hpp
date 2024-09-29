@@ -36,10 +36,12 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 #define BATT_V_TO_12BIT     79.5f   //69.76744f
 #define MIN_BATT_VOLTAGE    22.8f
 #define MAX_BATT_VOLTAGE    25.0f
-#define MIN_ADC_4ma         388
-#define MAX_ADC_20ma        1995
-#define MIN_ADC_TEMPC       -50
-#define MAX_ADC_TEMPC       150
+#define MIN_ADC_TEMPC       -50.f
+#define MAX_ADC_TEMPC       150.f
+//#define MIN_ADC_4ma         388
+//#define MAX_ADC_20ma        1995
+#define MIN_ADC_4ma         396.f
+#define MAX_ADC_20ma        1966.f
 
 /* FRAM addr */
 #define ALLOC_STARTUP_KEY           0

@@ -29,8 +29,8 @@ bool h12Flag;
 bool pmFlag;
 
 /* Filters */
-ExponentialSmoothing exp_filter_tempC_product(0.075);
-ExponentialSmoothing exp_filter_tempC_wJacket(0.075);
+ExponentialSmoothing exp_filter_tempC_product(0.025);
+ExponentialSmoothing exp_filter_tempC_wJacket(0.025);
 ExponentialSmoothing exp_filter_24v_batt(0.02);
 
 /* Task manager */
@@ -83,10 +83,11 @@ void read_digital_signals()
     Pressed_key = STM32->get_kb();
 
     for (index = 0; index < 8; index++)
+    {
         OptIn_state[index] = STM32->get(COMM_GET::DGIN, index);
+    }
 
     OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
-
 }
 
 void read_analog_signals(bool is_startup_call = false)
