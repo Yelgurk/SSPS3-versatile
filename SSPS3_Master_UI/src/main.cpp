@@ -231,10 +231,10 @@ void setup_task_manager()
 {
     rt_task_manager.add_task("task_update_filters", [](){
         read_analog_signals();
-        filter_tempC_product->add_value(AnIn_state[ADC_TEMPC_PRODUCT]);
-        filter_tempC_wJacket->add_value(AnIn_state[ADC_TEMPC_WJACKET]);
+        //filter_tempC_product->add_value(AnIn_state[ADC_TEMPC_PRODUCT]);
+        //filter_tempC_wJacket->add_value(AnIn_state[ADC_TEMPC_WJACKET]);
         filter_24v_batt     ->add_value(AnIn_state[ADC_VOLTAGE_BATT]);
-    }, 300);
+    }, 100);
     
     rt_task_manager.add_task("task_update_UI_state_bar", [](){
         UI_service->UI_machine_state_bar->control_set_values_state_bar(
@@ -287,42 +287,40 @@ void setup_task_manager()
 
             if (to_do.must_be_cooled)
             {
-                chilling_wd     ->set_aim(to_do.tempC, filter_tempC_product->get_physical_value());
+                chilling_wd     ->set_aim(to_do.tempC + 0, filter_tempC_product->get_physical_value());
                 heating_wd      ->set_aim(0, 0);
-            }
-            else if (
-                (to_do.aim == ProgramStepAimEnum::EXPOSURE
-                && prev_step.aim == ProgramStepAimEnum::HEATING)
-                || var_type_of_equipment_enum.local() == EquipmentType::Cheesemaker
-            )
-            {
-                chilling_wd     ->set_aim(to_do.tempC + 5, filter_tempC_product->get_physical_value());
-                
-                if (var_equip_have_wJacket_tempC_sensor.get())
-                    heating_wd      ->set_aim(
-                        min(to_do.tempC, (uint8_t)(to_do.tempC - 3)),
-                        filter_tempC_product->get_physical_value(),
-                        filter_tempC_wJacket->get_physical_value()
-                    );
-                else
-                    heating_wd  ->set_aim(
-                        min(to_do.tempC, (uint8_t)(to_do.tempC - 2)),
-                        filter_tempC_product->get_physical_value()
-                    );
             }
             else
             {
-                chilling_wd     ->set_aim(0, 0);
+                if ((to_do.aim == ProgramStepAimEnum::EXPOSURE && prev_step.aim == ProgramStepAimEnum::HEATING)
+                    || var_type_of_equipment_enum.local() == EquipmentType::Cheesemaker)
+                {
+                    if (var_equip_have_wJacket_tempC_sensor.get())
+                        chilling_wd ->set_aim(
+                            to_do.tempC + 2,
+                            filter_tempC_product->get_physical_value(),
+                            filter_tempC_wJacket->get_physical_value()
+                        );
+                    else
+                        chilling_wd ->set_aim(
+                            to_do.tempC + 2,
+                            filter_tempC_product->get_physical_value()
+                        );
+                }
+                else
+                {
+                    chilling_wd     ->set_aim(0, 0);
+                }
                 
                 if (var_equip_have_wJacket_tempC_sensor.get())
                     heating_wd      ->set_aim(
-                        min(to_do.tempC, (uint8_t)(to_do.tempC - 2)),
+                        to_do.tempC,
                         filter_tempC_product->get_physical_value(),
                         filter_tempC_wJacket->get_physical_value()
                     );
                 else
                     heating_wd  ->set_aim(
-                        min(to_do.tempC, (uint8_t)(to_do.tempC - 2)),
+                        min(to_do.tempC, (uint8_t)(to_do.tempC - 1)),
                         filter_tempC_product->get_physical_value()
                     );
             }

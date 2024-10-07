@@ -41,9 +41,13 @@ public:
         expected_state = true;
     }
 
+    void set_aim(double needed_temp, double product_tempC, double wJacket_tempC)
+    {
+        expected_state = ((product_tempC + wJacket_tempC) / 2) > needed_temp;
+    }
+
     void set_aim(double needed_temp, double current_temp)
     {
-        is_water_intake = false;
         expected_state = current_temp > needed_temp;
     }
 

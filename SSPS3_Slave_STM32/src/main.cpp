@@ -65,7 +65,7 @@ void setup()
         pinMode(pin, INPUT_PULLDOWN);
 
     for(uint8_t pin : Adc)
-        pinMode(pin, INPUT_PULLDOWN);
+        pinMode(pin, INPUT_ANALOG);
 
     itcw = new TwoWire(SDA, SCL);
     I2C = new I2C_Service(itcw, STM_I2C_ADR, set_event, get_event);

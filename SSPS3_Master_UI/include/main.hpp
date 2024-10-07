@@ -29,8 +29,8 @@ bool h12Flag;
 bool pmFlag;
 
 /* Filters */
-ExponentialSmoothing exp_filter_tempC_product(0.025);
-ExponentialSmoothing exp_filter_tempC_wJacket(0.025);
+ExponentialSmoothing exp_filter_tempC_product(0.06);
+ExponentialSmoothing exp_filter_tempC_wJacket(0.06);
 ExponentialSmoothing exp_filter_24v_batt(0.02);
 
 /* Task manager */
@@ -80,22 +80,30 @@ void read_digital_signals()
 {
     static uint8_t index = 0;
 
+
+    static uint8_t old = 123;
     Pressed_key = STM32->get_kb();
 
+    //if (old != Pressed_key)
+    //    Serial.println(Pressed_key);
+    //old = Pressed_key;
+
     for (index = 0; index < 8; index++)
-    {
         OptIn_state[index] = STM32->get(COMM_GET::DGIN, index);
-    }
 
     OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
 }
 
+void read_tempC_sensors(bool is_startup_call = false);
 void read_analog_signals(bool is_startup_call = false)
 {
     static uint8_t index = 0;
 
     for (index = 0; index < 4; index++)
-        AnIn_state[index] = STM32->get(COMM_GET::ANIN, index);
+        if (is_startup_call || (index != ADC_TEMPC_PRODUCT && index != ADC_TEMPC_WJACKET))
+            AnIn_state[index] = STM32->get(COMM_GET::ANIN, index);
+
+    read_tempC_sensors(is_startup_call);
 
     if (is_startup_call)
         for (uint8_t call = 0; call < 10; call++)
@@ -105,4 +113,48 @@ void read_analog_signals(bool is_startup_call = false)
             
             delay(10);
         }
+}
+
+void read_tempC_sensors(bool is_startup_call)
+{
+    static uint8_t      index = 0;
+    static uint16_t     tempC_product_val[9] = { 0 },
+                        tempC_wJacket_val[9] = { 0 };
+    static uint16_t     tempC_product_val_filtered = is_startup_call ? AnIn_state[ADC_TEMPC_PRODUCT] : tempC_product_val_filtered,
+                        tempC_wJacket_val_filtered = is_startup_call ? AnIn_state[ADC_TEMPC_WJACKET] : tempC_wJacket_val_filtered;
+
+    tempC_product_val[index = index >= 9 ? 0 : index]
+        = STM32->get(COMM_GET::ANIN, ADC_TEMPC_PRODUCT);
+
+    tempC_wJacket_val[index++]
+        = STM32->get(COMM_GET::ANIN, ADC_TEMPC_WJACKET);
+
+    if (index >= 9)
+    {
+        std::sort(tempC_product_val, tempC_product_val + 9);
+        std::sort(tempC_wJacket_val, tempC_wJacket_val + 9);
+
+        AnIn_state[ADC_TEMPC_PRODUCT] = (tempC_product_val[3] + tempC_product_val[4] + tempC_product_val[5]) / 3 - 0;
+        AnIn_state[ADC_TEMPC_WJACKET] = (tempC_wJacket_val[3] + tempC_wJacket_val[4] + tempC_wJacket_val[5]) / 3 - 6;
+
+        exp_filter_tempC_product.add_value(AnIn_state[ADC_TEMPC_PRODUCT]);
+        exp_filter_tempC_wJacket.add_value(AnIn_state[ADC_TEMPC_WJACKET]);
+    }
+
+    if (false)
+    {
+    Serial.print("s1: ");
+    Serial.print(AnIn_state[ADC_TEMPC_PRODUCT]);
+    Serial.print(" => ");
+    Serial.print(filter_tempC_product->get_physical_value());
+    Serial.println(" *c;");
+    
+    Serial.print("s2: ");
+    Serial.print(AnIn_state[ADC_TEMPC_WJACKET]);
+    Serial.print(" => ");
+    Serial.print(filter_tempC_wJacket->get_physical_value());
+    Serial.println(" *c;");
+
+    Serial.println("");
+    }
 }
