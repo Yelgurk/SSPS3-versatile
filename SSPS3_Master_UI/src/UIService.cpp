@@ -761,7 +761,7 @@ void UIService::init_settings_part_chm_templates()
                 templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
                     0,
                     var_prog_any_step_max_durat_ss.get(),
-                    templ->get_step(page)->duration_ss += 5
+                    templ->get_step(page)->duration_ss += 10
                 ) ;
                 prog_chm_templates->at(get_template_chm_index())->accept();
             },
@@ -770,7 +770,7 @@ void UIService::init_settings_part_chm_templates()
                 templ->get_step(page)->duration_ss = ValueComparator<uint32_t>::calc(
                     0,
                     var_prog_any_step_max_durat_ss.get(),
-                    templ->get_step(page)->duration_ss -= 5
+                    templ->get_step(page)->duration_ss -= 10
                 ) ;
                 prog_chm_templates->at(get_template_chm_index())->accept();
             },
@@ -1169,8 +1169,8 @@ void UIService::init_settings_master_controls()
 
     UI_S_M_prog_any_step_max_durat_ss = new UIValueSetter(UI_settings_master_limits_prog, false, 40, "Этап прогр.\nmax длит.", nullptr, &OpenSans_bold_14px);
     UI_S_M_prog_any_step_max_durat_ss->set_extra_button_logic({
-        [this]() { var_prog_any_step_max_durat_ss.set(var_prog_any_step_max_durat_ss.get() + 5); },
-        [this]() { var_prog_any_step_max_durat_ss.set(var_prog_any_step_max_durat_ss.get() - 5); },
+        [this]() { var_prog_any_step_max_durat_ss.set(var_prog_any_step_max_durat_ss.get() + 10); },
+        [this]() { var_prog_any_step_max_durat_ss.set(var_prog_any_step_max_durat_ss.get() - 10); },
         []() {}
     });
     UI_S_M_prog_any_step_max_durat_ss->add_ui_context_action([this]() {

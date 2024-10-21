@@ -92,7 +92,7 @@ private:
         lv_clear_states(get_container_content("[context_icon]"));
         lv_clear_states(get_container());
 
-        static _lv_state_t obj_state;
+        static lv_state_t obj_state;
         switch (selector)
         {
         case NotifyIconEnum::OK: {
