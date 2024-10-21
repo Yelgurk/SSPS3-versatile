@@ -164,7 +164,8 @@ public:
                             source->tempC,
                             source->duration_ss,
                             false,
-                            source->aim == ProgramStepAimEnum::CHILLING,
+                            false, //_main_step == ProgramStepAimEnum::CHILLING,
+                            //source->aim == ProgramStepAimEnum::CHILLING,
                             false
                         );
 

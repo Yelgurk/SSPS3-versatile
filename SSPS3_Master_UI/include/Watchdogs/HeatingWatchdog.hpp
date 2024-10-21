@@ -34,7 +34,10 @@ public:
     }
 
     void set_aim(double needed_temp, double product_tempC, double wJacket_tempC) {
-        current_state = wJacket_tempC >= wJacket_max_tempC ? false : (product_tempC < needed_temp);
+        current_state = wJacket_tempC >= wJacket_max_tempC
+        ? false
+        : ((product_tempC + wJacket_tempC) / 2) < needed_temp;
+        //: (product_tempC < needed_temp);
     }
 
     void emergency_stop()

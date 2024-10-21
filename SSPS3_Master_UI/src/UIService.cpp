@@ -92,11 +92,13 @@ void UIService::init_screens()
             }),
             KeyModel(KeyMap::L_STACK_1, [this]()
             {
+                /*
                 prog_runned.ptr()->end_task_by_user();
                 prog_runned.accept();
 
                 UI_task_roadmap_control->update_ui_context();
                 UI_task_roadmap_control->update_task_steps_state();
+                */
             }),
             KeyModel(KeyMap::LEFT_TOP, [this]()
             {

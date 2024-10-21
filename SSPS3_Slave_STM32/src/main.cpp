@@ -1,9 +1,16 @@
 #include "../include/main.hpp"
 
-bool is_key_press = false;
+#if KeyPadVersion == 1
+    bool is_key_press = false;
+#endif
+
+bool is_key_first_call_done = false;
 bool is_key_press_rel_await = false;
+uint8_t key_feedback = KB_Await;
+
 uint8_t get_pressed_key()
 {
+#if KeyPadVersion == 1
     if (KeyPressed >= KB_Size && KeyPressed < KB_Await)
         is_key_press_rel_await = false;
 
@@ -14,6 +21,25 @@ uint8_t get_pressed_key()
     }
     else
         return KB_Await;
+#elif KeyPadVersion == 2
+    key_feedback = KeyPressed;
+
+    if (key_feedback < KB_Size)
+        is_key_first_call_done = true;
+    
+    if (!is_key_first_call_done && key_feedback >= KB_Size && key_feedback < KB_Await)
+        return (key_feedback = KeyPressed = KB_Await);
+
+    if (is_key_press_rel_await || (key_feedback >= KB_Size && key_feedback < KB_Await))
+    {
+        is_key_press_rel_await = false;
+        is_key_first_call_done = false;
+        KeyPressed = KB_Await;
+        return key_feedback;
+    }
+    
+    return key_feedback;
+#endif
 }
 
 void set_event(I2C_COMM command, uint8_t pin, uint16_t value)
@@ -67,6 +93,16 @@ void setup()
     for(uint8_t pin : Adc)
         pinMode(pin, INPUT_ANALOG);
 
+#if KeyPadVersion == 2
+    for (uint8_t pin : KB_col_pin)
+        pinMode(pin, OUTPUT);
+
+    for (uint8_t pin : KB_row_pin)
+        pinMode(pin, INPUT_PULLUP);
+
+    myKeypad.setDebounce(80);
+#endif
+
     itcw = new TwoWire(SDA, SCL);
     I2C = new I2C_Service(itcw, STM_I2C_ADR, set_event, get_event);
 }
@@ -99,6 +135,7 @@ void loop()
     if (changed > 0)
         CHANGE_INT_SIGNAL();
 
+#if KeyPadVersion == 1
     if (!is_key_press_rel_await && kpd.getKeys())
         for (int i = 0; i < LIST_MAX; i++)
             if (kpd.key[i].stateChanged)
@@ -120,14 +157,47 @@ void loop()
                         CHANGE_INT_SIGNAL();
                     }; break;
                 }
+#elif KeyPadVersion == 2
+    KeyNew = myKeypad.getKeyWithDebounce();
+    KeyNew = KeyNew == 0 ? KB_Await : KeyNew - 1;
 
-    if ((KeyPressed < KB_Size) && millis() >= KeyHoldNext)
+    if (KeyNew != KB_Await)
+    {
+        if (KeyPressed == KB_Await)
+        {
+            KeyHoldNext = millis() + (KeyHoldDelay = HOLD_begin_ms);
+
+            KeyPressed = KeyNew;
+            CHANGE_INT_SIGNAL();
+        }
+        else if (KeyPressed < KB_Size && KeyPressed != KeyNew)
+        {
+            KeyHoldDelay = HOLD_begin_ms;
+
+            KeyPressed = KeyPressed + KB_Size;
+            is_key_press_rel_await = true;
+            CHANGE_INT_SIGNAL();
+        }
+    }
+    else if (KeyPressed < KB_Size)
+    {
+        KeyHoldDelay = HOLD_begin_ms;
+
+        KeyPressed = KeyPressed + KB_Size;
+        is_key_press_rel_await = true;
+        CHANGE_INT_SIGNAL();
+    }
+#endif
+
+    if (is_key_first_call_done && KeyPressed < KB_Size && KeyPressed == KeyNew && millis() >= KeyHoldNext)
     {
         KeyHoldDelay /= HOLD_x;
         KeyHoldDelay = KeyHoldDelay < HOLD_min_ms ? HOLD_min_ms : KeyHoldDelay;
         
         KeyHoldNext = millis() + KeyHoldDelay;
+#if KeyPadVersion == 1
         is_key_press = true;
+#endif
         CHANGE_INT_SIGNAL();
     }
 }

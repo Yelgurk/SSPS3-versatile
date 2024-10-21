@@ -56,7 +56,7 @@ static const std::string prog_rights = string("Maxim Krugley, yelgurk@gmail.com"
 static const uint32_t startup_key = 20001209;
 
 /* Const physical limitations by company */
-#define LIMIT_WATER_BOILING_POINT_TEMPC     90
+#define LIMIT_WATER_BOILING_POINT_TEMPC     95
 
 struct __attribute__((packed)) AutoProgStates
 {

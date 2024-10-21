@@ -1,7 +1,45 @@
+#define KeyPadVersion   2
+
 #include <Arduino.h>
-#include <Keypad.h>
 #include <algorithm>
 #include "./I2C_Service.hpp"
+
+/* Keypad 4x4 var's */
+#define KB_Row                      4
+#define KB_Col                      4
+#define KB_Size                     (KB_Row * KB_Col)           
+#define KB_Await                    (KB_Row * KB_Col) * 2
+#define HOLD_begin_ms               1000
+#define HOLD_x                      1.2
+#define HOLD_min_ms                 50
+
+uint8_t KB_row_pin[KB_Row] = {PB11, PB13, PA9, PA11};
+uint8_t KB_col_pin[KB_Col] = {PC7, PC9, PB14, PC6};
+uint8_t KeyNew = KB_Await;
+uint8_t KeyPressed = KB_Await;
+uint16_t KeyHoldDelay = HOLD_begin_ms;
+uint64_t KeyHoldNext = 0;
+
+#if KeyPadVersion == 1
+    #include <Keypad.h>
+
+    char keysInline[KB_Row * KB_Col] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'};
+
+    char keys[KB_Row][KB_Col] = {
+        {'A', 'B', 'C', 'D'},
+        {'E', 'F', 'G', 'H'},
+        {'I', 'J', 'K', 'L'},
+        {'M', 'N', 'O', 'P'}
+    }; 
+
+    Keypad kpd = Keypad(makeKeymap(keys), KB_row_pin, KB_col_pin, KB_Row, KB_Col);
+#elif KeyPadVersion == 2
+    #include "KeyPad4495.hpp"
+
+    char keysInline[KB_Row * KB_Col] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+
+    Keypad4495 myKeypad(keysInline, KB_row_pin, KB_col_pin, KB_Row, KB_Col);
+#endif
 
 TwoWire * itcw;
 I2C_Service * I2C;
@@ -19,30 +57,6 @@ I2C_Service * I2C;
 //#define IS_MASTER_INTERRUPTED       digitalRead(INT)
 #define CHANGE_INT_SIGNAL()         digitalWrite(INT, !static_cast<bool>(digitalRead(INT)))
 
-/* Keypad 4x4 var's */
-#define KB_Row                      4
-#define KB_Col                      4
-#define KB_Size                     (KB_Row * KB_Col)           
-#define KB_Await                    (KB_Row * KB_Col) * 2
-#define HOLD_begin_ms               1000
-#define HOLD_x                      1.2
-#define HOLD_min_ms                 50
-
-char keys[KB_Row][KB_Col] = {
-    {'A', 'B', 'C', 'D'},
-    {'E', 'F', 'G', 'H'},
-    {'I', 'J', 'K', 'L'},
-    {'M', 'N', 'O', 'P'}
-};
-const char keysInline[KB_Row * KB_Col] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'}; 
-uint8_t KeyPressed = KB_Await;
-uint16_t KeyHoldDelay = HOLD_begin_ms;
-uint64_t KeyHoldNext = 0;
-
-uint8_t KB_row_pin[KB_Row] = {PB11, PB13, PA9, PA11};
-uint8_t KB_col_pin[KB_Col] = {PC7, PC9, PB14, PC6};
-
-Keypad kpd = Keypad(makeKeymap(keys), KB_row_pin, KB_col_pin, KB_Row, KB_Col);
 String kbMsg = "";
 
 /* I/O defines and arr var's based on defines */

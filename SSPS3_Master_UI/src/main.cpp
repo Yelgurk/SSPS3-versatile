@@ -94,6 +94,18 @@ void loop()
         UI_service->UI_notification_bar->key_press(Pressed_key);
         UI_manager->handle_key_press(Pressed_key);
 
+        if (!prog_runned.local().is_runned && UI_manager->is_current_control(ScreenType::PROGRAM_SELECTOR))
+        {
+            switch (static_cast<KeyMap>(Pressed_key))
+            {
+            case KeyMap::L_STACK_4: prog_stasrtup_wd->start_program(var_type_of_equipment_enum.local(), 0); break ;
+            case KeyMap::L_STACK_3: prog_stasrtup_wd->start_program(var_type_of_equipment_enum.local(), 1); break ;
+            case KeyMap::L_STACK_2: prog_stasrtup_wd->start_program(var_type_of_equipment_enum.local(), 2); break ;
+            default:
+                break;
+            }
+        }
+
         if (prog_runned.local().is_runned)
         {
             Pressed_key_accept_for_prog = Pressed_key == static_cast<uint8_t>(KeyMap::LEFT_BOT);
@@ -110,18 +122,6 @@ void loop()
                     SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN :
                     SystemNotification::INFO_TASK_CANCELED_BY_USER /* like if OptIn_state[DIN_STOP_SENS] is 1*/
                 );
-            }
-        }
-
-        if (!prog_runned.local().is_runned && UI_manager->is_current_control(ScreenType::PROGRAM_SELECTOR))
-        {
-            switch (static_cast<KeyMap>(Pressed_key))
-            {
-            case KeyMap::L_STACK_4: prog_stasrtup_wd->start_program(var_type_of_equipment_enum.local(), 0); break ;
-            case KeyMap::L_STACK_3: prog_stasrtup_wd->start_program(var_type_of_equipment_enum.local(), 1); break ;
-            case KeyMap::L_STACK_2: prog_stasrtup_wd->start_program(var_type_of_equipment_enum.local(), 2); break ;
-            default:
-                break;
             }
         }
 
@@ -279,6 +279,8 @@ void setup_task_manager()
         prog_runned.accept();
         prog_wd_first_call = false;
 
+        //Serial.println("*task*");
+
         ProgramStep prev_step = *prog_runned.ptr()->get_prev_step();
         
         if (to_do.step_is_turned_on && to_do.aim != ProgramStepAimEnum::WATER_JACKET)
@@ -287,14 +289,20 @@ void setup_task_manager()
 
             if (to_do.must_be_cooled)
             {
-                chilling_wd     ->set_aim(to_do.tempC + 0, filter_tempC_product->get_physical_value());
+                //Serial.println("*chilling step*");
+
+                chilling_wd     ->set_aim(to_do.tempC, filter_tempC_product->get_physical_value());
                 heating_wd      ->set_aim(0, 0);
             }
             else
             {
-                if ((to_do.aim == ProgramStepAimEnum::EXPOSURE && prev_step.aim == ProgramStepAimEnum::HEATING)
-                    || var_type_of_equipment_enum.local() == EquipmentType::Cheesemaker)
+                //Serial.println("*main step*");
+
+                /*
+                if ((to_do.aim == ProgramStepAimEnum::EXPOSURE && prev_step.aim == ProgramStepAimEnum::CHILLING))
+                    //|| var_type_of_equipment_enum.local() == EquipmentType::Cheesemaker)
                 {
+                    
                     if (var_equip_have_wJacket_tempC_sensor.get())
                         chilling_wd ->set_aim(
                             to_do.tempC + 2,
@@ -302,19 +310,30 @@ void setup_task_manager()
                             filter_tempC_wJacket->get_physical_value()
                         );
                     else
-                        chilling_wd ->set_aim(
-                            to_do.tempC + 2,
-                            filter_tempC_product->get_physical_value()
-                        );
+                    
+
+                   Serial.println("*chilling exposure subtask*");
+
+                    chilling_wd ->set_aim(
+                        to_do.tempC + 1,
+                        filter_tempC_product->get_physical_value()
+                    );
                 }
                 else
                 {
+                    
+                    Serial.println("*without chilling*");
                     chilling_wd     ->set_aim(0, 0);
                 }
+                */
+
+                //Serial.println("*without chilling*");
+                chilling_wd     ->set_aim(0, 0);
                 
+                //Serial.println("*heating exposure subtask*");
                 if (var_equip_have_wJacket_tempC_sensor.get())
                     heating_wd      ->set_aim(
-                        to_do.tempC,
+                        to_do.tempC + 1,
                         filter_tempC_product->get_physical_value(),
                         filter_tempC_wJacket->get_physical_value()
                     );
@@ -327,16 +346,20 @@ void setup_task_manager()
         }
         else if (to_do.step_is_turned_on && to_do.aim == ProgramStepAimEnum::WATER_JACKET)
         {
+            //Serial.println("*water jacket step*");
             async_motor_wd  ->set_async_motor_speed(to_do.fan);
             chilling_wd     ->set_water_intake();
         }
         else
         {
+            //Serial.println("*awaiting*");
             async_motor_wd  ->set_async_motor_speed(0);
             chilling_wd     ->set_aim(0, 0);
             heating_wd      ->set_aim(0, 0);
         }
         
+        //Serial.println("");
+
         wJacket_drain_wd    ->water_in_jacket(
             OptIn_state[DIN_WJACKET_SENS],
             prog_runned.local().is_runned,

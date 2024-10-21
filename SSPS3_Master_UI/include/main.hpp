@@ -80,7 +80,6 @@ void read_digital_signals()
 {
     static uint8_t index = 0;
 
-
     static uint8_t old = 123;
     Pressed_key = STM32->get_kb();
 
@@ -93,6 +92,11 @@ void read_digital_signals()
 
     OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
 }
+
+static uint16_t     offset_1    = 63,
+                    offset_2    = 163;
+static uint16_t     result_1    = 0,
+                    result_2    = 0;
 
 void read_tempC_sensors(bool is_startup_call = false);
 void read_analog_signals(bool is_startup_call = false)
@@ -108,8 +112,11 @@ void read_analog_signals(bool is_startup_call = false)
     if (is_startup_call)
         for (uint8_t call = 0; call < 10; call++)
         {
-            exp_filter_tempC_product.add_value(STM32->get(COMM_GET::ANIN, ADC_TEMPC_PRODUCT));
-            exp_filter_tempC_wJacket.add_value(STM32->get(COMM_GET::ANIN, ADC_TEMPC_WJACKET));
+            result_1 = STM32->get(COMM_GET::ANIN, ADC_TEMPC_PRODUCT);
+            result_2 = STM32->get(COMM_GET::ANIN, ADC_TEMPC_WJACKET);
+
+            exp_filter_tempC_product.add_value(result_1 >= offset_1 ? result_1 - offset_1 : result_1);
+            exp_filter_tempC_wJacket.add_value(result_2 >= result_2 ? result_2 - offset_2 : result_2);
             
             delay(10);
         }
@@ -123,11 +130,14 @@ void read_tempC_sensors(bool is_startup_call)
     static uint16_t     tempC_product_val_filtered = is_startup_call ? AnIn_state[ADC_TEMPC_PRODUCT] : tempC_product_val_filtered,
                         tempC_wJacket_val_filtered = is_startup_call ? AnIn_state[ADC_TEMPC_WJACKET] : tempC_wJacket_val_filtered;
 
+    result_1 = STM32->get(COMM_GET::ANIN, ADC_TEMPC_PRODUCT);
+    result_2 = STM32->get(COMM_GET::ANIN, ADC_TEMPC_WJACKET);
+
     tempC_product_val[index = index >= 9 ? 0 : index]
-        = STM32->get(COMM_GET::ANIN, ADC_TEMPC_PRODUCT);
+        = result_1 >= offset_1 ? result_1 - offset_1 : result_1;
 
     tempC_wJacket_val[index++]
-        = STM32->get(COMM_GET::ANIN, ADC_TEMPC_WJACKET);
+        = result_2 >= result_2 ? result_2 - offset_2 : result_2;
 
     if (index >= 9)
     {
@@ -139,22 +149,22 @@ void read_tempC_sensors(bool is_startup_call)
 
         exp_filter_tempC_product.add_value(AnIn_state[ADC_TEMPC_PRODUCT]);
         exp_filter_tempC_wJacket.add_value(AnIn_state[ADC_TEMPC_WJACKET]);
-    }
 
-    if (false)
-    {
-    Serial.print("s1: ");
-    Serial.print(AnIn_state[ADC_TEMPC_PRODUCT]);
-    Serial.print(" => ");
-    Serial.print(filter_tempC_product->get_physical_value());
-    Serial.println(" *c;");
+        if (false)
+        {
+        Serial.print("s1: ");
+        Serial.print(AnIn_state[ADC_TEMPC_PRODUCT]);
+        Serial.print(" => ");
+        Serial.print(filter_tempC_product->get_physical_value());
+        Serial.println(" *c;");
     
-    Serial.print("s2: ");
-    Serial.print(AnIn_state[ADC_TEMPC_WJACKET]);
-    Serial.print(" => ");
-    Serial.print(filter_tempC_wJacket->get_physical_value());
-    Serial.println(" *c;");
+        Serial.print("s2: ");
+        Serial.print(AnIn_state[ADC_TEMPC_WJACKET]);
+        Serial.print(" => ");
+        Serial.print(filter_tempC_wJacket->get_physical_value());
+        Serial.println(" *c;");
 
-    Serial.println("");
+        Serial.println("");
+        }
     }
 }
