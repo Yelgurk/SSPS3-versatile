@@ -48,6 +48,11 @@ void setup()
     itcw    ->begin(SDA, SCL, 400000);
     STM32   = new STM32_slave(STM_I2C_ADDR);
 
+    var_sensor_tempC_limit_4ma_12bit        .set_is_system_val();
+    var_sensor_tempC_limit_20ma_12bit       .set_is_system_val();
+    var_sensor_tempC_limit_4ma_degrees_C    .set_is_system_val();
+    var_sensor_tempC_limit_20ma_degrees_C   .set_is_system_val();
+
     if (var_startup_key.get() != startup_key)
         Storage::reset_all(true);
 

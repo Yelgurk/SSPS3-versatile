@@ -93,8 +93,8 @@ void read_digital_signals()
     OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
 }
 
-static uint16_t     offset_1    = 63,
-                    offset_2    = 163;
+static uint16_t     offset_1    = 0,
+                    offset_2    = 0;
 static uint16_t     result_1    = 0,
                     result_2    = 0;
 

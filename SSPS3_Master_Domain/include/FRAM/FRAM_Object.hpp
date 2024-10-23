@@ -18,6 +18,7 @@ class FRAMObjectBase
 {
 protected:
     bool is_resetable = true;
+    bool is_system_val = false;
 
 public:
     virtual ~FRAMObjectBase() = default;
@@ -30,8 +31,16 @@ public:
         is_resetable = state;
     }
 
+    void set_is_system_val(bool state = true) {
+        is_system_val = state;
+    }
+
     bool get_is_resetable() {
         return is_resetable;
+    }
+
+    bool get_is_system_val() {
+        return is_system_val;
     }
 };
 

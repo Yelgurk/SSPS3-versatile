@@ -100,7 +100,7 @@ void setup()
     for (uint8_t pin : KB_row_pin)
         pinMode(pin, INPUT_PULLUP);
 
-    myKeypad.setDebounce(80);
+    myKeypad.setDebounce(100);
 #endif
 
     itcw = new TwoWire(SDA, SCL);

@@ -66,8 +66,8 @@ public:
     static void reset_all(bool hard_reset = false)
     {
         for (auto& pair : addressMap)
-            if (pair.second->get_is_resetable() || hard_reset)
-                pair.second->reset();
+            if (!pair.second->get_is_system_val() && (pair.second->get_is_resetable() || hard_reset))
+                    pair.second->reset();
     }
 
     static void print_list_of_addr()
