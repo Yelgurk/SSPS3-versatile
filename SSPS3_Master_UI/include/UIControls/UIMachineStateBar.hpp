@@ -33,6 +33,8 @@ public:
         { StyleActivator::Shadow }
     }
     {
+
+#ifndef SSPS3_IS_CHEAP_SOLUTION_YES
         bar_height = height;
 
         lv_obj_set_width(get_container(), width);
@@ -59,10 +61,22 @@ public:
         );
 
         control_set_values_state_bar(30, true, 85, 85, true, WaterJacketStateEnum::EMPTY, 101, ChargeStateEnum::ERROR);
+#else
+        bar_height = height;
+
+        lv_obj_set_width(get_container(), 85);
+        lv_obj_set_height(get_container(), height);
+        lv_obj_align(get_container(), align, offset_x, offset_y);
+        lv_obj_remove_flag(get_container(), LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_set_style_clip_corner(get_container(), true, 0);
+
+        create_state_bar(get_container(), 65, 10, "tempC", Translator::get(BAR_TEMPC_MILK), &img_tempC);
+#endif
     }
 
     void control_set_values_state_bar(int16_t fan, bool is_fan_flex_speed, int16_t tempC, int16_t tempC_wJ, bool is_wJ_sensor, WaterJacketStateEnum water_jacket_state, int16_t charge_value, ChargeStateEnum charge_state)
     {
+#ifndef SSPS3_IS_CHEAP_SOLUTION_YES
         static char buffer[20];
         charge_value = charge_value < 0 ? 0 : (charge_value > 100 ? 100 : charge_value);
 
@@ -129,6 +143,7 @@ public:
             lv_bar_set_value(bar_ptr, 100, LV_ANIM_OFF);
             }; break;
         }
+#endif
     }
 
 private:
