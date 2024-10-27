@@ -171,7 +171,7 @@ public:
 
     /* master, page - 1 */
     UIValueSetter * UI_S_M_type_of_equipment_enum;
-    UIValueSetter * UI_S_M_is_blowgun_by_rf;       
+    UIValueSetter * UI_S_M_stop_btn_type;       
     UIValueSetter * UI_S_M_is_asyncM_rpm_float;
     UIValueSetter * UI_S_M_plc_language;
     UIValueSetter * UI_S_M_equip_have_wJacket_tempC_sensor;

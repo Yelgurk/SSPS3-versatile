@@ -56,6 +56,8 @@ void setup()
     if (var_startup_key.get() != startup_key)
         Storage::reset_all(true);
 
+    var_stop_btn_type.get();
+
     Translator::set_lang(var_plc_language.get());
 
     rtc     = new DS3231(*itcw);

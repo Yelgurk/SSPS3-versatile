@@ -855,16 +855,16 @@ void UIService::init_settings_master_controls()
         UI_S_M_type_of_equipment_enum->set_value(equipment_name);
     });
 
-    UI_S_M_is_blowgun_by_rf = new UIValueSetter(UI_settings_master_machine, false, 40, "пистолет");
-    UI_S_M_is_blowgun_by_rf->set_extra_button_logic({
-        [this]() { var_is_blowgun_by_rf.set(var_is_blowgun_by_rf.get() - 1); },
-        [this]() { var_is_blowgun_by_rf.set(var_is_blowgun_by_rf.get() - 1); },
+    UI_S_M_stop_btn_type = new UIValueSetter(UI_settings_master_machine, false, 40, "STOP-гриб");
+    UI_S_M_stop_btn_type->set_extra_button_logic({
+        [this]() { var_stop_btn_type.set(var_stop_btn_type.get() - 1); },
+        [this]() { var_stop_btn_type.set(var_stop_btn_type.get() - 1); },
         []() {}
     });
-    UI_S_M_is_blowgun_by_rf->add_ui_context_action([this]() { UI_S_M_is_blowgun_by_rf->set_value(
-        var_is_blowgun_by_rf.get()
-        ? "радио"
-        : "кнопка"    
+    UI_S_M_stop_btn_type->add_ui_context_action([this]() { UI_S_M_stop_btn_type->set_value(
+        var_stop_btn_type.get()
+        ? "инверс."
+        : "норм."    
     ); });
 
     UI_S_M_is_asyncM_rpm_float = new UIValueSetter(UI_settings_master_machine, false, 40, "частотник");
@@ -1206,7 +1206,7 @@ void UIService::init_settings_master_controls()
 
     /* master, page - 1 */
     UI_S_M_type_of_equipment_enum               ->set_position(0, 10, 40, 85);       
-    UI_S_M_is_blowgun_by_rf                     ->set_position(0, 102, 40, 85);       
+    UI_S_M_stop_btn_type                        ->set_position(0, 102, 40, 85);       
     UI_S_M_is_asyncM_rpm_float                  ->set_position(0, 195, 40, 85);
     UI_S_M_plc_language                         ->set_position(0, 10, 140, 85);   
     UI_S_M_equip_have_wJacket_tempC_sensor      ->set_position(0, 105, 140, 175);   

@@ -90,7 +90,8 @@ void read_digital_signals()
     for (index = 0; index < 8; index++)
         OptIn_state[index] = STM32->get(COMM_GET::DGIN, index);
 
-    OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
+    if (var_stop_btn_type.local())
+        OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
 }
 
 static uint16_t     offset_1    = 0,
