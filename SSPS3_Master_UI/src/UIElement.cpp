@@ -51,15 +51,23 @@ UIElement::UIElement(
     gui_set_default_style(this->container);
     gui_set_transp_and_hide_style(this->container);
     
+#ifndef SSPS3_IS_CHEAP_SOLUTION_YES
     if (exists_in_the_collection(&styles_activator, StyleActivator::Rectangle))
         gui_set_rect_style(this->container);
-    
+#else
+    gui_set_rect_style(this->container);
+#endif
+
     if (exists_in_the_collection(&styles_activator, StyleActivator::Unscrollable))
         gui_set_unscrollable(this->container);
-    
+
+#ifndef SSPS3_IS_CHEAP_SOLUTION_YES
     if (exists_in_the_collection(&styles_activator, StyleActivator::Shadow))
         gui_set_shadow_style(this->container);
-    
+#else
+    lv_obj_set_style_shadow_opa(this->container, 0, LV_STATE_DEFAULT);
+#endif
+
     if (exists_in_the_collection(&styles_activator, StyleActivator::Focus))
         gui_set_focus_style(this->container);
     

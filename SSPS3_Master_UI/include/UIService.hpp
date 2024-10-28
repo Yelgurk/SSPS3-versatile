@@ -10,6 +10,7 @@
 #include "UIElement.hpp"
 #include "UIControls/UIBlowingControl.hpp"
 #include "UIControls/UIBlowValListItem.hpp"
+#include "UIControls/UICheapRoadmap.hpp"
 #include "UIControls/UIDateTime.hpp"
 #include "UIControls/UIMachineStateBar.hpp"
 #include "UIControls/UIMenuList.hpp"
@@ -128,6 +129,8 @@ public:
     UINotificationBar * UI_notification_bar;
     UIProgramSelectorControl * UI_prog_selector_control;
     UITaskRoadmapList * UI_task_roadmap_control;
+    UICheapRoadmap * UI_cheap_roadmap_control;
+    
     UIBlowingControl * UI_blowing_control;
 
     /* Prog and blowing buff lists */

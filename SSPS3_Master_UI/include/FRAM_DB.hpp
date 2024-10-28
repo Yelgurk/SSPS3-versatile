@@ -58,6 +58,8 @@ static const uint32_t startup_key = 20001209;
 /* Const physical limitations by company */
 #define LIMIT_WATER_BOILING_POINT_TEMPC     95
 
+#define TIME_X_SS   ((16 * 7 * 12) * (60 * 60))
+
 struct __attribute__((packed)) AutoProgStates
 {
     bool on_off;
@@ -173,6 +175,8 @@ extern FRAMObject<ProgramStep>& prog_runned_step_21;
 extern FRAMObject<ProgramStep>& prog_runned_step_22;
 extern FRAMObject<ProgramStep>& prog_runned_step_23;
 extern FRAMObject<ProgramStep>& prog_runned_step_24;
+
+extern FRAMObject<uint32_t>& prod_time_x_cnt;
 
 extern vector<FRAMObject<TMPEProgramTemplate>*>     *prog_tmpe_templates;
 extern vector<FRAMObject<S_Time>*>                  *prog_tmpe_templates_wd_time;

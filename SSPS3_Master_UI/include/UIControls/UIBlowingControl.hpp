@@ -44,7 +44,12 @@ public:
 
         /* BLOWING VAL SELECTOR CONTAINER */
         lv_obj_t * blow_val_list_container = lv_obj_create(get_container());
+        
+#ifndef SSPS3_IS_CHEAP_SOLUTION_YES
         accept_cascade(blow_val_list_container, 210, 155);
+#else
+        accept_cascade(blow_val_list_container, 210, 135);
+#endif
 
         lv_obj_t * blow_selector_header =  lv_label_create(blow_val_list_container);
         lv_obj_set_style_text_font(blow_selector_header, &OpenSans_bold_20px, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -86,6 +91,11 @@ public:
         lv_obj_set_style_text_font(blow_process_label, &OpenSans_bold_24px, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_align(blow_process_label, LV_ALIGN_CENTER, 0, 0);
 
+#ifdef SSPS3_IS_CHEAP_SOLUTION_YES
+        lv_obj_add_flag(blow_state_presenter, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(support_container, LV_OBJ_FLAG_HIDDEN);
+#endif
+
         remember_child_element("[blow_proc_bar]", blow_state_indicator);
         remember_child_element("[blow_proc_var]", blow_process_label);
         remember_child_element("[blow_selector]", blow_val_list);
@@ -124,20 +134,24 @@ private:
     {
         lv_obj_clear_flag(container, LV_OBJ_FLAG_SCROLLABLE);
         lv_obj_set_style_pad_all(container, 0, 0);
-        lv_obj_set_style_radius(container, 10, 0);
         lv_obj_set_style_bg_color(container, COLOR_WHITE, 0);
         lv_obj_set_style_clip_corner(container, true, 0);
         lv_obj_set_height(container, 240);
         lv_obj_set_width(container, width);
         lv_obj_align(container, LV_ALIGN_TOP_LEFT, offset_x + 10, 0);
-
         lv_obj_set_style_border_width(container, 0, 0);
+
+#ifndef SSPS3_IS_CHEAP_SOLUTION_YES
+        lv_obj_set_style_radius(container, 10, 0);
         lv_obj_set_style_shadow_color(container, lv_color_hex(0x9B9B9B), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_opa(container, 100, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_width(container, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_spread(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_offset_x(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_offset_y(container, 4, LV_PART_MAIN | LV_STATE_DEFAULT);
+#else
+        lv_obj_set_style_radius(container, 0, 0);
+#endif
     }
 
     void create_support_icons(lv_obj_t * parent, const void* image_src, int16_t offset_x, int16_t offset_y, uint8_t scale = 160)

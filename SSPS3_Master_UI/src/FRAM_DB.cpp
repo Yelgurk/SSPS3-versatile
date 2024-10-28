@@ -176,6 +176,9 @@ FRAMObject<ProgramStep>& prog_runned_step_22                    = Storage::alloc
 FRAMObject<ProgramStep>& prog_runned_step_23                    = Storage::allocate<ProgramStep>(def_prog_runned_step_null);
 FRAMObject<ProgramStep>& prog_runned_step_24                    = Storage::allocate<ProgramStep>(def_prog_runned_step_null);
 
+// time x func
+FRAMObject<uint32_t>& prod_time_x_cnt                           = Storage::allocate<uint32_t>(0, false);
+
 vector<FRAMObject<TMPEProgramTemplate>*> * prog_tmpe_templates = new vector<FRAMObject<TMPEProgramTemplate>*>{
     &prog_tmpe_main,
     &prog_tmpe_cooling,

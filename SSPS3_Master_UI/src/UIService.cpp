@@ -30,7 +30,11 @@ UIService::UIService()
 
     screen = lv_obj_create(NULL);
     lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
+#ifndef SSPS3_IS_CHEAP_SOLUTION_YES
     lv_obj_set_style_bg_color(screen, COLOR_WHITE_SMOKE, LV_PART_MAIN | LV_STATE_DEFAULT);
+#else
+    lv_obj_set_style_bg_color(screen, COLOR_WHITE, LV_PART_MAIN | LV_STATE_DEFAULT);
+#endif
     lv_obj_set_width(screen, SCREEN_WIDTH);
     lv_obj_set_height(screen, SCREEN_HEIGHT);
 
@@ -50,6 +54,7 @@ UIService::UIService()
     this->init_screens();
     this->UI_prog_selector_control->hide_ui_hierarchy();
     this->UI_task_roadmap_control->hide_ui_hierarchy();
+    this->UI_cheap_roadmap_control->hide_ui_hierarchy();
     this->UI_blowing_control->hide_ui_hierarchy();
     this->UI_menu_list_user->hide_ui_hierarchy();
     this->UI_menu_list_master->hide_ui_hierarchy();
@@ -64,6 +69,7 @@ void UIService::init_screens()
     UI_notification_bar     = new UINotificationBar(this->screen);
 
     /* task roadmap controls init */
+
     UI_task_roadmap_control = new UITaskRoadmapList(
         {
             KeyModel(KeyMap::TOP, [this]()
@@ -143,6 +149,75 @@ void UIService::init_screens()
                     prog_runned.get().get_prog_percentage(),
                     prog_runned.get().gone_ss,
                     prog_runned.get().state
+                );
+        }
+    );
+
+    /* cheap task roadmap control */
+    UI_cheap_roadmap_control = new UICheapRoadmap(
+        {
+            KeyModel(KeyMap::RIGHT_TOP, [this]() { UI_manager->set_control(ScreenType::MENU_USER); }),
+            KeyModel(KeyMap::RIGHT_BOT, [this]()
+            {
+                prog_runned.ptr()->pause_task();
+                prog_runned.accept();
+
+                UI_cheap_roadmap_control->update_ui_context();
+            }),
+            KeyModel(KeyMap::L_STACK_1, [this]()
+            {
+                prog_runned.ptr()->end_task_by_user();
+                prog_runned.accept();
+
+                UI_cheap_roadmap_control->update_ui_context();
+            }),
+            KeyModel(KeyMap::LEFT_TOP, [this]()
+            {
+                if (!prog_runned.local().is_runned)
+                    UI_manager->set_control(ScreenType::PROGRAM_SELECTOR);
+            })
+        },
+        this->screen
+    );
+
+    UI_cheap_roadmap_control->add_ui_base_action([this]() {
+        if (prog_runned.get().state != TaskStateEnum::AWAIT)
+        {
+            switch (prog_runned.get().aim)
+            {
+            case ProgramAimEnum::TMP_PASTEUR:       UI_cheap_roadmap_control->set_task_header_name(Translator::get(NAME_PASTEUR)); break;
+            case ProgramAimEnum::TMP_HEAT:          UI_cheap_roadmap_control->set_task_header_name(Translator::get(NAME_HEATING)); break;
+            case ProgramAimEnum::TMP_CHILL:         UI_cheap_roadmap_control->set_task_header_name(Translator::get(NAME_COOLING)); break;
+            case ProgramAimEnum::TMP_WATCHDOG_1:    UI_cheap_roadmap_control->set_task_header_name(Translator::get(NAME_AUTOPROG) + " #1"); break;
+            case ProgramAimEnum::TMP_WATCHDOG_2:    UI_cheap_roadmap_control->set_task_header_name(Translator::get(NAME_AUTOPROG) + " #2"); break;
+            case ProgramAimEnum::TMP_WATCHDOG_3:    UI_cheap_roadmap_control->set_task_header_name(Translator::get(NAME_AUTOPROG) + " #3"); break;
+            case ProgramAimEnum::CHM_MAIN_1:        UI_cheap_roadmap_control->set_task_header_name(Translator::get(CHZ_PARMESAN)); break;
+            case ProgramAimEnum::CHM_MAIN_2:        UI_cheap_roadmap_control->set_task_header_name(Translator::get(CHZ_ADIGEJ)); break;
+            case ProgramAimEnum::CHM_MAIN_3:        UI_cheap_roadmap_control->set_task_header_name(Translator::get(CHZ_TILSIT)); break;
+            case ProgramAimEnum::CHM_TEMPL_1:       UI_cheap_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #1"); break;
+            case ProgramAimEnum::CHM_TEMPL_2:       UI_cheap_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #2"); break;
+            case ProgramAimEnum::CHM_TEMPL_3:       UI_cheap_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #3"); break;
+            case ProgramAimEnum::CHM_TEMPL_4:       UI_cheap_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #4"); break;
+            case ProgramAimEnum::CHM_TEMPL_5:       UI_cheap_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #5"); break;
+            case ProgramAimEnum::CHM_TEMPL_6:       UI_cheap_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #6"); break;
+            case ProgramAimEnum::CHM_TEMPL_7:       UI_cheap_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #7"); break;
+            
+            default:
+                break;
+            }
+        }
+    });
+
+    UI_cheap_roadmap_control->add_ui_context_action(
+        [this]()
+        {
+            if (prog_runned.get().state != TaskStateEnum::AWAIT)
+                UI_cheap_roadmap_control->set_task_state_values(
+                    prog_runned.get().get_prog_percentage(),
+                    prog_runned.get().gone_ss,
+                    prog_runned.get().is_runned && prog_runned.local().on_pause_by_user
+                        ? CheapTaskStateEnum::PAUSE
+                        : (CheapTaskStateEnum)prog_runned.local().state
                 );
         }
     );

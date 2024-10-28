@@ -32,7 +32,7 @@ boolean     Pressed_key_accept_for_prog = false;
 void blowing_proc(bool pistol_trigger);
 void rtc_recovery_by_FRAM();
 void setup_filters();
-void setup_UI();
+bool setup_UI(bool is_x = false);
 void setup_controllers();
 void setup_task_manager();
 void setup_watchdogs();
@@ -48,16 +48,32 @@ void setup()
     itcw    ->begin(SDA, SCL, 400000);
     STM32   = new STM32_slave(STM_I2C_ADDR);
 
+    if (var_startup_key.get() != startup_key)
+        Storage::reset_all(true);
+
+    prod_time_x_cnt                         .set_is_system_val();
     var_stop_btn_type                       .set_is_system_val();
     var_sensor_tempC_limit_4ma_12bit        .set_is_system_val();
     var_sensor_tempC_limit_20ma_12bit       .set_is_system_val();
     var_sensor_tempC_limit_4ma_degrees_C    .set_is_system_val();
     var_sensor_tempC_limit_20ma_degrees_C   .set_is_system_val();
-
-    if (var_startup_key.get() != startup_key)
-        Storage::reset_all(true);
-
     var_stop_btn_type.get();
+
+#ifdef SSPS3_IS_CHEAP_SOLUTION_YES
+    if (prod_time_x_cnt.get() >= TIME_X_SS)
+    {
+        setup_UI(true);
+        UI_service->UI_date_time->hide_ui_hierarchy();
+        UI_service->UI_machine_state_bar->hide_ui_hierarchy();
+        UI_service->UI_notification_bar->hide_ui_hierarchy();
+        UI_service->UI_notify_bar->hide_ui_hierarchy();
+
+        lv_task_handler();
+        delay(500);
+        esp_restart();
+    }
+    prod_time_x_cnt.set(prod_time_x_cnt.local() + 1);
+#endif
 
     Translator::set_lang(var_plc_language.get());
 
@@ -200,13 +216,21 @@ void setup_filters()
     );
 }
 
-void setup_UI()
+bool setup_UI(bool is_x)
 {
     UI_service = new UIService();
+    
+    if (is_x)
+        return false;
+
     UI_manager = new UIManager();
 
     UI_manager->add_control(ScreenType::PROGRAM_SELECTOR,   UI_service->UI_prog_selector_control);
+#ifndef SSPS3_IS_CHEAP_SOLUTION_YES
     UI_manager->add_control(ScreenType::TASK_ROADMAP,       UI_service->UI_task_roadmap_control);
+#else
+    UI_manager->add_control(ScreenType::TASK_ROADMAP,       UI_service->UI_cheap_roadmap_control);
+#endif
     UI_manager->add_control(ScreenType::BLOWING_CONTROL,    UI_service->UI_blowing_control);
     UI_manager->add_control(ScreenType::MENU_USER,          UI_service->UI_menu_list_user);
     UI_manager->add_control(ScreenType::MENU_MASTER,        UI_service->UI_menu_list_master);
@@ -217,6 +241,8 @@ void setup_UI()
         UI_manager->set_control(ScreenType::TASK_ROADMAP);
 
     UI_notification_bar = UI_service->UI_notification_bar;
+
+    return true;
 }
 
 void setup_controllers()
@@ -280,6 +306,11 @@ void setup_task_manager()
             }
 
         var_last_rt.set(*dt_rt);
+
+#ifdef SSPS3_IS_CHEAP_SOLUTION_YES
+    prod_time_x_cnt.set(prod_time_x_cnt.local() + 1);
+#endif
+
     }, 1000);
 
     rt_task_manager.add_task("task_do_programm", []() {
@@ -373,9 +404,13 @@ void setup_task_manager()
             prog_runned.local().is_runned,
             to_do.aim == ProgramStepAimEnum::WATER_JACKET
         );
-        
+
+#ifndef SSPS3_IS_CHEAP_SOLUTION_YES
         UI_service->UI_task_roadmap_control->update_task_steps_state();
         UI_service->UI_task_roadmap_control->update_ui_context();
+#else
+        UI_service->UI_cheap_roadmap_control->update_ui_context();
+#endif
     }, 500);
 
     rt_task_manager.add_task("task_call_watchdogs", []() {

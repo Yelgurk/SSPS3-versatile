@@ -52,17 +52,21 @@ public:
             lv_obj_set_width(setters_container, width_setter_container);
             lv_obj_set_height(setters_container, height_setter_container);
             lv_obj_align(setters_container, LV_ALIGN_RIGHT_MID, -10, 30);
-            lv_obj_set_style_radius(setters_container, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_bg_opa(setters_container, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_bg_color(setters_container, COLOR_WHITE, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_clip_corner(setters_container, true, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_border_width(setters_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+#ifndef SSPS3_IS_CHEAP_SOLUTION_YES
+            lv_obj_set_style_radius(setters_container, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+            
             lv_obj_set_style_shadow_color(setters_container, COLOR_MEDIUM_GREY, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_shadow_opa(setters_container, 155, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_shadow_width(setters_container, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_shadow_spread(setters_container, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_shadow_offset_x(setters_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_shadow_offset_y(setters_container, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+#endif
 
             remember_child_element("[settings_container]", setters_container);
             set_childs_presenter("[settings_container]");
