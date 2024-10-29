@@ -92,9 +92,6 @@ void read_digital_signals()
 
     if (var_stop_btn_type.local())
         OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
-
-    OptIn_state[DIN_380V_SIGNAL] = 1;
-    OptIn_state[DIN_WJACKET_SENS] = 1;
 }
 
 static uint16_t     offset_1    = 0,

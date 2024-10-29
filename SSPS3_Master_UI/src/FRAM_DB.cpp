@@ -70,7 +70,7 @@ FRAMObject<S_DateTime>& var_last_rt                             = Storage::alloc
 
 // master settings - page 1
 FRAMObject<EquipmentType>& var_type_of_equipment_enum           = Storage::allocate<EquipmentType>(EquipmentType::DairyTaxiPasteurizerFlowgun, false, ALLOC_SETTINGS_MASTER);
-FRAMObject<bool>&   var_stop_btn_type                           = Storage::allocate<bool>(false, false);
+FRAMObject<bool>&   var_stop_btn_type                           = Storage::allocate<bool>(true, false);
 FRAMObject<bool>&   var_is_asyncM_rpm_float                     = Storage::allocate<bool>(false, false);
 FRAMObject<uint8_t>& var_plc_language                           = Storage::allocate<uint8_t>(0, false);
 FRAMObject<bool>& var_equip_have_wJacket_tempC_sensor           = Storage::allocate<bool>(false, false);
