@@ -52,11 +52,13 @@ void setup()
         Storage::reset_all(true);
 
     prod_time_x_cnt                         .set_is_system_val();
+    var_type_of_equipment_enum              .set_is_system_val();
     var_stop_btn_type                       .set_is_system_val();
     var_sensor_tempC_limit_4ma_12bit        .set_is_system_val();
     var_sensor_tempC_limit_20ma_12bit       .set_is_system_val();
     var_sensor_tempC_limit_4ma_degrees_C    .set_is_system_val();
     var_sensor_tempC_limit_20ma_degrees_C   .set_is_system_val();
+    var_type_of_equipment_enum.get();
     var_stop_btn_type.get();
 
 #ifdef SSPS3_IS_CHEAP_SOLUTION_YES
