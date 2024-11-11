@@ -72,6 +72,7 @@ void UIService::init_screens()
 
     UI_task_roadmap_control = new UITaskRoadmapList(
         {
+#ifndef SSPS3_IS_CHEAP_SOLUTION_YES
             KeyModel(KeyMap::TOP, [this]()
             {
                 UI_task_roadmap_control->navi_prev();
@@ -109,6 +110,7 @@ void UIService::init_screens()
                 if (!prog_runned.local().is_runned)
                     UI_manager->set_control(ScreenType::PROGRAM_SELECTOR);
             })
+#endif
         },
         this->screen
     );
@@ -156,6 +158,7 @@ void UIService::init_screens()
     /* cheap task roadmap control */
     UI_cheap_roadmap_control = new UICheapRoadmap(
         {
+#ifdef SSPS3_IS_CHEAP_SOLUTION_YES
             KeyModel(KeyMap::RIGHT_TOP, [this]() { UI_manager->set_control(ScreenType::MENU_USER); }),
             KeyModel(KeyMap::RIGHT_BOT, [this]()
             {
@@ -176,6 +179,7 @@ void UIService::init_screens()
                 if (!prog_runned.local().is_runned)
                     UI_manager->set_control(ScreenType::PROGRAM_SELECTOR);
             })
+#endif
         },
         this->screen
     );

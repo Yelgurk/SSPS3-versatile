@@ -158,8 +158,13 @@ struct __attribute__((packed)) ProgramControl
     {
         if (this->is_runned)
         {
-            if (!permanent_pause)
-                on_pause_by_user = !on_pause_by_user;
+            if (permanent_pause == false)
+            {
+                if (on_pause_by_user)
+                    resume_task();
+                else
+                    on_pause_by_user = true;
+            }
             else
                 on_pause_by_user = true;
         }
