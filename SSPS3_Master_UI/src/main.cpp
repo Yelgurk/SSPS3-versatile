@@ -104,6 +104,22 @@ void setup()
     rt_task_manager.execute_task("task_do_programm");
 
     dt_rt->get_rt();
+
+    if (false)
+    {
+        STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 1);
+        delay(500);
+        STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 0);
+        delay(500);
+        STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 1);
+        delay(500);
+        STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 0);
+        delay(500);
+        STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 1);
+        delay(500);
+        STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 0);
+        delay(500);
+    }
 }
 
 void loop()
