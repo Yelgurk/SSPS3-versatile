@@ -134,7 +134,7 @@ void loop()
         UI_service->UI_notification_bar->key_press(Pressed_key);
         UI_manager->handle_key_press(Pressed_key);
 
-        if (!prog_runned.local().is_runned && UI_manager->is_current_control(ScreenType::PROGRAM_SELECTOR))
+        if (!prog_runned.local().is_runned && UI_manager->is_current_control(ScreenType::PROGRAM_SELECTOR) && UI_service->get_is_pasteurizer())
         {
             switch (static_cast<KeyMap>(Pressed_key))
             {

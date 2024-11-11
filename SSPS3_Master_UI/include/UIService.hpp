@@ -242,6 +242,7 @@ public:
 
 public:
     UIService();
+    bool get_is_pasteurizer();
 
 private:
     void init_screens();

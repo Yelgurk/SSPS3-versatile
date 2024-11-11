@@ -229,12 +229,13 @@ void UIService::init_screens()
             KeyModel(KeyMap::BOTTOM,    [this]() { UI_prog_selector_control->navi_next(); }),
             KeyModel(KeyMap::TOP,       [this]() { UI_prog_selector_control->navi_prev(); }),
             KeyModel(KeyMap::RIGHT_TOP, [this]() { UI_manager->set_control(ScreenType::MENU_USER); }),
-            KeyModel(KeyMap::R_STACK_4, [this]() { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(0); }),
-            KeyModel(KeyMap::R_STACK_3, [this]() { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(1); }),
-            KeyModel(KeyMap::R_STACK_2, [this]() { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(2); }),
-            KeyModel(KeyMap::R_STACK_1, [this]() { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(3); }),
+            KeyModel(KeyMap::R_STACK_4, [this]() { if(is_blowgun) { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(0); }}),
+            KeyModel(KeyMap::R_STACK_3, [this]() { if(is_blowgun) { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(1); }}),
+            KeyModel(KeyMap::R_STACK_2, [this]() { if(is_blowgun) { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(2); }}),
+            KeyModel(KeyMap::R_STACK_1, [this]() { if(is_blowgun) { UI_manager->set_control(ScreenType::BLOWING_CONTROL); UI_blowing_control->focus_on(3); }}),
         }
     );
+    
     if (is_pasteur)
         init_prog_selector_part_tmpe();
     else if (is_chm)
@@ -1378,4 +1379,8 @@ void UIService::display_wd_in_setters()
     UI_setter_wd_hh ->set_value(prog_tmpe_templates_wd_time->at(get_template_wd_index())->get().get_hours());
     UI_setter_wd_mm ->set_value(prog_tmpe_templates_wd_time->at(get_template_wd_index())->get().get_minutes());
     UI_setter_wd_ss ->set_value(prog_tmpe_templates_wd_time->at(get_template_wd_index())->get().get_seconds());
+}
+
+bool UIService::get_is_pasteurizer() {
+    return is_pasteur;
 }
