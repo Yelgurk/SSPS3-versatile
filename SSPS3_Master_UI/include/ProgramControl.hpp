@@ -148,8 +148,7 @@ struct __attribute__((packed)) ProgramControl
         return index == prog_runned_steps_count.get() - 1;
     }
 
-    void resume_task()
-    {
+    void resume_task() {
         if (this->is_runned)
             on_pause_by_user = false;
     }
@@ -158,13 +157,8 @@ struct __attribute__((packed)) ProgramControl
     {
         if (this->is_runned)
         {
-            if (permanent_pause == false)
-            {
-                if (on_pause_by_user)
-                    resume_task();
-                else
-                    on_pause_by_user = true;
-            }
+            if (!permanent_pause)
+                on_pause_by_user = !on_pause_by_user;
             else
                 on_pause_by_user = true;
         }

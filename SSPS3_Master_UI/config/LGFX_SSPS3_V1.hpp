@@ -19,7 +19,7 @@
 #define LCD_RS    20
 #define LCD_BL    9
 
-#define LCD_TYPE_V 1
+#define LCD_TYPE_V 0
 
 class LGFX : public lgfx::LGFX_Device
 {

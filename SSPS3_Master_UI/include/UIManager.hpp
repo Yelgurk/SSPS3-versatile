@@ -17,11 +17,21 @@ enum class ScreenType : uint8_t {
     MENU_MASTER
 };
 
+//#define PASS_V0
+#define PASS_V1
+
+#ifdef PASS_V0
 #define PASS_BUFFER_SIZE    8
+#endif
+
+#ifdef PASS_V1
+#define PASS_BUFFER_SIZE    6
+#endif
 
 class CircularPassBuffer
 {
 private:
+#ifdef PASS_V0
     const KeyMap key[PASS_BUFFER_SIZE] = {
         KeyMap::L_STACK_4,
         KeyMap::L_STACK_1,
@@ -32,6 +42,18 @@ private:
         KeyMap::R_STACK_3,
         KeyMap::R_STACK_2
     };
+#endif
+
+#ifdef PASS_V1
+    const KeyMap key[PASS_BUFFER_SIZE] = {
+        KeyMap::L_STACK_4,
+        KeyMap::L_STACK_4,
+        KeyMap::L_STACK_4,
+        KeyMap::R_STACK_4,
+        KeyMap::R_STACK_4,
+        KeyMap::R_STACK_4
+    };
+#endif
 
     KeyMap buffer[PASS_BUFFER_SIZE] = { KeyMap::_END };
 

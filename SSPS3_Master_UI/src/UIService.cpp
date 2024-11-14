@@ -78,18 +78,13 @@ void UIService::init_screens()
                 UI_task_roadmap_control->navi_prev();
                 UI_task_roadmap_control->update_task_steps_state();
             }),
-            KeyModel(KeyMap::TOP, [this]()
-            {
-                if (!prog_runned.get().is_runned)
-                    UI_manager->set_control(ScreenType::PROGRAM_SELECTOR);
-            }),
             KeyModel(KeyMap::BOTTOM, [this]()
             {
                 UI_task_roadmap_control->navi_next();
                 UI_task_roadmap_control->update_task_steps_state();
             }),
             KeyModel(KeyMap::RIGHT_TOP, [this]() { UI_manager->set_control(ScreenType::MENU_USER); }),
-            KeyModel(KeyMap::RIGHT_BOT, [this]()
+            KeyModel(KeyMap::RIGHT_BOT_REL, [this]()
             {
                 prog_runned.ptr()->pause_task();
                 prog_runned.accept();
