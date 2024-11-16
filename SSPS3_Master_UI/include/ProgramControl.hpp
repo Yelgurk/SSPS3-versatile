@@ -56,6 +56,7 @@ bool IsInBounds(const T& value, const T& low, const T& high) {
 struct __attribute__((packed)) ProgramStep
 {
     ProgramStepAimEnum aim;
+    uint8_t step_index;
     uint8_t fan;
     uint8_t tempC;
     uint32_t duration_ss;
@@ -67,10 +68,11 @@ struct __attribute__((packed)) ProgramStep
     StepStateEnum state = StepStateEnum::AWAIT;
     uint32_t gone_ss = 0;
 
-    ProgramStep() : ProgramStep(ProgramStepAimEnum::TO_TEMPERATURE, 0, 0, 0, 0, 0, 0, 0) {}
+    ProgramStep() : ProgramStep(ProgramStepAimEnum::TO_TEMPERATURE, 0, 0, 0, 0, 0, 0, 0, 0) {}
 
     ProgramStep(
         ProgramStepAimEnum aim,
+        uint8_t step_index,
         uint8_t fan,
         uint8_t tempC,
         uint32_t duration_ss,
@@ -80,6 +82,7 @@ struct __attribute__((packed)) ProgramStep
         bool step_is_turned_on
     ) :
     aim(aim),
+    step_index(step_index),
     fan(fan),
     tempC(tempC),
     duration_ss(duration_ss),
@@ -202,9 +205,9 @@ struct __attribute__((packed)) TMPEProgramTemplate
     ProgramStep step_heating;
 
     TMPEProgramTemplate() : TMPEProgramTemplate(
-        ProgramStep(ProgramStepAimEnum::PASTEUR,    0, 0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::CHILLING,   0, 0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::HEATING,    0, 0, 0, 0, 0, 0, 0)
+        ProgramStep(ProgramStepAimEnum::PASTEUR,    0, 0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::CHILLING,   1, 0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::HEATING,    2, 0, 0, 0, 0, 0, 0, 0)
     )
     {}
 
@@ -242,12 +245,12 @@ struct __attribute__((packed)) CHMProgramTemplate
     ProgramStep step_drying;
 
     CHMProgramTemplate() : CHMProgramTemplate(
-        ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::CHILLING, 0, 0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::CUTTING,  0, 0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::MIXING,   0, 0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::HEATING,  0, 0, 0, 0, 0, 0, 0),
-        ProgramStep(ProgramStepAimEnum::DRYING,   0, 0, 0, 0, 0, 0, 0)
+        ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::CHILLING, 1, 0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::CUTTING,  2, 0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::MIXING,   3, 0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::HEATING,  4, 0, 0, 0, 0, 0, 0, 0),
+        ProgramStep(ProgramStepAimEnum::DRYING,   5, 0, 0, 0, 0, 0, 0, 0)
     )
     {}
 

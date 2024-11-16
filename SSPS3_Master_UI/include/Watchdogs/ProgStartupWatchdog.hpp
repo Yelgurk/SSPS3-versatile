@@ -345,7 +345,7 @@ public:
 
 private:
     void add_new_task_step(uint8_t new_step_index, ProgramStepAimEnum aim, uint8_t fan, uint8_t tempC, uint32_t duration_ss, bool untill_condition_met, bool is_cooling_step, bool await_ok) {
-        prog_runned_steps->at(new_step_index)->set(ProgramStep(aim, fan, tempC, duration_ss, untill_condition_met, is_cooling_step, await_ok, 1));
+        prog_runned_steps->at(new_step_index)->set(ProgramStep(aim, new_step_index, fan, tempC, duration_ss, untill_condition_met, is_cooling_step, await_ok, 1));
     }
 };
 

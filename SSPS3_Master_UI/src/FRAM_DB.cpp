@@ -1,21 +1,21 @@
 #include "FRAM_DB.hpp"
 
 static TMPEProgramTemplate def_prog_tmpe_full = TMPEProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,    20, 65, 1800, 0, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::CHILLING,   30, 42, 0,    0, 1, 0, 1),
-    ProgramStep(ProgramStepAimEnum::HEATING,    10, 42, 60,   0, 0, 1, 0)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,    0, 20, 65, 1800, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING,   1, 30, 42, 0,    0, 1, 0, 1),
+    ProgramStep(ProgramStepAimEnum::HEATING,    2, 10, 42, 60,   0, 0, 1, 0)
 );
 
 static TMPEProgramTemplate def_prog_tmpe_heating = TMPEProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,    0,  0,  0,   0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CHILLING,   0,  0,  0,   0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::HEATING,    10, 42, 0,   0, 0, 1, 1)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,    0, 0,  0,  0,   0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::CHILLING,   1, 0,  0,  0,   0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::HEATING,    2, 10, 42, 0,   0, 0, 1, 1)
 );
 
 static TMPEProgramTemplate def_prog_tmpe_chilling = TMPEProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,    0,  0,  0,   0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CHILLING,   30, 42, 0,   0, 1, 0, 1),
-    ProgramStep(ProgramStepAimEnum::HEATING,    0,  0,  0,   0, 0, 0, 0)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,    0, 0,  0,  0,   0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::CHILLING,   1, 30, 42, 0,   0, 1, 0, 1),
+    ProgramStep(ProgramStepAimEnum::HEATING,    2, 0,  0,  0,   0, 0, 0, 0)
 );
 
 static S_Time def_wd_boot_time_1 = S_Time(8, 0, 0);
@@ -23,39 +23,39 @@ static S_Time def_wd_boot_time_2 = S_Time(14, 0, 0);
 static S_Time def_wd_boot_time_3 = S_Time(23, 0, 0);
 
 static CHMProgramTemplate def_prog_chm_null = CHMProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR, 0, 0, 0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CHILLING, 0, 0, 0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CUTTING, 0, 0, 0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::MIXING, 0, 0, 0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::HEATING, 0, 0, 0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::DRYING, 0, 0, 0, 0, 0, 0, 0)
+    ProgramStep(ProgramStepAimEnum::PASTEUR, 0, 0, 0, 0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::CHILLING, 1, 0, 0, 0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::CUTTING, 2, 0, 0, 0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::MIXING, 3, 0, 0, 0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::HEATING, 4, 0, 0, 0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::DRYING, 5, 0, 0, 0, 0, 0, 0, 0)
 );
 
 static CHMProgramTemplate def_prog_chm_parmezan = CHMProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,  5,  82, 20,   0, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::CHILLING, 10, 32, 1800, 0, 1, 1, 1),
-    ProgramStep(ProgramStepAimEnum::CUTTING,  3,  32, 300,  0, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::MIXING,   15, 32, 2400, 0, 0, 1, 1),
-    ProgramStep(ProgramStepAimEnum::HEATING,  25, 50, 1200, 0, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::DRYING,   30, 50, 1800, 0, 0, 0, 1)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 5,  82, 20,   0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING, 1, 10, 32, 1800, 0, 1, 1, 1),
+    ProgramStep(ProgramStepAimEnum::CUTTING,  2, 3,  32, 300,  0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::MIXING,   3, 15, 32, 2400, 0, 0, 1, 1),
+    ProgramStep(ProgramStepAimEnum::HEATING,  4, 25, 50, 1200, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::DRYING,   5, 30, 50, 1800, 0, 0, 0, 1)
 );
 
 static CHMProgramTemplate def_prog_chm_adygeiskij = CHMProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,  20, 90, 0, 0, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::CHILLING, 0,  0,  0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CUTTING,  0,  0,  0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::MIXING,   0,  0,  0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::HEATING,  0,  0,  0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::DRYING,   0,  0,  0, 0, 0, 0, 0)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 20, 90, 0, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING, 1, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::CUTTING,  2, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::MIXING,   3, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::HEATING,  4, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::DRYING,   5, 0,  0,  0, 0, 0, 0, 0)
 );
 
 static CHMProgramTemplate def_prog_chm_tylzickij = CHMProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,  5,  72, 20,   0, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::CHILLING, 15, 32, 1800, 0, 1, 1, 1),
-    ProgramStep(ProgramStepAimEnum::CUTTING,  3,  32, 300,  0, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::MIXING,   15, 32, 2400, 0, 0, 1, 1),
-    ProgramStep(ProgramStepAimEnum::HEATING,  25, 50, 1200, 0, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::DRYING,   30, 50, 2580, 0, 0, 0, 1)
+    ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 5,  72, 20,   0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING, 1, 15, 32, 1800, 0, 1, 1, 1),
+    ProgramStep(ProgramStepAimEnum::CUTTING,  2, 3,  32, 300,  0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::MIXING,   3, 15, 32, 2400, 0, 0, 1, 1),
+    ProgramStep(ProgramStepAimEnum::HEATING,  4, 25, 50, 1200, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::DRYING,   5, 30, 50, 2580, 0, 0, 0, 1)
 );
 
 static ProgramControl def_prog_runned_null = ProgramControl();

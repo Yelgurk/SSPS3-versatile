@@ -34,10 +34,10 @@ public:
     }
     {
         set_key_press_actions({
-            KeyModel(KeyMap::TOP,       [this]() { this->navi_prev(); }),
-            KeyModel(KeyMap::BOTTOM,    [this]() { this->navi_next(); }),
-            KeyModel(KeyMap::LEFT_BOT,  [=]() { try_run_prog(prog_index); }),
-            KeyModel(KeyMap::RIGHT_BOT, [=]() { try_run_prog(prog_index); })
+            KeyModel(KeyMap::TOP,           [this]() { this->navi_prev(); }),
+            KeyModel(KeyMap::BOTTOM,        [this]() { this->navi_next(); }),
+            KeyModel(KeyMap::LEFT_BOT_REL,  [=]() { try_run_prog(prog_index); }),
+            KeyModel(KeyMap::RIGHT_BOT_REL, [=]() { try_run_prog(prog_index); })
         });
 
         lv_obj_set_height(get_container(), height_selector);

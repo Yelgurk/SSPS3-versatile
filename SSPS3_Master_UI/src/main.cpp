@@ -58,6 +58,7 @@ void setup()
     var_sensor_tempC_limit_20ma_12bit       .set_is_system_val();
     var_sensor_tempC_limit_4ma_degrees_C    .set_is_system_val();
     var_sensor_tempC_limit_20ma_degrees_C   .set_is_system_val();
+
     var_type_of_equipment_enum.get();
     var_stop_btn_type.get();
 
@@ -334,58 +335,84 @@ void setup_task_manager()
     rt_task_manager.add_task("task_do_programm", []() {
         ProgramStep to_do = prog_runned.ptr()->do_task(prog_wd_first_call);
         prog_runned.accept();
-        prog_wd_first_call = false;
-
-        //Serial.println("*task*");
-
         ProgramStep prev_step = *prog_runned.ptr()->get_prev_step();
         
+        prog_wd_first_call = false;
+
         if (to_do.step_is_turned_on && to_do.aim != ProgramStepAimEnum::WATER_JACKET)
         {
             async_motor_wd      ->set_async_motor_speed(to_do.fan);
 
             if (to_do.must_be_cooled)
             {
-                //Serial.println("*chilling step*");
-
-                chilling_wd     ->set_aim(to_do.tempC, filter_tempC_product->get_physical_value());
-                heating_wd      ->set_aim(0, 0);
-            }
-            else
-            {
-                //Serial.println("*main step*");
-
-                /*
-                if ((to_do.aim == ProgramStepAimEnum::EXPOSURE && prev_step.aim == ProgramStepAimEnum::CHILLING))
-                    //|| var_type_of_equipment_enum.local() == EquipmentType::Cheesemaker)
+                if (var_equip_have_wJacket_tempC_sensor.get())
                 {
-                    
-                    if (var_equip_have_wJacket_tempC_sensor.get())
-                        chilling_wd ->set_aim(
-                            to_do.tempC + 2,
-                            filter_tempC_product->get_physical_value(),
-                            filter_tempC_wJacket->get_physical_value()
-                        );
-                    else
-                    
-
-                   Serial.println("*chilling exposure subtask*");
-
                     chilling_wd ->set_aim(
-                        to_do.tempC + 1,
-                        filter_tempC_product->get_physical_value()
+                        to_do.tempC,
+                        filter_tempC_product->get_physical_value(),
+                        filter_tempC_wJacket->get_physical_value()
                     );
                 }
                 else
                 {
-                    
-                    Serial.println("*without chilling*");
+                    chilling_wd ->set_aim(
+                        to_do.tempC,
+                        filter_tempC_product->get_physical_value()
+                    );
+                }
+                
+                heating_wd      ->set_aim(to_do.tempC, 0);
+            }
+            else if (prev_step.aim == ProgramStepAimEnum::CHILLING && to_do.aim == ProgramStepAimEnum::EXPOSURE)
+            {
+                if (var_equip_have_wJacket_tempC_sensor.get())
+                {
+                    chilling_wd ->set_aim(
+                        to_do.tempC + 1,
+                        filter_tempC_product->get_physical_value(),
+                        filter_tempC_wJacket->get_physical_value()
+                    );
+
+                    heating_wd  ->set_aim(
+                        to_do.tempC - 2,
+                        filter_tempC_product->get_physical_value(),
+                        filter_tempC_wJacket->get_physical_value()
+                    );
+                }
+                else
+                {
+                    chilling_wd ->set_aim(
+                        to_do.tempC + 4,
+                        filter_tempC_product->get_physical_value()
+                    );
+
+                    heating_wd  ->set_aim(
+                        to_do.tempC - 4,
+                        filter_tempC_product->get_physical_value()
+                    );
+                }
+            }
+            else
+            {
+                if (prog_runned.local().is_last_step(to_do.step_index))
+                {
+                    if (var_equip_have_wJacket_tempC_sensor.get())
+                        chilling_wd ->set_aim(
+                            to_do.tempC + 1,
+                            filter_tempC_product->get_physical_value(),
+                            filter_tempC_wJacket->get_physical_value()
+                        );
+                    else
+                        chilling_wd ->set_aim(
+                            to_do.tempC + 3,
+                            filter_tempC_product->get_physical_value()
+                        );
+                }
+                else
+                {
+                    //Serial.println("*without chilling*");
                     chilling_wd     ->set_aim(0, 0);
                 }
-                */
-
-                //Serial.println("*without chilling*");
-                chilling_wd     ->set_aim(0, 0);
                 
                 //Serial.println("*heating exposure subtask*");
                 if (var_equip_have_wJacket_tempC_sensor.get())
@@ -396,7 +423,7 @@ void setup_task_manager()
                     );
                 else
                     heating_wd  ->set_aim(
-                        min(to_do.tempC, (uint8_t)(to_do.tempC - 1)),
+                        to_do.tempC - 3,
                         filter_tempC_product->get_physical_value()
                     );
             }
