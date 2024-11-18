@@ -31,6 +31,34 @@ static CHMProgramTemplate def_prog_chm_null = CHMProgramTemplate(
     ProgramStep(ProgramStepAimEnum::DRYING, 5, 0, 0, 0, 0, 0, 0, 0)
 );
 
+static CHMProgramTemplate def_prog_chm_adygeiskij = CHMProgramTemplate(
+    ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 20, 90, 240, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING, 1, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::CUTTING,  2, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::MIXING,   3, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::HEATING,  4, 0,  90, 240, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::DRYING,   5, 0,  0,  0, 0, 0, 0, 0)
+);
+
+static CHMProgramTemplate def_prog_chm_cottage_cheese = CHMProgramTemplate(
+    ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 20, 90, 240, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING, 1, 20, 50, 240, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CUTTING,  2, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::MIXING,   3, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::HEATING,  4, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::DRYING,   5, 0,  0,  0, 0, 0, 0, 0)
+);
+
+static CHMProgramTemplate def_prog_chm_yogurt = CHMProgramTemplate(
+    ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 20, 90, 240, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CHILLING, 1, 6,  50, 0, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::CUTTING,  2, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::MIXING,   3, 0,  0,  0, 0, 0, 0, 0),
+    ProgramStep(ProgramStepAimEnum::HEATING,  4, 0,  50, 14400, 0, 0, 0, 1),
+    ProgramStep(ProgramStepAimEnum::DRYING,   5, 0,  15, 0, 0, 0, 0, 1)
+);
+
+/*
 static CHMProgramTemplate def_prog_chm_parmezan = CHMProgramTemplate(
     ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 5,  82, 20,   0, 0, 0, 1),
     ProgramStep(ProgramStepAimEnum::CHILLING, 1, 10, 32, 1800, 0, 1, 1, 1),
@@ -38,15 +66,6 @@ static CHMProgramTemplate def_prog_chm_parmezan = CHMProgramTemplate(
     ProgramStep(ProgramStepAimEnum::MIXING,   3, 15, 32, 2400, 0, 0, 1, 1),
     ProgramStep(ProgramStepAimEnum::HEATING,  4, 25, 50, 1200, 0, 0, 0, 1),
     ProgramStep(ProgramStepAimEnum::DRYING,   5, 30, 50, 1800, 0, 0, 0, 1)
-);
-
-static CHMProgramTemplate def_prog_chm_adygeiskij = CHMProgramTemplate(
-    ProgramStep(ProgramStepAimEnum::PASTEUR,  0, 20, 90, 0, 0, 0, 0, 1),
-    ProgramStep(ProgramStepAimEnum::CHILLING, 1, 0,  0,  0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::CUTTING,  2, 0,  0,  0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::MIXING,   3, 0,  0,  0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::HEATING,  4, 0,  0,  0, 0, 0, 0, 0),
-    ProgramStep(ProgramStepAimEnum::DRYING,   5, 0,  0,  0, 0, 0, 0, 0)
 );
 
 static CHMProgramTemplate def_prog_chm_tylzickij = CHMProgramTemplate(
@@ -57,6 +76,7 @@ static CHMProgramTemplate def_prog_chm_tylzickij = CHMProgramTemplate(
     ProgramStep(ProgramStepAimEnum::HEATING,  4, 25, 50, 1200, 0, 0, 0, 1),
     ProgramStep(ProgramStepAimEnum::DRYING,   5, 30, 50, 2580, 0, 0, 0, 1)
 );
+*/
 
 static ProgramControl def_prog_runned_null = ProgramControl();
 static ProgramStep def_prog_runned_step_null = ProgramStep();
@@ -106,7 +126,7 @@ FRAMObject<uint8_t>& var_prog_limit_heat_tempC_max              = Storage::alloc
 FRAMObject<uint8_t>& var_prog_limit_heat_tempC_min              = Storage::allocate<uint8_t>(30, false);                               // ok
 FRAMObject<uint8_t>& var_prog_limit_chill_tempC_max             = Storage::allocate<uint8_t>(50, false);                               // ok
 FRAMObject<uint8_t>& var_prog_limit_chill_tempC_min             = Storage::allocate<uint8_t>(5, false);                                // ok
-FRAMObject<uint16_t>& var_prog_any_step_max_durat_ss            = Storage::allocate<uint16_t>(3600 * 4, false);                        // ok
+FRAMObject<uint16_t>& var_prog_any_step_max_durat_ss            = Storage::allocate<uint16_t>(3600 * 5, false);                        // ok
 FRAMObject<bool>& var_prog_coolign_water_safe_mode              = Storage::allocate<bool>(false, false);                               // ok
 FRAMObject<uint8_t>& var_prog_heaters_toggle_delay_ss           = Storage::allocate<uint8_t>(20, false);                               // ok
 FRAMObject<uint8_t>& var_prog_wJacket_toggle_delay_ss           = Storage::allocate<uint8_t>(10, false);                               // ok
@@ -135,9 +155,9 @@ FRAMObject<AutoProgStates>& prog_tmpe_wd_1_on_off               = Storage::alloc
 FRAMObject<AutoProgStates>& prog_tmpe_wd_2_on_off               = Storage::allocate<AutoProgStates>(AutoProgStates());
 FRAMObject<AutoProgStates>& prog_tmpe_wd_3_on_off               = Storage::allocate<AutoProgStates>(AutoProgStates());
 
-FRAMObject<CHMProgramTemplate>& prog_chm_templ_1                = Storage::allocate<CHMProgramTemplate>(def_prog_chm_parmezan);
-FRAMObject<CHMProgramTemplate>& prog_chm_templ_2                = Storage::allocate<CHMProgramTemplate>(def_prog_chm_adygeiskij);
-FRAMObject<CHMProgramTemplate>& prog_chm_templ_3                = Storage::allocate<CHMProgramTemplate>(def_prog_chm_tylzickij);
+FRAMObject<CHMProgramTemplate>& prog_chm_templ_1                = Storage::allocate<CHMProgramTemplate>(def_prog_chm_adygeiskij);
+FRAMObject<CHMProgramTemplate>& prog_chm_templ_2                = Storage::allocate<CHMProgramTemplate>(def_prog_chm_cottage_cheese);
+FRAMObject<CHMProgramTemplate>& prog_chm_templ_3                = Storage::allocate<CHMProgramTemplate>(def_prog_chm_yogurt);
 FRAMObject<CHMProgramTemplate>& prog_chm_templ_4                = Storage::allocate<CHMProgramTemplate>(def_prog_chm_null);
 FRAMObject<CHMProgramTemplate>& prog_chm_templ_5                = Storage::allocate<CHMProgramTemplate>(def_prog_chm_null);
 FRAMObject<CHMProgramTemplate>& prog_chm_templ_6                = Storage::allocate<CHMProgramTemplate>(def_prog_chm_null);

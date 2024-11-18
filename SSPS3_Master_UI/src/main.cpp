@@ -48,6 +48,8 @@ void setup()
     itcw    ->begin(SDA, SCL, 400000);
     STM32   = new STM32_slave(STM_I2C_ADDR);
 
+    //Storage::first_boot();
+
     if (var_startup_key.get() != startup_key)
         Storage::reset_all(true);
 

@@ -70,6 +70,12 @@ public:
                     pair.second->reset();
     }
 
+    static void first_boot()
+    {
+        for (auto& pair : addressMap)
+            pair.second->reset();
+    }
+
     static void print_list_of_addr()
     {
         for (auto& pair : addressMap)

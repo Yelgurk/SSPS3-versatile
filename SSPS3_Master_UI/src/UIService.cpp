@@ -121,9 +121,9 @@ void UIService::init_screens()
             case ProgramAimEnum::TMP_WATCHDOG_1:    UI_task_roadmap_control->set_task_header_name(Translator::get(NAME_AUTOPROG) + " #1"); break;
             case ProgramAimEnum::TMP_WATCHDOG_2:    UI_task_roadmap_control->set_task_header_name(Translator::get(NAME_AUTOPROG) + " #2"); break;
             case ProgramAimEnum::TMP_WATCHDOG_3:    UI_task_roadmap_control->set_task_header_name(Translator::get(NAME_AUTOPROG) + " #3"); break;
-            case ProgramAimEnum::CHM_MAIN_1:        UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_PARMESAN)); break;
-            case ProgramAimEnum::CHM_MAIN_2:        UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_ADIGEJ)); break;
-            case ProgramAimEnum::CHM_MAIN_3:        UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_TILSIT)); break;
+            case ProgramAimEnum::CHM_MAIN_1:        UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_ADIGEJ)); break;
+            case ProgramAimEnum::CHM_MAIN_2:        UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_COT_CHEZ)); break;
+            case ProgramAimEnum::CHM_MAIN_3:        UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_YOGURT)); break;
             case ProgramAimEnum::CHM_TEMPL_1:       UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #1"); break;
             case ProgramAimEnum::CHM_TEMPL_2:       UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #2"); break;
             case ProgramAimEnum::CHM_TEMPL_3:       UI_task_roadmap_control->set_task_header_name(Translator::get(CHZ_OWN_REC) + " #3"); break;
@@ -1345,9 +1345,9 @@ void UIService::init_prog_selector_part_tmpe()
 void UIService::init_prog_selector_part_chm()
 {
     static vector<std::string> chm_templ_menu_items_name = {
-        Translator::get(CHZ_PARMESAN),
-        Translator::get(CHZ_TILSIT),
         Translator::get(CHZ_ADIGEJ),
+        Translator::get(CHZ_COT_CHEZ),
+        Translator::get(CHZ_YOGURT),
     };
 
     for (uint8_t i = 0; i < TEMPLATES_COUNT_CHM; i++)

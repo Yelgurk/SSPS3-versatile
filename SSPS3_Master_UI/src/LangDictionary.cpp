@@ -29,6 +29,8 @@ const std::vector<WordEntry> wordEntries PROGMEM = {
     /*"[имя_сыр_пармезан]"*/ {CHZ_PARMESAN, {"сыр \"Пармезан\"", "cheese \"Parmesan\"", "ser \"Parmezan\""}},
     /*"[имя_сыр_адыгейский]"*/ {CHZ_ADIGEJ, {"сыр \"Адыгейский\"", "cheese \"Adygei\"", "ser \"Adygei\""}},
     /*"[имя_сыр_тильзитский]"*/ {CHZ_TILSIT, {"сыр \"Тильзитский\"", "cheese \"Tilsiter\"", "ser \"Tilsiter\""}},
+    /*"[имя_сыроварня_йогурт]"*/ {CHZ_YOGURT, {"йогурт", "yogurt", "jogurt"}},
+    /*"[имя_сыроварня_творог]"*/ {CHZ_COT_CHEZ, {"творог", "cottage cheese", "Twarog"}},
     /*"[имя_сыр_свой]"*/ {CHZ_OWN_REC, {"свой сыр", "own recipe", "własny przepis"}},
     /*"[нет_поддержки_пастера]"*/ {PASTEUR_DOESNT_SUPPORTED, {"Оборудование не поддерживает пастеризацию", "The equipment does not support pasteurisation", "Urządzenie nie obsługuje pasteryzacji"}},
     /*"[дата_и_время]"*/ {DATE_TIME, {"Дата / Время", "Date / Time", "Data / Godzina"}},
