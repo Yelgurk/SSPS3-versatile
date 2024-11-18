@@ -361,7 +361,7 @@ void setup_task_manager()
                     );
                 }
                 
-                heating_wd      ->set_aim(to_do.tempC, 0);
+                heating_wd      ->set_aim(0, 0);
             }
             else if (prev_step.aim == ProgramStepAimEnum::CHILLING && to_do.aim == ProgramStepAimEnum::EXPOSURE)
             {
@@ -374,7 +374,7 @@ void setup_task_manager()
                     );
 
                     heating_wd  ->set_aim(
-                        to_do.tempC - 2,
+                        to_do.tempC - 1,
                         filter_tempC_product->get_physical_value(),
                         filter_tempC_wJacket->get_physical_value()
                     );
@@ -382,12 +382,12 @@ void setup_task_manager()
                 else
                 {
                     chilling_wd ->set_aim(
-                        to_do.tempC + 4,
+                        to_do.tempC + 3,
                         filter_tempC_product->get_physical_value()
                     );
 
                     heating_wd  ->set_aim(
-                        to_do.tempC - 4,
+                        to_do.tempC - 3,
                         filter_tempC_product->get_physical_value()
                     );
                 }
@@ -397,35 +397,48 @@ void setup_task_manager()
                 if (prog_runned.local().is_last_step(to_do.step_index))
                 {
                     if (var_equip_have_wJacket_tempC_sensor.get())
+                    {
                         chilling_wd ->set_aim(
                             to_do.tempC + 1,
                             filter_tempC_product->get_physical_value(),
                             filter_tempC_wJacket->get_physical_value()
                         );
+
+                        heating_wd  ->set_aim(
+                            to_do.tempC - 1,
+                            filter_tempC_product->get_physical_value(),
+                            filter_tempC_wJacket->get_physical_value()
+                        );
+                    }
                     else
+                    {
                         chilling_wd ->set_aim(
                             to_do.tempC + 3,
                             filter_tempC_product->get_physical_value()
                         );
+
+                        heating_wd  ->set_aim(
+                            to_do.tempC - 3,
+                            filter_tempC_product->get_physical_value()
+                        );
+                    }
                 }
                 else
                 {
-                    //Serial.println("*without chilling*");
+                    if (var_equip_have_wJacket_tempC_sensor.get())
+                        heating_wd  ->set_aim(
+                            to_do.tempC - 1,
+                            filter_tempC_product->get_physical_value(),
+                            filter_tempC_wJacket->get_physical_value()
+                        );
+                    else
+                        heating_wd  ->set_aim(
+                            to_do.tempC - 3,
+                            filter_tempC_product->get_physical_value()
+                        );
+                    
                     chilling_wd     ->set_aim(0, 0);
                 }
-                
-                //Serial.println("*heating exposure subtask*");
-                if (var_equip_have_wJacket_tempC_sensor.get())
-                    heating_wd      ->set_aim(
-                        to_do.tempC + 1,
-                        filter_tempC_product->get_physical_value(),
-                        filter_tempC_wJacket->get_physical_value()
-                    );
-                else
-                    heating_wd  ->set_aim(
-                        to_do.tempC - 3,
-                        filter_tempC_product->get_physical_value()
-                    );
             }
         }
         else if (to_do.step_is_turned_on && to_do.aim == ProgramStepAimEnum::WATER_JACKET)
