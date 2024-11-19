@@ -50,7 +50,7 @@ enum class ProgramStepAimEnum : uint8_t
 
 template <typename T>
 bool IsInBounds(const T& value, const T& low, const T& high) {
-    return !(value < low) && (value < high);
+    return (value >= low) && (value <= high);
 }
 
 struct __attribute__((packed)) ProgramStep

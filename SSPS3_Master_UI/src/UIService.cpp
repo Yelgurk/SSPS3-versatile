@@ -710,9 +710,9 @@ void UIService::init_settings_part_chm_templates()
     menu_chm_local_start_at = UI_template_menu_items.size();
 
     static vector<std::string> chm_templ_menu_items_name = {
-        Translator::get(CHZ_PARMESAN),
-        Translator::get(CHZ_TILSIT),
-        Translator::get(CHZ_ADIGEJ)
+        Translator::get(CHZ_ADIGEJ),
+        Translator::get(CHZ_COT_CHEZ),
+        Translator::get(CHZ_YOGURT)
     };
 
     static vector<std::string> chm_templ_step_name = {

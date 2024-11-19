@@ -98,10 +98,20 @@ void read_digital_signals()
     //OptIn_state[DIN_STOP_SENS] = 0;
 }
 
-static uint16_t     offset_1    = 0,//(40.f / 5.f) * 8.f,
-                    offset_2    = 0;//(40.f / 5.f) * 20.f;
+/* 8pt == 1*C */
+static float        pt_to_tempC = 8.f;
+static uint16_t     offset_1    = pt_to_tempC * 8.f,
+                    offset_2    = pt_to_tempC * 19.f;
 static uint16_t     result_1    = 0,
                     result_2    = 0;
+
+void debug_show_tempC_offsets()
+{
+    Serial.print("off_1 = ");
+    Serial.println(offset_1 / pt_to_tempC);
+    Serial.print("off_2 = ");
+    Serial.println(offset_2 / pt_to_tempC);
+}
 
 void read_tempC_sensors(bool is_startup_call = false);
 void read_analog_signals(bool is_startup_call = false)

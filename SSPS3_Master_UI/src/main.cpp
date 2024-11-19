@@ -40,6 +40,7 @@ void setup_watchdogs();
 void setup()
 {
     Serial.begin(115200);
+    debug_show_tempC_offsets();
 
     pinMode(INT, INPUT_PULLDOWN);
     attachInterrupt(digitalPinToInterrupt(INT), interrupt_action, CHANGE);
@@ -343,6 +344,7 @@ void setup_task_manager()
 
         if (to_do.step_is_turned_on && to_do.aim != ProgramStepAimEnum::WATER_JACKET)
         {
+            //Serial.println("*task main step*");
             async_motor_wd      ->set_async_motor_speed(to_do.fan);
 
             if (to_do.must_be_cooled)
@@ -370,7 +372,7 @@ void setup_task_manager()
                 if (var_equip_have_wJacket_tempC_sensor.get())
                 {
                     chilling_wd ->set_aim(
-                        to_do.tempC + 1,
+                        to_do.tempC,
                         filter_tempC_product->get_physical_value(),
                         filter_tempC_wJacket->get_physical_value()
                     );
@@ -384,12 +386,12 @@ void setup_task_manager()
                 else
                 {
                     chilling_wd ->set_aim(
-                        to_do.tempC + 3,
+                        to_do.tempC + 1,
                         filter_tempC_product->get_physical_value()
                     );
 
                     heating_wd  ->set_aim(
-                        to_do.tempC - 3,
+                        to_do.tempC - 4,
                         filter_tempC_product->get_physical_value()
                     );
                 }
@@ -401,13 +403,13 @@ void setup_task_manager()
                     if (var_equip_have_wJacket_tempC_sensor.get())
                     {
                         chilling_wd ->set_aim(
-                            to_do.tempC + 1,
+                            to_do.tempC,
                             filter_tempC_product->get_physical_value(),
                             filter_tempC_wJacket->get_physical_value()
                         );
 
                         heating_wd  ->set_aim(
-                            to_do.tempC - 1,
+                            to_do.tempC,
                             filter_tempC_product->get_physical_value(),
                             filter_tempC_wJacket->get_physical_value()
                         );
@@ -415,7 +417,7 @@ void setup_task_manager()
                     else
                     {
                         chilling_wd ->set_aim(
-                            to_do.tempC + 3,
+                            to_do.tempC + 2,
                             filter_tempC_product->get_physical_value()
                         );
 
@@ -429,7 +431,7 @@ void setup_task_manager()
                 {
                     if (var_equip_have_wJacket_tempC_sensor.get())
                         heating_wd  ->set_aim(
-                            to_do.tempC - 1,
+                            to_do.tempC,
                             filter_tempC_product->get_physical_value(),
                             filter_tempC_wJacket->get_physical_value()
                         );
@@ -469,6 +471,7 @@ void setup_task_manager()
         UI_service->UI_task_roadmap_control->update_task_steps_state();
         UI_service->UI_task_roadmap_control->update_ui_context();
 #else
+        UI_service->UI_cheap_roadmap_control->update_ui_base();
         UI_service->UI_cheap_roadmap_control->update_ui_context();
 #endif
     }, 500);
