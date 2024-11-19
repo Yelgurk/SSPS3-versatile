@@ -292,7 +292,7 @@ public:
         sprintf(buffer, "%.2f", percentage_done);
         lv_label_set_text(get_container_content("[state_percentage]"), (string(buffer) + "%").c_str());
 
-        sprintf(buffer, "%02d:%02d:%02d", (uint32_t)task_gone_ss / (60 * 60), (uint32_t)task_gone_ss / 60, (uint32_t)task_gone_ss % 60);
+        sprintf(buffer, "%02d:%02d:%02d", (uint32_t)task_gone_ss / (60 * 60), ((uint32_t)task_gone_ss % (60 * 60)) / 60, (uint32_t)task_gone_ss % 60);
         lv_label_set_text(get_container_content("[state_duration]"), buffer);
 
         lv_obj_t * bar = get_container_content("[progress_bar]");
