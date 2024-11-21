@@ -100,8 +100,8 @@ void read_digital_signals()
 
 /* 8pt == 1*C */
 static float        pt_to_tempC = 8.f;
-static uint16_t     offset_1    = 0,//pt_to_tempC * 8.f,
-                    offset_2    = 0;//pt_to_tempC * 19.f;
+static uint16_t     offset_1    = pt_to_tempC * 8.f,
+                    offset_2    = pt_to_tempC * 19.f;
 static uint16_t     result_1    = 0,
                     result_2    = 0;
 

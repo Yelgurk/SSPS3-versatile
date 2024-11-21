@@ -352,7 +352,7 @@ void setup_task_manager()
                 if (var_equip_have_wJacket_tempC_sensor.get())
                 {
                     chilling_wd ->set_aim(
-                        to_do.tempC,
+                        to_do.tempC - 2,
                         filter_tempC_product->get_physical_value(),
                         filter_tempC_wJacket->get_physical_value()
                     );
