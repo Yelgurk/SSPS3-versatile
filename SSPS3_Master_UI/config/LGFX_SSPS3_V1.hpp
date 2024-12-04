@@ -6,6 +6,16 @@
 #define LGFX_USE_V1
 #include <LovyanGFX.hpp>
 
+
+
+#define LCD_TYPE_V 2
+
+class LGFX : public lgfx::LGFX_Device
+{
+//lgfx::Panel_ILI9481     _panel_instance;
+//lgfx::Panel_ILI9486     _panel_instance;
+
+#if LCD_TYPE_V == 0
 #define LCD_D0    18
 #define LCD_D1    17
 #define LCD_D2    16
@@ -18,17 +28,36 @@
 #define LCD_WR    19
 #define LCD_RS    20
 #define LCD_BL    9
-
-#define LCD_TYPE_V 1
-
-class LGFX : public lgfx::LGFX_Device
-{
-//lgfx::Panel_ILI9481     _panel_instance;
-//lgfx::Panel_ILI9486     _panel_instance;
-
-#if LCD_TYPE_V == 0
   lgfx::Panel_ILI9488     _panel_instance;
+
 #elif LCD_TYPE_V == 1
+#define LCD_D0    18
+#define LCD_D1    17
+#define LCD_D2    16
+#define LCD_D3    15
+#define LCD_D4    7
+#define LCD_D5    6
+#define LCD_D6    5
+#define LCD_D7    4
+#define LCD_RD    8
+#define LCD_WR    19
+#define LCD_RS    20
+#define LCD_BL    9
+  lgfx::Panel_ST7796      _panel_instance;
+
+#elif LCD_TYPE_V == 2
+#define LCD_D0    18
+#define LCD_D1    17
+#define LCD_D2    16
+#define LCD_D3    15
+#define LCD_D4    7
+#define LCD_D5    6
+#define LCD_D6    5
+#define LCD_D7    4
+#define LCD_RD    8
+#define LCD_WR    19
+#define LCD_RS    20
+#define LCD_BL    14
   lgfx::Panel_ST7796      _panel_instance;
 #endif
 
@@ -81,6 +110,9 @@ public:
       cfg.invert          = false;
       cfg.rgb_order       = false;
 #elif LCD_TYPE_V == 1
+      cfg.invert          = true;
+      cfg.rgb_order       = false;
+#elif LCD_TYPE_V == 2
       cfg.invert          = true;
       cfg.rgb_order       = false;
 #endif

@@ -16,10 +16,22 @@
 #include "Watchdogs/ProgStartupWatchdog.hpp"
 #include "FRAM_DB.hpp"
 
+//#define IS_SSPS3F1_V1
+#define IS_SSPS3F1_BLACKOUT_EDITION 
+
 /* I2C */
+#ifdef IS_SSPS3F1_V1
 #define SDA                         48
 #define SCL                         47
 #define INT                         12
+#endif
+
+#ifdef IS_SSPS3F1_BLACKOUT_EDITION
+#define SDA                         40
+#define SCL                         39
+#define INT                         38
+#endif
+
 #define STM_I2C_ADDR                0x30
 #define FRAM_I2C_ADDR               0x50
 
