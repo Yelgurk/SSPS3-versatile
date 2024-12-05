@@ -21,19 +21,25 @@
 
 /* I2C */
 #ifdef IS_SSPS3F1_V1
-#define SDA                         48
-#define SCL                         47
-#define INT                         12
+    #define SDA                         48
+    #define SCL                         47
+    #define INT                         12
 #endif
 
 #ifdef IS_SSPS3F1_BLACKOUT_EDITION
-#define SDA                         40
-#define SCL                         39
-#define INT                         38
+    #define SDA                         40
+    #define SCL                         39
+    #define INT                         38
 #endif
 
 #define STM_I2C_ADDR                0x30
 #define FRAM_I2C_ADDR               0x50
+
+/* SSPS3F1 BLACKOUT EDITION - Extra part */
+
+#ifdef IS_SSPS3F1_BLACKOUT_EDITION
+    #define BUZZER_PIN                  11
+#endif
 
 /* RTC */
 bool century = false;
@@ -95,9 +101,14 @@ void read_digital_signals()
     static uint8_t old = 123;
     Pressed_key = STM32->get_kb();
 
-    //if (old != Pressed_key)
-    //    Serial.println(Pressed_key);
-    //old = Pressed_key;
+    if (old != Pressed_key)
+    {
+        if (Pressed_key >= 0 && Pressed_key < 16 )
+            digitalWrite(BUZZER_PIN, HIGH);
+        
+        //Serial.println(Pressed_key);
+    }
+    old = Pressed_key;
 
     for (index = 0; index < 8; index++)
         OptIn_state[index] = STM32->get(COMM_GET::DGIN, index);

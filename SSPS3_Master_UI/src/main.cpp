@@ -52,6 +52,9 @@ void setup()
 /* #IFDEF PLC VERSION REGION - BEGIN */
 
 #ifdef IS_SSPS3F1_BLACKOUT_EDITION
+    pinMode(BUZZER_PIN, OUTPUT); //Buzzer init
+    digitalWrite(BUZZER_PIN, LOW);
+
     pinMode(13, OUTPUT); //OK led
     digitalWrite(13, HIGH);
 
@@ -61,7 +64,7 @@ void setup()
 
 /* IFDEF PLC VERSION REGION - END */
 
-    if (var_startup_key.get() == 0 || var_startup_key.get() == (256 * 256 * 256 * 256 - 1))
+    if (var_startup_key.get() == 0 || var_startup_key.get() == (uint32_t)0xFFFFFFFF)
         Storage::first_boot();
 
     if (var_startup_key.get() != startup_key)
@@ -70,6 +73,10 @@ void setup()
     prod_time_x_cnt                         .set_is_system_val();
     var_type_of_equipment_enum              .set_is_system_val();
     var_stop_btn_type                       .set_is_system_val();
+    var_sensor_batt_min_V                   .set_is_system_val();
+    var_sensor_batt_max_V                   .set_is_system_val();
+    var_sensor_batt_V_min_12bit             .set_is_system_val();
+    var_sensor_batt_V_max_12bit             .set_is_system_val();
     var_sensor_tempC_limit_4ma_12bit        .set_is_system_val();
     var_sensor_tempC_limit_20ma_12bit       .set_is_system_val();
     var_sensor_tempC_limit_4ma_degrees_C    .set_is_system_val();
@@ -144,6 +151,10 @@ void setup()
 void loop()
 {
     Blowing_control->do_blowing();
+    
+#ifdef IS_SSPS3F1_BLACKOUT_EDITION
+    digitalWrite(BUZZER_PIN, LOW);
+#endif
 
     if (interrupted_by_slave)
     {

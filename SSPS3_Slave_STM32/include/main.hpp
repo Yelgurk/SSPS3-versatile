@@ -22,7 +22,7 @@ uint8_t KB_row_pin[KB_Row] =
     PB11, PB13, PA9, PA11
 #endif
 #ifdef SSPS3F1_BLACKOUT_EDITION
-    PA12, PA11, PA10, PA9
+    PA12, PA11, PC8, PC7
 #endif
 };
 
@@ -32,7 +32,7 @@ uint8_t KB_col_pin[KB_Col] =
     PC7, PC9, PB14, PC6
 #endif
 #ifdef SSPS3F1_BLACKOUT_EDITION
-    PA8, PC9, PC8, PC7
+    PA8, PC9, PA10, PA9
 #endif
 };
 
