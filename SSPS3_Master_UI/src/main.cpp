@@ -133,18 +133,21 @@ void setup()
 
     if (false)
     {
+        STM32->set(COMM_SET::RELAY, REL_HEATERS, 1);
+        delay(1000);
         STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 1);
-        delay(500);
+        delay(1000);
+        STM32->set(COMM_SET::RELAY, REL_WJACKET_VALVE, 1);
+        delay(1000);
+        STM32->set(COMM_SET::RELAY, REL_BLOWGUN_PUMP, 1);
+        delay(1000);
+        STM32->set(COMM_SET::RELAY, REL_HEATERS, 0);
+        delay(1000);
         STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 0);
-        delay(500);
-        STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 1);
-        delay(500);
-        STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 0);
-        delay(500);
-        STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 1);
-        delay(500);
-        STM32->set(COMM_SET::RELAY, REL_ASYNC_M, 0);
-        delay(500);
+        delay(1000);
+        STM32->set(COMM_SET::RELAY, REL_WJACKET_VALVE, 0);
+        delay(1000);
+        STM32->set(COMM_SET::RELAY, REL_BLOWGUN_PUMP, 0);
     }
 }
 

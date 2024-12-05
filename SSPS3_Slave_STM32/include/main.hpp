@@ -115,14 +115,14 @@ String kbMsg = "";
     #define STM_ADC_4       PC3
 #endif
 #ifdef SSPS3F1_BLACKOUT_EDITION
-    #define STM_RELAY_1     PC4
-    #define STM_RELAY_2     PC5
-    #define STM_RELAY_3     PB0
-    #define STM_RELAY_4     PB1
-    #define STM_RELAY_5     PB13
-    #define STM_RELAY_6     PB14
-    #define STM_RELAY_7     PB15
-    #define STM_RELAY_8     PC6
+    #define STM_RELAY_8     PC4
+    #define STM_RELAY_7     PC5
+    #define STM_RELAY_6     PB0
+    #define STM_RELAY_5     PB1
+    #define STM_RELAY_4     PB13
+    #define STM_RELAY_3     PB14
+    #define STM_RELAY_2     PB15
+    #define STM_RELAY_1     PC6
 
     #define STM_DAC_1       PA4
 

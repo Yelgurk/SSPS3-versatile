@@ -111,7 +111,14 @@ void read_digital_signals()
     old = Pressed_key;
 
     for (index = 0; index < 8; index++)
+    {
         OptIn_state[index] = STM32->get(COMM_GET::DGIN, index);
+
+        //Serial.print(OptIn_state[index]);
+
+        //if (index == 7)
+        //    Serial.println();
+    }
 
     if (!var_stop_btn_type.local())
         OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
@@ -142,8 +149,16 @@ void read_analog_signals(bool is_startup_call = false)
     static uint8_t index = 0;
 
     for (index = 0; index < 4; index++)
+    {
         if (is_startup_call || (index != ADC_TEMPC_PRODUCT && index != ADC_TEMPC_WJACKET))
             AnIn_state[index] = STM32->get(COMM_GET::ANIN, index);
+
+        //Serial.print(AnIn_state[index]);
+        //Serial.print(",  ");
+
+        //if (index == 3)
+        //    Serial.println();
+    }
 
     read_tempC_sensors(is_startup_call);
 
