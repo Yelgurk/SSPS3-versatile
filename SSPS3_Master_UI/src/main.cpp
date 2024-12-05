@@ -207,6 +207,7 @@ int melody3[] = {
   NOTE_G4,8, NOTE_C4,8, NOTE_E4,16, NOTE_F4,16, NOTE_G4,8, NOTE_C4,8, NOTE_E4,16, NOTE_F4,16,
   NOTE_G4,-4, NOTE_C4,-4,//5
 
+/*
   NOTE_DS4,16, NOTE_F4,16, NOTE_G4,4, NOTE_C4,4, NOTE_DS4,16, NOTE_F4,16, //6
   NOTE_D4,-1, //7 and 8
   NOTE_F4,-4, NOTE_AS3,-4,
@@ -239,6 +240,7 @@ int melody3[] = {
   
   REST,4, NOTE_GS5,16, NOTE_AS5,16, NOTE_C6,8, NOTE_G5,8, NOTE_GS5,16, NOTE_AS5,16,
   NOTE_C6,8, NOTE_G5,16, NOTE_GS5,16, NOTE_AS5,16, NOTE_C6,8, NOTE_G5,8, NOTE_GS5,16, NOTE_AS5,16,  
+  */
 };
 
 // sizeof gives the number of bytes, each int value is composed of two bytes (16 bits)
