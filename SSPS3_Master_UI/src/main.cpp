@@ -85,6 +85,18 @@ void setup()
     var_type_of_equipment_enum.get();
     var_stop_btn_type.get();
 
+    var_sensor_batt_min_V.get();                   
+    var_sensor_batt_max_V.get();                   
+    var_sensor_batt_V_min_12bit.get();             
+    var_sensor_batt_V_max_12bit.get();             
+    var_sensor_tempC_limit_4ma_12bit.get();        
+    var_sensor_tempC_limit_20ma_12bit.get();       
+    var_sensor_tempC_limit_4ma_degrees_C.get();    
+    var_sensor_tempC_limit_20ma_degrees_C.get();   
+
+    if (var_sensor_tempC_limit_20ma_12bit.local() > 2800.f)
+        var_sensor_tempC_limit_20ma_12bit.reset();
+
 #ifdef SSPS3_IS_CHEAP_SOLUTION_YES
     if (prod_time_x_cnt.get() >= TIME_X_SS)
     {
@@ -310,13 +322,21 @@ void setup_controllers()
     );
 }
 
+static uint16_t V_BAT_COUNTER_CRUTCH = 0;
+
 void setup_task_manager()
 {
     rt_task_manager.add_task("task_update_filters", [](){
         read_analog_signals();
         //filter_tempC_product->add_value(AnIn_state[ADC_TEMPC_PRODUCT]);
         //filter_tempC_wJacket->add_value(AnIn_state[ADC_TEMPC_WJACKET]);
-        filter_24v_batt     ->add_value(AnIn_state[ADC_VOLTAGE_BATT]);
+
+        if ((++V_BAT_COUNTER_CRUTCH >= 450 && filter_24v_batt->get_filtered_value() > AnIn_state[ADC_VOLTAGE_BATT]) ||
+            (V_BAT_COUNTER_CRUTCH >= 5 && filter_24v_batt->get_filtered_value() <= AnIn_state[ADC_VOLTAGE_BATT]))
+        {
+            filter_24v_batt->add_value(AnIn_state[ADC_VOLTAGE_BATT]);
+            V_BAT_COUNTER_CRUTCH = 0;
+        }
     }, 100);
     
     rt_task_manager.add_task("task_update_UI_state_bar", [](){

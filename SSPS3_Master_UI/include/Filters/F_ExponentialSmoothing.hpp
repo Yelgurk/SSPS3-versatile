@@ -20,7 +20,7 @@ public:
     {
         if (!initialized)
         {
-            filtered_value = value;
+            filtered_value = value * 0.98f;
             initialized = true;
         }
         else

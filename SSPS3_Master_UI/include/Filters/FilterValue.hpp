@@ -18,7 +18,7 @@ public:
 
 public:
     FilterValue(Filter* filter, int16_t minVal = 0, int16_t maxVal = 4095, float physMin = 0.0, float physMax = 100.0)
-        : currentFilter(filter), minValue(minVal), maxValue(maxVal), physicalMin(physMin), physicalMax(physMax) {}
+        : currentFilter(filter), minValue(minVal), maxValue(maxVal), physicalMin(physMin), physicalMax(physMax){}
 
     void set_filter(Filter* filter) {
         currentFilter = filter;

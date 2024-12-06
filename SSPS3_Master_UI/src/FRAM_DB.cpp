@@ -105,7 +105,7 @@ FRAMObject<uint16_t>& var_sensor_tempC_limit_20ma_12bit         = Storage::alloc
 FRAMObject<int16_t>& var_sensor_tempC_limit_4ma_degrees_C       = Storage::allocate<int16_t>(-50, false);              // ok
 FRAMObject<int16_t>& var_sensor_tempC_limit_20ma_degrees_C      = Storage::allocate<int16_t>(150, false);              // ok
 FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_min_12bit        = Storage::allocate<uint16_t>(0, false);               // nowhere useful
-FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_max_12bit        = Storage::allocate<uint16_t>(BIT_12_VAL / 2, false);  // ok
+FRAMObject<uint16_t>& var_sensor_dac_rpm_limit_max_12bit        = Storage::allocate<uint16_t>(BIT_12_VAL / 2, false);  // ok, P.S. 4096 = 10V, but out default async driver has max 5V signal, this why (4095 / 2) like (10v / 2)
 FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_min              = Storage::allocate<uint8_t>(0, false);                // nowhere useful
 FRAMObject<uint8_t>& var_sensor_dac_asyncM_rpm_max              = Storage::allocate<uint8_t>(30, false);               // ok
  

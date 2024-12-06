@@ -28,14 +28,22 @@ static auto& mem_String = Storage::allocate<std::string>("err");
 /* min - 0.046ma    => 0 */
 /* max - 38.13ma    => 4095 */
 
+//#define SSPS3F1_V1
+#define SSPS3F1_BLACKOUT_EDITION
+
 /* Prog conf defines */
 #define PROG_RUNNED_STEPS_NCT_MAX   24
 
 /* ADC limits */
-#define BIT_12_VAL          4095
-#define BATT_V_TO_12BIT     79.5f   //69.76744f
-#define MIN_BATT_VOLTAGE    22.8f
-#define MAX_BATT_VOLTAGE    25.0f
+#define BIT_12_VAL          4024
+#ifdef SSPS3F1_V1
+    #define BATT_V_TO_12BIT     79.5f
+#endif
+#ifdef SSPS3F1_BLACKOUT_EDITION
+    #define BATT_V_TO_12BIT     83.2f
+#endif
+#define MIN_BATT_VOLTAGE    23.2f //22.6f - is absolutely minimum voltage of empty batt
+#define MAX_BATT_VOLTAGE    24.8f
 #define MIN_ADC_TEMPC       -50.f
 #define MAX_ADC_TEMPC       150.f
 //#define MIN_ADC_4ma         388

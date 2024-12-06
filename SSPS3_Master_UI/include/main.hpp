@@ -32,8 +32,8 @@
     #define INT                         38
 #endif
 
-#define STM_I2C_ADDR                0x30
-#define FRAM_I2C_ADDR               0x50
+#define STM_I2C_ADDR                    0x30
+#define FRAM_I2C_ADDR                   0x50
 
 /* SSPS3F1 BLACKOUT EDITION - Extra part */
 
@@ -49,7 +49,7 @@ bool pmFlag;
 /* Filters */
 ExponentialSmoothing exp_filter_tempC_product(0.06);
 ExponentialSmoothing exp_filter_tempC_wJacket(0.06);
-ExponentialSmoothing exp_filter_24v_batt(0.02);
+ExponentialSmoothing exp_filter_24v_batt(0.03);
 
 /* Task manager */
 RtTaskManager rt_task_manager;
@@ -123,15 +123,15 @@ void read_digital_signals()
     if (!var_stop_btn_type.local())
         OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
 
-    //OptIn_state[DIN_WJACKET_SENS] = 1;
-    //OptIn_state[DIN_380V_SIGNAL] = 1;
-    //OptIn_state[DIN_STOP_SENS] = 0;
+    //OptIn_state[DIN_WJACKET_SENS]   = 1;
+    //OptIn_state[DIN_380V_SIGNAL]    = 1;
+    //OptIn_state[DIN_STOP_SENS]      = 0;
 }
 
 /* 8pt == 1*C */
 static float        pt_to_tempC = 8.f;
-static uint16_t     offset_1    = 0,//pt_to_tempC * 8.f,
-                    offset_2    = 0;//pt_to_tempC * 19.f;
+static uint16_t     offset_1    = pt_to_tempC * 6.f,
+                    offset_2    = pt_to_tempC * 0.f;
 static uint16_t     result_1    = 0,
                     result_2    = 0;
 
@@ -165,6 +165,8 @@ void read_analog_signals(bool is_startup_call = false)
     if (is_startup_call)
         for (uint8_t call = 0; call < 10; call++)
         {
+            filter_24v_batt->add_value(STM32->get(COMM_GET::ANIN, ADC_VOLTAGE_BATT));
+            
             result_1 = STM32->get(COMM_GET::ANIN, ADC_TEMPC_PRODUCT);
             result_2 = STM32->get(COMM_GET::ANIN, ADC_TEMPC_WJACKET);
 
