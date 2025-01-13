@@ -438,7 +438,7 @@ void setup_task_manager()
                     );
 
                     heating_wd  ->set_aim(
-                        to_do.tempC - 4,
+                        to_do.tempC - 2,
                         filter_tempC_product->get_physical_value()
                     );
                 }
@@ -469,7 +469,7 @@ void setup_task_manager()
                         );
 
                         heating_wd  ->set_aim(
-                            to_do.tempC - 3,
+                            to_do.tempC - 2,
                             filter_tempC_product->get_physical_value()
                         );
                     }
@@ -484,7 +484,7 @@ void setup_task_manager()
                         );
                     else
                         heating_wd  ->set_aim(
-                            to_do.tempC - 3,
+                            to_do.tempC - 2,
                             filter_tempC_product->get_physical_value()
                         );
                     

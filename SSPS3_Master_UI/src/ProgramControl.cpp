@@ -151,7 +151,7 @@ ProgramStep ProgramControl::do_task(bool first_call_after_startup)
             else if (_step_curr.await_ok_button)
                 _go_next_step = Pressed_key_accept_for_prog;
             else if (_step_curr.untill_condition_met)
-                _go_next_step = IsInBounds<int16_t>(filter_tempC_product->get_physical_value(), _step_curr.tempC - 1, _step_curr.tempC + 1);
+                _go_next_step = IsInBounds<int16_t>(filter_tempC_product->get_physical_value(), _step_curr.tempC - 2, _step_curr.tempC + 1);
             else if (_step_curr.is_time_out())
                 _go_next_step = true;
 
