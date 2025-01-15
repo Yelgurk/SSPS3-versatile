@@ -125,26 +125,69 @@ void Keypad4495::getMatrixStatus(byte* matrix_array) {
   }
 };
 
+const char KEY_DEBOUNCE_AWAIT = -1;
+unsigned long _lastDebounceTime = 0;
+char _lastKey = Keypad4495::NO_KEY;
+bool _debouncing = false;
+
+char Keypad4495::getKeyWithDebounce() {
+    char button = getKey();
+    unsigned long currentMillis = millis();
+
+    if (_debouncing)
+    {
+        if (currentMillis - _lastDebounceTime >= _debounce_ms)
+        {
+            // Если прошло достаточно времени, проверяем, совпадает ли кнопка
+            _debouncing = false;
+            
+            if (button == _lastKey)
+            {
+                _lastKey = NO_KEY;
+                return button; // Возвращаем кнопку, если она совпадает
+            }
+            else
+            {
+                return NO_KEY; // Игнорируем, если кнопка изменилась
+            }
+        }
+
+        return KEY_DEBOUNCE_AWAIT; // Пока не истек debounce, возвращаем NO_KEY
+    }
+
+    if (button != NO_KEY && button != _lastKey) {
+        // Начинаем debounce, если кнопка изменилась
+        _debouncing = true;
+        _lastDebounceTime = currentMillis;
+        _lastKey = button;
+        return KEY_DEBOUNCE_AWAIT; // Пока debounce активен, возвращаем NO_KEY
+    }
+
+    return NO_KEY; // Если кнопка не нажата или не изменилась
+}
+
+/*
 char Keypad4495::getKeyWithDebounce() {
   char button;
   unsigned long pressTime;
 
   button = getKey();
-  if (button != Keypad4495::NO_KEY) {
+  if (button != Keypad4495::NO_KEY)
+  {
     pressTime = millis();
-    while (millis() - pressTime < _debounce_ms)
-      ; // Spin our wheels while we wait
+    while (millis() - pressTime < _debounce_ms) ;
 
-    if (button == getKey()) {
-      // Same button, now wait for it to be released
-      //while (getKey() == button); // Spin our wheels and wait for button to be released
-    } else {
-      // Different button, so return NO_KEY and ignore the keypress
+    if (button == getKey())
+    {
+    }
+    else
+    {
       button = Keypad4495::NO_KEY;
     }
   }
   return button;
 };
+*/
 
 // Blocking call -- waits for a keypress before returning
 char Keypad4495::waitForKeyWithDebounce() {

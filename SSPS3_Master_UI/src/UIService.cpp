@@ -97,6 +97,8 @@ void UIService::init_screens()
                 prog_runned.ptr()->end_task_by_user();
                 prog_runned.accept();
 
+                UI_notification_bar->push_info(SystemNotification::INFO_TASK_CANCELED_BY_USER_PLC);
+
                 UI_task_roadmap_control->update_ui_context();
                 UI_task_roadmap_control->update_task_steps_state();
             }),

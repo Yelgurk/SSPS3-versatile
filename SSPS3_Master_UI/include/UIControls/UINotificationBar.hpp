@@ -19,6 +19,7 @@ _INFO_BEGIN = 21,
     INFO_TASK_RESUME_AFTER_PROBLEM_SOLVING,
     INFO_TASK_RESUME_AFTER_PLC_REBOOT,
     INFO_TASK_CANCELED_BY_USER,
+    INFO_TASK_CANCELED_BY_USER_PLC,
 _INFO_END = 40,
 _WARNING_BEGIN = 41,
     WARNING_WATER_JACKET_NO_WATER,
@@ -96,6 +97,7 @@ private:
             case SystemNotification::INFO_TASK_RESUME_AFTER_PROBLEM_SOLVING:    lv_label_set_text(text, "Программа продолжена"); break;
             case SystemNotification::INFO_TASK_RESUME_AFTER_PLC_REBOOT:         lv_label_set_text(text, "Программа продолжена после перезагрузки"); break;
             case SystemNotification::INFO_TASK_CANCELED_BY_USER:                lv_label_set_text(text, "Программа преравана по кнопке"); break;
+            case SystemNotification::INFO_TASK_CANCELED_BY_USER_PLC:            lv_label_set_text(text, "Прог. прерв. по кнопке на ПЛК"); break;
             case SystemNotification::WARNING_WATER_JACKET_NO_WATER:             lv_label_set_text(text, "ВНИМАНИЕ! Нет воды в рубашке!"); break;
             case SystemNotification::WARNING_380V_NO_POWER:                     lv_label_set_text(text, "ВНИМАНИЕ! Нет сети 380В!"); break;
             case SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN:                lv_label_set_text(text, "Вероятная поломка датчика температуры!"); break;

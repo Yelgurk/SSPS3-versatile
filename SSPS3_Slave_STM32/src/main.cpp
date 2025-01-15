@@ -100,12 +100,14 @@ void setup()
     for (uint8_t pin : KB_row_pin)
         pinMode(pin, INPUT_PULLUP);
 
-    myKeypad.setDebounce(100);
+    myKeypad.setDebounce(150);
 #endif
 
     itcw = new TwoWire(SDA, SCL);
     I2C = new I2C_Service(itcw, STM_I2C_ADR, set_event, get_event);
 }
+
+void run_kb_dispatcher(char key);
 
 uint8_t changed;
 void loop()
@@ -158,7 +160,28 @@ void loop()
                     }; break;
                 }
 #elif KeyPadVersion == 2
-    KeyNew = myKeypad.getKeyWithDebounce();
+    char keypad_awaiter = myKeypad.getKeyWithDebounce();
+    
+    if (keypad_awaiter >= 0)
+        run_kb_dispatcher(keypad_awaiter);
+#endif
+
+    if (is_key_first_call_done && KeyPressed < KB_Size && KeyPressed == KeyNew && millis() >= KeyHoldNext)
+    {
+        KeyHoldDelay /= HOLD_x;
+        KeyHoldDelay = KeyHoldDelay < HOLD_min_ms ? HOLD_min_ms : KeyHoldDelay;
+        
+        KeyHoldNext = millis() + KeyHoldDelay;
+#if KeyPadVersion == 1
+        is_key_press = true;
+#endif
+        CHANGE_INT_SIGNAL();
+    }
+}
+
+void run_kb_dispatcher(char key)
+{
+    KeyNew = key;
     KeyNew = KeyNew == 0 ? KB_Await : KeyNew - 1;
 
     if (KeyNew != KB_Await)
@@ -187,17 +210,47 @@ void loop()
         is_key_press_rel_await = true;
         CHANGE_INT_SIGNAL();
     }
-#endif
-
-    if (is_key_first_call_done && KeyPressed < KB_Size && KeyPressed == KeyNew && millis() >= KeyHoldNext)
-    {
-        KeyHoldDelay /= HOLD_x;
-        KeyHoldDelay = KeyHoldDelay < HOLD_min_ms ? HOLD_min_ms : KeyHoldDelay;
-        
-        KeyHoldNext = millis() + KeyHoldDelay;
-#if KeyPadVersion == 1
-        is_key_press = true;
-#endif
-        CHANGE_INT_SIGNAL();
-    }
 }
+
+/*
+const char KEY_DEBOUNCE_AWAIT = -1;
+unsigned long _lastDebounceTime = 0;
+char _lastKey = Keypad4495::NO_KEY;
+bool _debouncing = false;
+
+char Keypad4495::getKeyWithDebounce() {
+    char button = getKey();
+    unsigned long currentMillis = millis();
+
+    if (_debouncing)
+    {
+        if (currentMillis - _lastDebounceTime >= _debounce_ms)
+        {
+            // Если прошло достаточно времени, проверяем, совпадает ли кнопка
+            _debouncing = false;
+            
+            if (button == _lastKey)
+            {
+                _lastKey = NO_KEY;
+                return button; // Возвращаем кнопку, если она совпадает
+            }
+            else
+            {
+                return NO_KEY; // Игнорируем, если кнопка изменилась
+            }
+        }
+
+        return KEY_DEBOUNCE_AWAIT; // Пока не истек debounce, возвращаем NO_KEY
+    }
+
+    if (button != NO_KEY && button != _lastKey) {
+        // Начинаем debounce, если кнопка изменилась
+        _debouncing = true;
+        _lastDebounceTime = currentMillis;
+        _lastKey = button;
+        return KEY_DEBOUNCE_AWAIT; // Пока debounce активен, возвращаем NO_KEY
+    }
+
+    return NO_KEY; // Если кнопка не нажата или не изменилась
+}
+*/
