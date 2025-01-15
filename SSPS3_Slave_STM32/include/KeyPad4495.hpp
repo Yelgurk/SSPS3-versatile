@@ -40,8 +40,6 @@ private:
   void disableCols();
   void enableCols();
 
-
-  char DEBOUNCE_AWAIT         = -1;
   long _debounce_start_millis = 0;
   char _debounced_btn         = Keypad4495::NO_KEY;
   bool _is_debouncing         = false;

@@ -132,7 +132,7 @@ char Keypad4495::getKeyWithDebounce()
     if (_is_debouncing)
     {
         if (millis() - _debounce_start_millis < _debounce_ms)
-            return DEBOUNCE_AWAIT;
+            return Keypad4495::NO_PIN;
 
         _is_debouncing = false;
 
@@ -151,7 +151,7 @@ char Keypad4495::getKeyWithDebounce()
             _debounced_btn = button;
             _debounce_start_millis = millis();
 
-            return DEBOUNCE_AWAIT;
+            return Keypad4495::NO_PIN;
         }
 
         return Keypad4495::NO_KEY;

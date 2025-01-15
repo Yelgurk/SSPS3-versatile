@@ -172,7 +172,7 @@ void loop()
 #elif KeyPadVersion == 2
     char keypad_awaiter = myKeypad.getKeyWithDebounce();
     
-    if (keypad_awaiter >= 0)
+    if (keypad_awaiter != Keypad4495::NO_PIN)
         run_kb_dispatcher(keypad_awaiter);
 #endif
 }
