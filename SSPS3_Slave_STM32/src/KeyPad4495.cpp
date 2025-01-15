@@ -125,6 +125,7 @@ void Keypad4495::getMatrixStatus(byte* matrix_array) {
   }
 };
 
+/*
 char Keypad4495::getKeyWithDebounce()
 {
     char button = Keypad4495::NO_KEY;
@@ -157,8 +158,8 @@ char Keypad4495::getKeyWithDebounce()
         return Keypad4495::NO_KEY;
     }
 };
+*/
 
-/*
 char Keypad4495::getKeyWithDebounce() {
   char button;
   unsigned long pressTime;
@@ -179,7 +180,7 @@ char Keypad4495::getKeyWithDebounce() {
   }
   return button;
 };
-*/
+
 
 // Blocking call -- waits for a keypress before returning
 char Keypad4495::waitForKeyWithDebounce() {
