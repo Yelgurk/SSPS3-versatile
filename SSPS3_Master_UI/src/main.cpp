@@ -346,9 +346,11 @@ void setup_task_manager()
             filter_tempC_product->get_physical_value(),
             filter_tempC_wJacket->get_physical_value(),
             var_equip_have_wJacket_tempC_sensor.local(),
-            OptIn_state[DIN_WJACKET_SENS]
-                ? (rt_out_state_wJacket ? WaterJacketStateEnum::COOLING : WaterJacketStateEnum::FILLED)
-                : (rt_out_state_wJacket ? WaterJacketStateEnum::FILLING : WaterJacketStateEnum::EMPTY),
+            OptIn_state[DIN_380V_SIGNAL] ? (
+                OptIn_state[DIN_WJACKET_SENS]
+                    ? (rt_out_state_wJacket ? WaterJacketStateEnum::COOLING : WaterJacketStateEnum::FILLED)
+                    : (rt_out_state_wJacket ? WaterJacketStateEnum::FILLING : WaterJacketStateEnum::EMPTY)
+            ) : WaterJacketStateEnum::AWAIT_380V,
             filter_24v_batt->get_percentage_value(),
             OptIn_state[DIN_380V_SIGNAL]
                 ? ChargeStateEnum::CHARGERING

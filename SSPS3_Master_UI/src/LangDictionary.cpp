@@ -17,6 +17,7 @@ const std::vector<WordEntry> wordEntries PROGMEM = {
     /*"[рубашка_набор]"*/ {JACKET_FILLING, {"набор", "intake", "pobór"}},
     /*"[рубашка_готов]"*/ {JACKET_DONE, {"заполн.", "full", "pełna"}},
     /*"[рубашка_охлажд]"*/ {JACKET_COOLING, {"охлажд.", "chill", "chłodz."}},
+    /*"[рубашка_380в]"*/ {JACKET_AWAIT_380V, {"сеть?", "power?", "power?"}},
     /*"[рубашка_пусто]"*/ {JACKET_EMPTY, {"пусто", "empty", "pusty"}},
     /*"[аккум_зарядка]"*/ {BAT_CHARGERING, {"зарядка", "charge", "ładowar."}},
     /*"[аккум_ошибка]"*/ {BAT_ERROR, {"ошибка", "error", "błąd"}},

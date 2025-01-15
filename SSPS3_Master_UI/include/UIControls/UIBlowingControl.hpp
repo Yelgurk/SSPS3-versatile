@@ -38,9 +38,9 @@ public:
         create_support_icons(support_container, &img_flag, -45, 175, 176);
         
         lv_obj_t * info_label_1 = create_support_label(support_container, Translator::get(DOSING_INFO_1), 12);
-        lv_obj_t * info_label_2 = create_support_label(support_container, Translator::get(DOSING_INFO_1), 62);
-        lv_obj_t * info_label_3 = create_support_label(support_container, Translator::get(DOSING_INFO_1), 107);
-        lv_obj_t * info_label_4 = create_support_label(support_container, Translator::get(DOSING_INFO_1), 172);
+        lv_obj_t * info_label_2 = create_support_label(support_container, Translator::get(DOSING_INFO_2), 62);
+        lv_obj_t * info_label_3 = create_support_label(support_container, Translator::get(DOSING_INFO_3), 107);
+        lv_obj_t * info_label_4 = create_support_label(support_container, Translator::get(DOSING_INFO_4), 172);
 
         /* BLOWING VAL SELECTOR CONTAINER */
         lv_obj_t * blow_val_list_container = lv_obj_create(get_container());

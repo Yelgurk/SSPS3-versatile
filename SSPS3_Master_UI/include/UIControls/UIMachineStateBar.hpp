@@ -6,7 +6,7 @@
 
 enum class ChargeStateEnum : uint8_t { ERROR, STABLE, CHARGERING };
 
-enum class WaterJacketStateEnum : uint8_t { EMPTY, FILLING, FILLED, COOLING };
+enum class WaterJacketStateEnum : uint8_t { EMPTY, FILLING, FILLED, COOLING, AWAIT_380V };
 
 class UIMachineStateBar : public UIElement
 {
@@ -93,6 +93,7 @@ public:
                 case WaterJacketStateEnum::FILLING: lv_label_set_text(get_container_content("[context_wJacket]"), Translator::get(JACKET_FILLING).c_str()); break;
                 case WaterJacketStateEnum::FILLED: lv_label_set_text(get_container_content("[context_wJacket]"), Translator::get(JACKET_DONE).c_str()); break;
                 case WaterJacketStateEnum::COOLING: lv_label_set_text(get_container_content("[context_wJacket]"), Translator::get(JACKET_COOLING).c_str()); break;
+                case WaterJacketStateEnum::AWAIT_380V: lv_label_set_text(get_container_content("[context_wJacket]"), Translator::get(JACKET_AWAIT_380V).c_str()); break;
                 default: lv_label_set_text(get_container_content("[context_wJacket]"), Translator::get(JACKET_EMPTY).c_str()); break;
             }
         }
