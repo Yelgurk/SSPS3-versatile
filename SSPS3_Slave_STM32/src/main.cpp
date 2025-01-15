@@ -159,12 +159,6 @@ void loop()
                         CHANGE_INT_SIGNAL();
                     }; break;
                 }
-#elif KeyPadVersion == 2
-    char keypad_awaiter = myKeypad.getKeyWithDebounce();
-    
-    if (keypad_awaiter >= 0)
-        run_kb_dispatcher(keypad_awaiter);
-#endif
 
     if (is_key_first_call_done && KeyPressed < KB_Size && KeyPressed == KeyNew && millis() >= KeyHoldNext)
     {
@@ -172,11 +166,15 @@ void loop()
         KeyHoldDelay = KeyHoldDelay < HOLD_min_ms ? HOLD_min_ms : KeyHoldDelay;
         
         KeyHoldNext = millis() + KeyHoldDelay;
-#if KeyPadVersion == 1
         is_key_press = true;
-#endif
         CHANGE_INT_SIGNAL();
     }
+#elif KeyPadVersion == 2
+    char keypad_awaiter = myKeypad.getKeyWithDebounce();
+    
+    if (keypad_awaiter >= 0)
+        run_kb_dispatcher(keypad_awaiter);
+#endif
 }
 
 void run_kb_dispatcher(char key)
@@ -208,6 +206,15 @@ void run_kb_dispatcher(char key)
 
         KeyPressed = KeyPressed + KB_Size;
         is_key_press_rel_await = true;
+        CHANGE_INT_SIGNAL();
+    }
+
+    if (is_key_first_call_done && KeyPressed < KB_Size && KeyPressed == KeyNew && millis() >= KeyHoldNext)
+    {
+        KeyHoldDelay /= HOLD_x;
+        KeyHoldDelay = KeyHoldDelay < HOLD_min_ms ? HOLD_min_ms : KeyHoldDelay;
+        
+        KeyHoldNext = millis() + KeyHoldDelay;
         CHANGE_INT_SIGNAL();
     }
 }

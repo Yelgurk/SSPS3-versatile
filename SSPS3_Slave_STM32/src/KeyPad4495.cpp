@@ -125,46 +125,38 @@ void Keypad4495::getMatrixStatus(byte* matrix_array) {
   }
 };
 
-const char KEY_DEBOUNCE_AWAIT = -1;
-unsigned long _lastDebounceTime = 0;
-char _lastKey = Keypad4495::NO_KEY;
-bool _debouncing = false;
+char Keypad4495::getKeyWithDebounce()
+{
+    char button = Keypad4495::NO_KEY;
 
-char Keypad4495::getKeyWithDebounce() {
-    char button = getKey();
-    unsigned long currentMillis = millis();
-
-    if (_debouncing)
+    if (_is_debouncing)
     {
-        if (currentMillis - _lastDebounceTime >= _debounce_ms)
+        if (millis() - _debounce_start_millis < _debounce_ms)
+            return DEBOUNCE_AWAIT;
+
+        _is_debouncing = false;
+
+        if (getKey() == _debounced_btn)
+            return button;
+        else
+            return Keypad4495::NO_KEY;
+    }
+    else
+    {
+        button = getKey();
+
+        if (button != Keypad4495::NO_KEY)
         {
-            // Если прошло достаточно времени, проверяем, совпадает ли кнопка
-            _debouncing = false;
-            
-            if (button == _lastKey)
-            {
-                _lastKey = NO_KEY;
-                return button; // Возвращаем кнопку, если она совпадает
-            }
-            else
-            {
-                return NO_KEY; // Игнорируем, если кнопка изменилась
-            }
+            _is_debouncing = true;
+            _debounced_btn = button;
+            _debounce_start_millis = millis();
+
+            return DEBOUNCE_AWAIT;
         }
 
-        return KEY_DEBOUNCE_AWAIT; // Пока не истек debounce, возвращаем NO_KEY
+        return Keypad4495::NO_KEY;
     }
-
-    if (button != NO_KEY && button != _lastKey) {
-        // Начинаем debounce, если кнопка изменилась
-        _debouncing = true;
-        _lastDebounceTime = currentMillis;
-        _lastKey = button;
-        return KEY_DEBOUNCE_AWAIT; // Пока debounce активен, возвращаем NO_KEY
-    }
-
-    return NO_KEY; // Если кнопка не нажата или не изменилась
-}
+};
 
 /*
 char Keypad4495::getKeyWithDebounce() {
