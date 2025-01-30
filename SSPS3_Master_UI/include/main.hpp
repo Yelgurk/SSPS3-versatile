@@ -94,10 +94,8 @@ void IRAM_ATTR interrupt_action() {
     interrupted_by_slave = true;
 }
 
-void read_digital_signals()
+bool read_digital_signals(bool timer_call = true)
 {
-    static uint8_t index = 0;
-
     static uint8_t old = 123;
     Pressed_key = STM32->get_kb();
 
@@ -110,6 +108,7 @@ void read_digital_signals()
     }
     old = Pressed_key;
 
+    static uint8_t index = 0;
     for (index = 0; index < 8; index++)
     {
         OptIn_state[index] = STM32->get(COMM_GET::DGIN, index);
@@ -126,6 +125,8 @@ void read_digital_signals()
     //OptIn_state[DIN_WJACKET_SENS]   = 1;
     //OptIn_state[DIN_380V_SIGNAL]    = 1;
     //OptIn_state[DIN_STOP_SENS]      = 0;
+
+    return !timer_call;
 }
 
 /* 8pt == 1*C */

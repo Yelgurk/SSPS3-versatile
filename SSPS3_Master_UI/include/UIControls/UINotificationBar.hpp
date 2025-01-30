@@ -41,105 +41,111 @@ struct SystemNotificationContainer
     SystemNotificationContainer(SystemNotification info) : info(info) {}
 };
 
-class UINotificationBar;
-
-static UINotificationBar* instance = nullptr;
-static bool animation_in_action = false;
-
 class UINotificationBar : public UIElement
 {
-private:
+public:
     vector<SystemNotificationContainer> notifications;
-    uint16_t index = 0;
+    uint16_t index = 0,
+             curr_index = 0;
 
     lv_anim_t a;
+    bool animation_in_action = false;
+    bool is_eng_ver = false;
 
-    static void anim_callback(void* obj, int32_t  v) {
+    static void anim_callback(void* obj, int32_t  v)
+    {
         lv_obj_set_y((lv_obj_t*)obj, v);
     }
 
     static void anim_ready(lv_anim_t* anim)
     {
-        animation_in_action = false;
-        instance->show_next();
+        UINotificationBar::instance()->animation_in_action = false;
+        UINotificationBar::instance()->show_next();
     }
 
     void show_next()
     {
         if (!notifications.empty())
         {  
+            curr_index = index;
+
+            if (notifications[index].must_be_closed)
+            {
+                notifications.erase(notifications.begin() + index);
+            }
+            else
+                ++index;
+
             if (index >= notifications.size())
                 index = 0;
 
-            animation_in_action = true;
+            if (notifications.empty())
+                return;
+
+            UINotificationBar::instance()->animation_in_action = true;
 
             static lv_obj_t * img = get_container_content("[notify_img]");
             static lv_obj_t * text = get_container_content("[notify_text]");
 
-            if (notifications.at(index).info < SystemNotification::_OK_END)
+            if (notifications.at(curr_index).info < SystemNotification::_OK_END)
                 lv_image_set_src(img, &img_checkmark);
-            else if (notifications.at(index).info < SystemNotification::_INFO_END)
+            else if (notifications.at(curr_index).info < SystemNotification::_INFO_END)
                 lv_image_set_src(img, &img_info);
-            else if (notifications.at(index).info < SystemNotification::_WARNING_END)
+            else if (notifications.at(curr_index).info < SystemNotification::_WARNING_END)
                 lv_image_set_src(img, &img_warning);
-            else if (notifications.at(index).info < SystemNotification::_ERROR_END)
+            else if (notifications.at(curr_index).info < SystemNotification::_ERROR_END)
                 lv_image_set_src(img, &img_error);
 
-            switch (notifications.at(index).info)
+            switch (notifications.at(curr_index).info)
             {
-            case SystemNotification::OK_TASK_DONE:                              lv_label_set_text(text, "Программа полностью выполнена!"); break;
-            case SystemNotification::OK_BLOWING_DONE:                           lv_label_set_text(text, "Раздача завершена!"); break;
-            case SystemNotification::INFO_TURN_OFF_380V_FIRST:                  lv_label_set_text(text, "Сначала ВЫКЛючите 380В"); break;
-            case SystemNotification::INFO_TURN_ON_380V_FIRST:                   lv_label_set_text(text, "Сначала ВКЛючите 380В"); break;
-            case SystemNotification::INFO_BLOWING_RESET_2_SS_AWAIT:             lv_label_set_text(text, "Сброс раздачи, долгая пауза"); break;
-            case SystemNotification::INFO_BLOWING_CANCELED_BY_USER:             lv_label_set_text(text, "Сброс задачи пользователем"); break;
-            case SystemNotification::INFO_TASK_AWAIT_PROBLEM_SOLVING:           lv_label_set_text(text, "Ожидание разрешения проблем"); break;
-            case SystemNotification::INFO_TASK_RESUME_AFTER_PROBLEM_SOLVING:    lv_label_set_text(text, "Программа продолжена"); break;
-            case SystemNotification::INFO_TASK_RESUME_AFTER_PLC_REBOOT:         lv_label_set_text(text, "Программа продолжена после перезагрузки"); break;
-            case SystemNotification::INFO_TASK_CANCELED_BY_USER:                lv_label_set_text(text, "Программа преравана по кнопке"); break;
-            case SystemNotification::INFO_TASK_CANCELED_BY_USER_PLC:            lv_label_set_text(text, "Прог. прерв. по кнопке на ПЛК"); break;
-            case SystemNotification::WARNING_WATER_JACKET_NO_WATER:             lv_label_set_text(text, "ВНИМАНИЕ! Нет воды в рубашке!"); break;
-            case SystemNotification::WARNING_380V_NO_POWER:                     lv_label_set_text(text, "ВНИМАНИЕ! Нет сети 380В!"); break;
-            case SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN:                lv_label_set_text(text, "Вероятная поломка датчика температуры!"); break;
-            case SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN:             lv_label_set_text(text, "ОШИБКА! Авария мешалки!"); break;
-            case SystemNotification::ERROR_TASK_ENDED_30_MIN_SOLVING_AWAIT:     lv_label_set_text(text, "ОШИБКА! 30 минут простоя!"); break;
+            case SystemNotification::OK_TASK_DONE:                              lv_label_set_text(text, is_eng_ver ? "Task completed" : "Программа выполнена"); break;
+            case SystemNotification::OK_BLOWING_DONE:                           lv_label_set_text(text, is_eng_ver ? "The spill is done" : "Раздача завершена"); break;
+            case SystemNotification::INFO_TURN_OFF_380V_FIRST:                  lv_label_set_text(text, is_eng_ver ? "Switch ON 380V!" : "Сначала ВЫКЛ 380В"); break;
+            case SystemNotification::INFO_TURN_ON_380V_FIRST:                   lv_label_set_text(text, is_eng_ver ? "Switch OFF 380V!" : "Сначала ВКЛ 380В"); break;
+            case SystemNotification::INFO_BLOWING_RESET_2_SS_AWAIT:             lv_label_set_text(text, is_eng_ver ? "Spill pause long downtime, reset" : "Сброс раздачи, долгая пауза"); break;
+            case SystemNotification::INFO_BLOWING_CANCELED_BY_USER:             lv_label_set_text(text, is_eng_ver ? "Spill is canceled by user" : "Сброс задачи пользователем"); break;
+            case SystemNotification::INFO_TASK_AWAIT_PROBLEM_SOLVING:           lv_label_set_text(text, is_eng_ver ? "Waiting for issues to be resolved" : "Ожидание разрешения проблем"); break;
+            case SystemNotification::INFO_TASK_RESUME_AFTER_PROBLEM_SOLVING:    lv_label_set_text(text, is_eng_ver ? "Task continued after a pause" : "Программа продолжена"); break;
+            case SystemNotification::INFO_TASK_RESUME_AFTER_PLC_REBOOT:         lv_label_set_text(text, is_eng_ver ? "Task continued after reboot" : "Программа продолжена после перезагрузки"); break;
+            case SystemNotification::INFO_TASK_CANCELED_BY_USER:                lv_label_set_text(text, is_eng_ver ? "Task aborted by STOP button" : "Программа преравана по кнопке"); break;
+            case SystemNotification::INFO_TASK_CANCELED_BY_USER_PLC:            lv_label_set_text(text, is_eng_ver ? "Task aborted by PLC button" : "Программа прерв. по кнопке на ПЛК"); break;
+            case SystemNotification::WARNING_WATER_JACKET_NO_WATER:             lv_label_set_text(text, is_eng_ver ? "Attention! No water in water jacket!" : "ВНИМАНИЕ! Нет воды в рубашке!"); break;
+            case SystemNotification::WARNING_380V_NO_POWER:                     lv_label_set_text(text, is_eng_ver ? "Attention! 380V disconnected!" : "ВНИМАНИЕ! Нет сети 380В!"); break;
+            case SystemNotification::ERROR_TEMP_C_SENSOR_BROKEN:                lv_label_set_text(text, is_eng_ver ? "ERROR! Temperature sensor problem!" : "Вероятная поломка датчика температуры!"); break;
+            case SystemNotification::ERROR_3_PHASE_MOTOR_IS_BROKEN:             lv_label_set_text(text, is_eng_ver ? "ERROR! Mixer motor broke down!" : "ОШИБКА! Авария мешалки!"); break;
+            case SystemNotification::ERROR_TASK_ENDED_30_MIN_SOLVING_AWAIT:     lv_label_set_text(text, is_eng_ver ? "ERROR! 30 minutes of idle time!" : "ОШИБКА! 30 минут простоя!"); break;
             
             default:
                 lv_label_set_text(text, "Тут будут уведомления!");
                 break;
             }
-
-            if (notifications[index].must_be_closed)
-                notifications.erase(notifications.begin() + index);
-            else
-                ++index;
    
             lv_anim_start(&a);
         }
     }
 
-public:
+private:
     UINotificationBar(
         lv_obj_t * lv_screen
     ) : UIElement {
         { EquipmentType::All },
         {
-            KeyModel(KeyMap::L_STACK_4, [this]() { this->display(true); }),
-            KeyModel(KeyMap::L_STACK_3, [this]() { this->display(true); }),
-            KeyModel(KeyMap::L_STACK_2, [this]() { this->display(true); }),
-            KeyModel(KeyMap::L_STACK_1, [this]() { this->display(true); }),
-            KeyModel(KeyMap::LEFT_TOP,  [this]() { this->display(true); }),
-            KeyModel(KeyMap::LEFT_BOT,  [this]() { this->display(true); }),
-            KeyModel(KeyMap::LEFT,      [this]() { this->display(true); }),
-            KeyModel(KeyMap::TOP,       [this]() { this->display(true); }),
-            KeyModel(KeyMap::RIGHT,     [this]() { this->display(true); }),
-            KeyModel(KeyMap::BOTTOM,    [this]() { this->display(true); }),
-            KeyModel(KeyMap::RIGHT_TOP, [this]() { this->display(true); }),
-            KeyModel(KeyMap::RIGHT_BOT, [this]() { this->display(true); }),
-            KeyModel(KeyMap::R_STACK_4, [this]() { this->display(true); }),
-            KeyModel(KeyMap::R_STACK_3, [this]() { this->display(true); }),
-            KeyModel(KeyMap::R_STACK_2, [this]() { this->display(true); }),
-            KeyModel(KeyMap::R_STACK_1, [this]() { this->display(true); })
+            KeyModel(KeyMap::L_STACK_4, []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::L_STACK_3, []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::L_STACK_2, []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::L_STACK_1, []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::LEFT_TOP,  []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::LEFT_BOT,  []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::LEFT,      []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::TOP,       []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::RIGHT,     []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::BOTTOM,    []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::RIGHT_TOP, []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::RIGHT_BOT, []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::R_STACK_4, []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::R_STACK_3, []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::R_STACK_2, []() { UINotificationBar::instance()->display(true); }),
+            KeyModel(KeyMap::R_STACK_1, []() { UINotificationBar::instance()->display(true); })
         },
         false,
         false,
@@ -183,8 +189,18 @@ public:
 
         remember_child_element("[notify_img]", notify_icon);
         remember_child_element("[notify_text]", notify_text);
+    }
 
-        instance = this;
+public:
+    static UINotificationBar* instance(lv_obj_t * lv_screen = nullptr)
+    {
+        static UINotificationBar inst(lv_screen);
+        return &inst;
+    }
+
+    void set_lang_ver(bool true_if_eng_false_if_rus)
+    {
+        is_eng_ver = true_if_eng_false_if_rus;
     }
 
     void push_info(SystemNotification type)
@@ -196,7 +212,9 @@ public:
         );
 
         if (it == notifications.end())
+        {
             notifications.push_back(SystemNotificationContainer(type));
+        }
 
         display();
     }
@@ -204,10 +222,12 @@ public:
     void display(bool button_pressed = false)
     {
         if (button_pressed)
+        {
             for (auto& container : notifications)
                 container.must_be_closed = true;
+        }
 
-        if (!animation_in_action)
+        if (!UINotificationBar::instance()->animation_in_action)
             show_next();
     }
 };

@@ -137,6 +137,8 @@ void setup()
     setup_task_manager();
     setup_watchdogs();
 
+    UINotificationBar::instance()->set_lang_ver(var_plc_language.get() != UI_LANGUAGE::RUSSIAN);
+
     read_digital_signals();
     read_analog_signals(true);
     rt_task_manager.execute_task("task_do_programm");
@@ -174,10 +176,12 @@ void loop()
     if (interrupted_by_slave)
     {
         interrupted_by_slave = false;
-        read_digital_signals();
 
-        UI_service->UI_notification_bar->key_press(Pressed_key);
-        UI_manager->handle_key_press(Pressed_key);
+        if (read_digital_signals(false))
+        {
+            UI_service->UI_notification_bar->key_press(Pressed_key);
+            UI_manager->handle_key_press(Pressed_key);
+        }
 
         if (!prog_runned.local().is_runned && UI_manager->is_current_control(ScreenType::PROGRAM_SELECTOR) && UI_service->get_is_pasteurizer())
         {
