@@ -66,7 +66,7 @@ void UIService::init_screens()
     UI_date_time            = new UIDateTime(this->screen);
     UI_machine_state_bar    = new UIMachineStateBar(this->screen);
     UI_notify_bar           = new UINotifyBar(this->screen);
-    UI_notification_bar     = new UINotificationBar(this->screen);
+    UI_notification_bar     = UINotificationBar::instance(this->screen); //new UINotificationBar(this->screen);
 
     /* task roadmap controls init */
 
@@ -330,7 +330,7 @@ void UIService::init_blowing_controls()
         Blow_vars.push_back(new UIBlowValListItem(UI_blowing_control, i < 3 ? BlowVarTypeEnum::LITRES : BlowVarTypeEnum::TIMER));
         UIBlowValListItem * blow_ptr = Blow_vars.back();
 
-        blow_ptr->add_ui_context_action([=]() { blow_ptr->set_value(blowing_vals->at(i)->get().val, i != 3 ? " л." : ""); });
+        blow_ptr->add_ui_context_action([=]() { blow_ptr->set_value(blowing_vals->at(i)->get().val, i != 3 ? (var_plc_language.get() != UI_LANGUAGE::RUSSIAN ? "L" : " л.") : ""); });
         blow_ptr->set_extra_button_logic({
             [=]() { blowing_vals->at(i)->ptr()->val += (i != 3 ? 250 : 5); blowing_vals->at(i)->accept(); },
             [=]() { blowing_vals->at(i)->ptr()->val -= (i != 3 ? 250 : 5); blowing_vals->at(i)->accept(); },
