@@ -1,6 +1,7 @@
 #include "./STM32_slave.hpp"
 
-volatile bool interrupted_by_slave = false;
+volatile bool interrupted_by_slave  = false;
+volatile bool interrupted_by_kb     = false;
 
 	
 #ifndef SSPS3_APPLICATION_SOLUTION

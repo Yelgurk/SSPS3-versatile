@@ -43,6 +43,8 @@ private:
   long _debounce_start_millis = 0;
   char _debounced_btn         = Keypad4495::NO_KEY;
   bool _is_debouncing         = false;
+  bool _is_no_key_delay       = false;
+
 };
 
 #endif

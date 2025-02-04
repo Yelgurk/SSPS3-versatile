@@ -45,6 +45,11 @@ void setup()
     pinMode(INT, INPUT_PULLDOWN);
     attachInterrupt(digitalPinToInterrupt(INT), interrupt_action, CHANGE);
 
+#ifdef IS_SSPS3F1_BLACKOUT_EDITION
+    pinMode(INT_KB, INPUT_PULLDOWN);
+    attachInterrupt(digitalPinToInterrupt(INT_KB), interrupt_action_2, CHANGE);
+#endif
+
     itcw    = new TwoWire(0);
     itcw    ->begin(SDA, SCL, 400000);
     STM32   = new STM32_slave(STM_I2C_ADDR);
@@ -171,17 +176,28 @@ void loop()
     
 #ifdef IS_SSPS3F1_BLACKOUT_EDITION
     digitalWrite(BUZZER_PIN, LOW);
+
+    if (interrupted_by_kb)
+    {
+        read_digital_signals(false);
+        
+        //Serial.println("key_press");
+        UI_service->UI_notification_bar->key_press(Pressed_key);
+        UI_manager->handle_key_press(Pressed_key);
+    }
 #endif
 
-    if (interrupted_by_slave)
+    if (interrupted_by_slave || interrupted_by_kb)
     {
-        interrupted_by_slave = false;
+#ifdef IS_SSPS3F1_BLACKOUT_EDITION
+        if (!interrupted_by_kb)
+            read_digital_signals();
+#else
+        read_digital_signals(false);
+#endif
 
-        if (read_digital_signals(false))
-        {
-            UI_service->UI_notification_bar->key_press(Pressed_key);
-            UI_manager->handle_key_press(Pressed_key);
-        }
+        interrupted_by_kb = false;
+        interrupted_by_slave = false;
 
         if (!prog_runned.local().is_runned && UI_manager->is_current_control(ScreenType::PROGRAM_SELECTOR) && UI_service->get_is_pasteurizer())
         {

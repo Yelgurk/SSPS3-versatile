@@ -30,6 +30,7 @@
     #define SDA                         40
     #define SCL                         39
     #define INT                         38
+    #define INT_KB                      21
 #endif
 
 #define STM_I2C_ADDR                    0x30
@@ -94,19 +95,27 @@ void IRAM_ATTR interrupt_action() {
     interrupted_by_slave = true;
 }
 
+void IRAM_ATTR interrupt_action_2() {
+    interrupted_by_kb = true;
+}
+
 bool read_digital_signals(bool timer_call = true)
 {
     static uint8_t old = 123;
-    Pressed_key = STM32->get_kb();
 
-    if (old != Pressed_key)
+    if (!timer_call)
     {
-        if (Pressed_key >= 0 && Pressed_key < 16 )
-            digitalWrite(BUZZER_PIN, HIGH);
-        
-        //Serial.println(Pressed_key);
+        Pressed_key = STM32->get_kb();
+
+        if (old != Pressed_key)
+        {
+            if (Pressed_key >= 0 && Pressed_key < 16 )
+                digitalWrite(BUZZER_PIN, HIGH);
+
+            //Serial.println(Pressed_key);
+        }
+        old = Pressed_key;
     }
-    old = Pressed_key;
 
     static uint8_t index = 0;
     for (index = 0; index < 8; index++)

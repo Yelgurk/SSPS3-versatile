@@ -69,11 +69,17 @@ uint16_t get_event(I2C_COMM command, uint8_t pin)
 
 void setup()
 {
+#ifdef ALLOW_UART_DEBUG
+    Serial.setRx(S_UART_RX);
+    Serial.setTx(S_UART_TX);
     Serial.begin(115200);
+#endif
+
     analogWriteResolution(12);
     analogReadResolution(12);
 
     pinMode(INT, OUTPUT);
+    pinMode(INT_KB, OUTPUT);
 
     for(uint8_t pin : Relay)
     {
@@ -177,6 +183,15 @@ void loop()
 #endif
 }
 
+void _call_master_for_kb_read()
+{
+#ifdef SSPS3F1_BLACKOUT_EDITION
+    CHANGE_KB_SIGNAL();
+#else
+    CHANGE_INT_SIGNAL();
+#endif
+}
+
 void run_kb_dispatcher(char key)
 {
     KeyNew = key;
@@ -189,7 +204,7 @@ void run_kb_dispatcher(char key)
             KeyHoldNext = millis() + (KeyHoldDelay = HOLD_begin_ms);
 
             KeyPressed = KeyNew;
-            CHANGE_INT_SIGNAL();
+            _call_master_for_kb_read();
         }
         else if (KeyPressed < KB_Size && KeyPressed != KeyNew)
         {
@@ -197,7 +212,7 @@ void run_kb_dispatcher(char key)
 
             KeyPressed = KeyPressed + KB_Size;
             is_key_press_rel_await = true;
-            CHANGE_INT_SIGNAL();
+            _call_master_for_kb_read();
         }
     }
     else if (KeyPressed < KB_Size)
@@ -206,7 +221,7 @@ void run_kb_dispatcher(char key)
 
         KeyPressed = KeyPressed + KB_Size;
         is_key_press_rel_await = true;
-        CHANGE_INT_SIGNAL();
+        _call_master_for_kb_read();
     }
 
     if (is_key_first_call_done && KeyPressed < KB_Size && KeyPressed == KeyNew && millis() >= KeyHoldNext)
@@ -215,49 +230,6 @@ void run_kb_dispatcher(char key)
         KeyHoldDelay = KeyHoldDelay < HOLD_min_ms ? HOLD_min_ms : KeyHoldDelay;
         
         KeyHoldNext = millis() + KeyHoldDelay;
-        CHANGE_INT_SIGNAL();
+        _call_master_for_kb_read();
     }
 }
-
-/*
-const char KEY_DEBOUNCE_AWAIT = -1;
-unsigned long _lastDebounceTime = 0;
-char _lastKey = Keypad4495::NO_KEY;
-bool _debouncing = false;
-
-char Keypad4495::getKeyWithDebounce() {
-    char button = getKey();
-    unsigned long currentMillis = millis();
-
-    if (_debouncing)
-    {
-        if (currentMillis - _lastDebounceTime >= _debounce_ms)
-        {
-            // Если прошло достаточно времени, проверяем, совпадает ли кнопка
-            _debouncing = false;
-            
-            if (button == _lastKey)
-            {
-                _lastKey = NO_KEY;
-                return button; // Возвращаем кнопку, если она совпадает
-            }
-            else
-            {
-                return NO_KEY; // Игнорируем, если кнопка изменилась
-            }
-        }
-
-        return KEY_DEBOUNCE_AWAIT; // Пока не истек debounce, возвращаем NO_KEY
-    }
-
-    if (button != NO_KEY && button != _lastKey) {
-        // Начинаем debounce, если кнопка изменилась
-        _debouncing = true;
-        _lastDebounceTime = currentMillis;
-        _lastKey = button;
-        return KEY_DEBOUNCE_AWAIT; // Пока debounce активен, возвращаем NO_KEY
-    }
-
-    return NO_KEY; // Если кнопка не нажата или не изменилась
-}
-*/

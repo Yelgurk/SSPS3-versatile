@@ -7,6 +7,13 @@
 
 //#define SSPS3F1_V1
 #define SSPS3F1_BLACKOUT_EDITION
+//#define ALLOW_UART_DEBUG
+
+// UART serial debug
+#ifdef ALLOW_UART_DEBUG
+    #define S_UART_TX   PA2
+    #define S_UART_RX   PA3
+#endif
 
 /* Keypad 4x4 var's */
 #define KB_Row                      4
@@ -77,6 +84,7 @@ I2C_Service * I2C;
     #define SDA                     PB11
     #define SCL                     PB10
     #define INT                     PA6
+    #define INT_KB                  PA5
 #endif
 
 /* STM32 slave calc func for i2c data transmittion */
@@ -85,6 +93,10 @@ I2C_Service * I2C;
 //#define INTERRUPT_MASTER(val)       digitalWrite(INT, val)       
 //#define IS_MASTER_INTERRUPTED       digitalRead(INT)
 #define CHANGE_INT_SIGNAL()         digitalWrite(INT, !static_cast<bool>(digitalRead(INT)))
+
+#ifdef SSPS3F1_BLACKOUT_EDITION
+    #define CHANGE_KB_SIGNAL()          digitalWrite(INT_KB, !static_cast<bool>(digitalRead(INT_KB)))
+#endif
 
 String kbMsg = "";
 
@@ -115,6 +127,7 @@ String kbMsg = "";
     #define STM_ADC_3       PC2
     #define STM_ADC_4       PC3
 #endif
+
 #ifdef SSPS3F1_BLACKOUT_EDITION
     #define STM_RELAY_8     PC4
     #define STM_RELAY_7     PC5

@@ -125,41 +125,81 @@ void Keypad4495::getMatrixStatus(byte* matrix_array) {
   }
 };
 
-/*
 char Keypad4495::getKeyWithDebounce()
 {
-    char button = Keypad4495::NO_KEY;
+    // Определяем состояния конечного автомата
+    enum State { IDLE, DEBOUNCE, IDLE_WAIT };
 
-    if (_is_debouncing)
+    // Переменные состояния объявляем как статические, чтобы сохранять между вызовами.
+    static State state = IDLE;
+    static char lastKey = NO_KEY;
+    static unsigned long timer = 0;
+    
+    unsigned long now = millis();
+    char currentKey = getKey();  // Получаем текущее значение с клавиатуры
+
+    switch(state)
     {
-        if (millis() - _debounce_start_millis < _debounce_ms)
-            return Keypad4495::NO_PIN;
-
-        _is_debouncing = false;
-
-        if (getKey() == _debounced_btn)
-            return button;
-        else
-            return Keypad4495::NO_KEY;
+        case IDLE:
+            // В состоянии ожидания:
+            if (currentKey != NO_KEY) {
+                // Если обнаружено нажатие, запоминаем его и запускаем дебаунсинг
+                lastKey = currentKey;
+                timer = now;
+                state = DEBOUNCE;
+                return NO_PIN;
+            } else {
+                // Если нажатия нет, запускаем таймаут простоя
+                timer = now;
+                state = IDLE_WAIT;
+                return NO_PIN;
+            }
+            break;
+            
+        case DEBOUNCE:
+            // В состоянии дебаунсинга:
+            if (now - timer < 150) {
+                // Если ещё не истек период дебаунса, возвращаем NO_PIN
+                return NO_PIN;
+            } else {
+                // Период истёк, проверяем – все ещё нажата та же клавиша?
+                if (getKey() == lastKey) {
+                    // Подтверждаем нажатие
+                    state = IDLE;  // Сбрасываем состояние
+                    return lastKey;
+                } else {
+                    // Если значение изменилось, считаем, что произошёл дребезг
+                    state = IDLE;
+                    return NO_KEY;
+                }
+            }
+            break;
+            
+        case IDLE_WAIT:
+            // В состоянии ожидания простоя:
+            if (currentKey != NO_KEY) {
+                // Если во время простоя обнаружено нажатие – запускаем дебаунсинг
+                state = DEBOUNCE;
+                lastKey = currentKey;
+                timer = now;
+                return NO_PIN;
+            }
+            if (now - timer < 80) {
+                // Если 80 мс ещё не прошли, продолжаем возвращать NO_PIN
+                return NO_PIN;
+            } else {
+                // По истечении 80 мс возвращаем NO_KEY
+                state = IDLE;
+                return NO_KEY;
+            }
+            break;
     }
-    else
-    {
-        button = getKey();
+    // На всякий случай возвращаем состояние по умолчанию
+    state = IDLE;
+    return NO_PIN;
+}
 
-        if (button != Keypad4495::NO_KEY)
-        {
-            _is_debouncing = true;
-            _debounced_btn = button;
-            _debounce_start_millis = millis();
-
-            return Keypad4495::NO_PIN;
-        }
-
-        return Keypad4495::NO_KEY;
-    }
-};
-*/
-
+/*
 char Keypad4495::getKeyWithDebounce() {
   char button;
   unsigned long pressTime;
@@ -168,6 +208,7 @@ char Keypad4495::getKeyWithDebounce() {
   if (button != Keypad4495::NO_KEY)
   {
     pressTime = millis();
+
     while (millis() - pressTime < _debounce_ms) ;
 
     if (button == getKey())
@@ -180,7 +221,7 @@ char Keypad4495::getKeyWithDebounce() {
   }
   return button;
 };
-
+*/
 
 // Blocking call -- waits for a keypress before returning
 char Keypad4495::waitForKeyWithDebounce() {
