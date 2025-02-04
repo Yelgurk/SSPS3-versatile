@@ -59,6 +59,8 @@ private:
     void start_pump();
     void stop_pump();
 
+    bool _blowing_resolver = false;
+
 public:
     BlowingControl(
         UINotificationBar * UI_notification_bar,
@@ -83,6 +85,7 @@ public:
     void blowgun_trigger(bool do_gurgling, bool is_keypad_press, float blowing_calibration_value, int8_t index = -1, BlowgunValue curr_value = BlowgunValue());
     void blowgun_stop(bool need_in_reload = false);
     void do_blowing();
+    void plc_btn_press_resolver();
 };
 
 #endif

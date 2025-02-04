@@ -41,6 +41,11 @@ void BlowingControl::blowgun_trigger(bool do_gurgling, bool is_keypad_press, flo
                     ms_aim = curr_value.val * 1000;
                 
                 ms_gone = 0;
+
+                if (!is_keypad_press && current_blow_index == 3)
+                    _blowing_resolver = false;
+                else
+                    _blowing_resolver = true;
             }
 
             last_blow_time_ms = current_time_ms;
@@ -73,6 +78,7 @@ void BlowingControl::blowgun_stop(bool need_in_reload)
             keyboard_must_be_reloaded = true;
     }
 
+    _blowing_resolver = false;
     timer_running = false;
     is_runned = false;
     triggered_by = BlowingTriggerType::NONE;
@@ -81,7 +87,13 @@ void BlowingControl::blowgun_stop(bool need_in_reload)
 
 void BlowingControl::do_blowing()
 {
-    if (!is_runned) return;
+    if (!is_runned || !_blowing_resolver) return;
+
+    if (is_runned && (bool)OptIn_state[DIN_STOP_SENS])
+    {
+        blowgun_stop(true);
+        UI_notification_bar->push_info(SystemNotification::INFO_TASK_CANCELED_BY_USER);
+    }
 
     uint32_t current_time_ms = millis();
 
@@ -106,6 +118,12 @@ void BlowingControl::do_blowing()
             blowgun_stop(true);
         }
     }
+}
+
+void BlowingControl::plc_btn_press_resolver()
+{
+    if (is_runned)
+        _blowing_resolver = true;
 }
 
 void BlowingControl::start_pump() {
