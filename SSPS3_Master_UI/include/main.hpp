@@ -17,7 +17,8 @@
 #include "FRAM_DB.hpp"
 
 //#define IS_SSPS3F1_V1
-#define IS_SSPS3F1_BLACKOUT_EDITION 
+#define IS_SSPS3F1_BLACKOUT_EDITION
+//#define DEMO_WITHOUT_EXTERNAL_POWER
 
 /* I2C */
 #ifdef IS_SSPS3F1_V1
@@ -131,9 +132,11 @@ bool read_digital_signals(bool timer_call = true)
     if (!var_stop_btn_type.local())
         OptIn_state[DIN_STOP_SENS] = OptIn_state[DIN_STOP_SENS] > 0 ? 0 : 1;
 
-    //OptIn_state[DIN_WJACKET_SENS]   = 1;
-    //OptIn_state[DIN_380V_SIGNAL]    = 1;
-    //OptIn_state[DIN_STOP_SENS]      = 0;
+#ifdef DEMO_WITHOUT_EXTERNAL_POWER
+    OptIn_state[DIN_WJACKET_SENS]   = 1;
+    OptIn_state[DIN_380V_SIGNAL]    = 1;
+    OptIn_state[DIN_STOP_SENS]      = 0;
+#endif
 
     return !timer_call;
 }
@@ -172,6 +175,14 @@ void read_analog_signals(bool is_startup_call = false)
 
     read_tempC_sensors(is_startup_call);
 
+#ifdef DEMO_WITHOUT_EXTERNAL_POWER
+    if (is_startup_call)
+        for (uint8_t it = 0; it < 10; it++)
+        {
+            exp_filter_tempC_product.add_value(1250);
+            exp_filter_tempC_wJacket.add_value(1250);
+        }
+#else
     if (is_startup_call)
         for (uint8_t call = 0; call < 10; call++)
         {
@@ -185,6 +196,7 @@ void read_analog_signals(bool is_startup_call = false)
             
             delay(10);
         }
+#endif
 }
 
 void read_tempC_sensors(bool is_startup_call)
@@ -195,8 +207,13 @@ void read_tempC_sensors(bool is_startup_call)
     static uint16_t     tempC_product_val_filtered = is_startup_call ? AnIn_state[ADC_TEMPC_PRODUCT] : tempC_product_val_filtered,
                         tempC_wJacket_val_filtered = is_startup_call ? AnIn_state[ADC_TEMPC_WJACKET] : tempC_wJacket_val_filtered;
 
+#ifdef DEMO_WITHOUT_EXTERNAL_POWER
+    result_1 = 1250;
+    result_2 = 1250;
+#else
     result_1 = STM32->get(COMM_GET::ANIN, ADC_TEMPC_PRODUCT);
     result_2 = STM32->get(COMM_GET::ANIN, ADC_TEMPC_WJACKET);
+#endif
 
     tempC_product_val[index = index >= 9 ? 0 : index]
         = result_1 >= offset_1 ? result_1 - offset_1 : result_1;

@@ -100,8 +100,8 @@ public:
             {
             case SystemNotification::OK_TASK_DONE:                              lv_label_set_text(text, is_eng_ver ? "Task completed" : "Программа выполнена"); break;
             case SystemNotification::OK_BLOWING_DONE:                           lv_label_set_text(text, is_eng_ver ? "The spill is done" : "Раздача завершена"); break;
-            case SystemNotification::INFO_TURN_OFF_380V_FIRST:                  lv_label_set_text(text, is_eng_ver ? "Switch ON 380V!" : "Сначала ВЫКЛ 380В"); break;
-            case SystemNotification::INFO_TURN_ON_380V_FIRST:                   lv_label_set_text(text, is_eng_ver ? "Switch OFF 380V!" : "Сначала ВКЛ 380В"); break;
+            case SystemNotification::INFO_TURN_OFF_380V_FIRST:                  lv_label_set_text(text, is_eng_ver ? "Switch OFF 380V!" : "Сначала ВЫКЛ 380В"); break;
+            case SystemNotification::INFO_TURN_ON_380V_FIRST:                   lv_label_set_text(text, is_eng_ver ? "Switch ON 380V!" : "Сначала ВКЛ 380В"); break;
             case SystemNotification::INFO_BLOWING_RESET_2_SS_AWAIT:             lv_label_set_text(text, is_eng_ver ? "Spill pause long downtime, reset" : "Сброс раздачи, долгая пауза"); break;
             case SystemNotification::INFO_BLOWING_CANCELED_BY_USER:             lv_label_set_text(text, is_eng_ver ? "Spill is canceled by user" : "Сброс задачи пользователем"); break;
             case SystemNotification::INFO_TASK_AWAIT_PROBLEM_SOLVING:           lv_label_set_text(text, is_eng_ver ? "Waiting for issues to be resolved" : "Ожидание разрешения проблем"); break;

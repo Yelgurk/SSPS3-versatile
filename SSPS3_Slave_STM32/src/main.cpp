@@ -74,7 +74,7 @@ void setup()
     Serial.setTx(S_UART_TX);
     Serial.begin(115200);
     
-    Serial.println("KMA_04.02.2025");
+    Serial.println("KMA_05.02.2025_02:11:00");
 #endif
 
     analogWriteResolution(12);
@@ -196,31 +196,54 @@ void _call_master_for_kb_read()
 
 void run_kb_dispatcher(char key)
 {
-    // Если полученное значение равно 0 (NO_KEY), трактуем его как отсутствие нажатия.
-    // Иначе преобразуем значение: библиотека возвращает значения 1..16,
-    // а нам нужен диапазон 0..15, поэтому вычтем 1.
+    static bool _notify_slave_kb_await = false;
+
+    // Преобразуем входное значение:
+    // Если key равен 0 (NO_KEY), то считаем, что клавиша отпущена (KB_Await).
+    // Иначе, поскольку библиотека возвращает значения 1..16, вычтем 1, чтобы диапазон стал 0..15.
     uint8_t newKey = (key == 0 ? KB_Await : key - 1);
 
-    // Обработка события отпускания:
-    if (newKey == KB_Await)
+    if (_notify_slave_kb_await)
     {
-        // Если ранее была зарегистрирована нажатая клавиша,
-        // посылаем событие «отпускания» (путём прибавления KB_Size)
         if (KeyPressed < KB_Size)
         {
             KeyPressed += KB_Size;
             _call_master_for_kb_read();
-            // Сброс состояния: после отпускания дальнейшие нажатия считаем новыми
-            KeyPressed = KB_Await;
-            is_key_first_call_done = false;
+            
+            return;
         }
-        // Если клавиша уже отпущена, ничего не делаем.
+        else
+        {
+            _notify_slave_kb_await = false;
+        
+            KeyPressed = KB_Await;
+            _call_master_for_kb_read();
+            
+            return;
+        }
+    }
+
+    // Если пришло состояние отсутствия нажатия (то есть отпускание):
+    if (newKey == KB_Await)
+    {
+        // Если ранее была зафиксирована нажатая клавиша (т.е. значение в диапазоне 0..15),
+        // то сформируем событие отпускания: это будет значение "нажатая клавиша + 16".
+        if (KeyPressed < KB_Size)
+        {
+            _notify_slave_kb_await = true;
+
+            KeyPressed += KB_Size;   // Например, если KeyPressed было 7, станет 23.
+            _call_master_for_kb_read();
+            // Не сбрасываем KeyPressed сразу – сброс произойдёт при следующем вызове get_pressed_key()
+            // согласно логике там (когда значение будет возвращено и затем сброшено в KB_Await).
+        }
+
         return;
     }
 
-    // Обработка нажатия (newKey – валидный номер клавиши от 0 до KB_Size-1):
-    // Если ранее никакая клавиша не была зафиксирована (состояние сброшено)
-    // или предыдущее событие было «отпускание» (KeyPressed >= KB_Size), то это новое нажатие.
+    // Если получено валидное нажатие (newKey от 0 до 15):
+
+    // Случай 1: Первое нажатие или состояние уже сброшено (или после release).
     if (KeyPressed == KB_Await || KeyPressed >= KB_Size)
     {
         KeyPressed = newKey;
@@ -229,24 +252,22 @@ void run_kb_dispatcher(char key)
         is_key_first_call_done = true;
         _call_master_for_kb_read();
     }
-    // Если нажата другая клавиша, отличная от текущей
+    // Случай 2: Если нажата другая клавиша, отличная от текущей.
     else if (KeyPressed < KB_Size && newKey != KeyPressed)
     {
-        // Сначала посылаем событие отпускания предыдущей клавиши
-        KeyPressed += KB_Size;
+        // Сначала посылаем событие отпускания предыдущей клавиши:
+        KeyPressed += KB_Size; // теперь значение release (например, 7 -> 23)
         _call_master_for_kb_read();
-        // Затем регистрируем новое нажатие
+        // Затем регистрируем новое нажатие:
         KeyPressed = newKey;
         KeyHoldDelay = HOLD_begin_ms;
         KeyHoldNext = millis() + KeyHoldDelay;
         is_key_first_call_done = true;
         _call_master_for_kb_read();
     }
-    // Если удерживается та же клавиша
+    // Случай 3: Если удерживается та же клавиша.
     else if (KeyPressed < KB_Size && newKey == KeyPressed)
     {
-        // Если время для следующего повторного срабатывания истекло,
-        // обновляем задержку (с геометрической прогрессией) и посылаем уведомление
         if (millis() >= KeyHoldNext)
         {
             KeyHoldDelay = KeyHoldDelay / HOLD_x;
@@ -257,47 +278,3 @@ void run_kb_dispatcher(char key)
         }
     }
 }
-
-/*
-void run_kb_dispatcher(char key)
-{
-    KeyNew = key;
-    KeyNew = KeyNew == 0 ? KB_Await : KeyNew - 1;
-
-    if (KeyNew != KB_Await)
-    {
-        if (KeyPressed == KB_Await)
-        {
-            KeyHoldNext = millis() + (KeyHoldDelay = HOLD_begin_ms);
-
-            KeyPressed = KeyNew;
-            _call_master_for_kb_read();
-        }
-        else if (KeyPressed < KB_Size && KeyPressed != KeyNew)
-        {
-            KeyHoldDelay = HOLD_begin_ms;
-
-            KeyPressed = KeyPressed + KB_Size;
-            is_key_press_rel_await = true;
-            _call_master_for_kb_read();
-        }
-    }
-    else if (KeyPressed < KB_Size)
-    {
-        KeyHoldDelay = HOLD_begin_ms;
-
-        KeyPressed = KeyPressed + KB_Size;
-        is_key_press_rel_await = true;
-        _call_master_for_kb_read();
-    }
-
-    if (is_key_first_call_done && KeyPressed < KB_Size && KeyPressed == KeyNew && millis() >= KeyHoldNext)
-    {
-        KeyHoldDelay /= HOLD_x;
-        KeyHoldDelay = KeyHoldDelay < HOLD_min_ms ? HOLD_min_ms : KeyHoldDelay;
-        
-        KeyHoldNext = millis() + KeyHoldDelay;
-        _call_master_for_kb_read();
-    }
-}
-*/

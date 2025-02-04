@@ -337,11 +337,7 @@ void UIService::init_blowing_controls()
         blow_ptr->set_extra_button_logic({
             [=]() { blowing_vals->at(i)->ptr()->val += (i != 3 ? 250 : 5); blowing_vals->at(i)->accept(); },
             [=]() { blowing_vals->at(i)->ptr()->val -= (i != 3 ? 250 : 5); blowing_vals->at(i)->accept(); },
-            [=]()
-            {
-                Blowing_control->plc_btn_press_resolver();
-                Blowing_control->blowgun_trigger(true, true, var_blow_pump_calibration_lm.local(), i, blowing_vals->at(i)->local());
-            }
+            [=]() { Blowing_control->blowgun_trigger(true, true, var_blow_pump_calibration_lm.local(), i, blowing_vals->at(i)->local()); }
         });
     }
 }

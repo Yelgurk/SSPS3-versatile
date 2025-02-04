@@ -40,7 +40,7 @@ void setup_watchdogs();
 void setup()
 {
     Serial.begin(115200);
-    Serial.println("KMA_04.02.2025");
+    Serial.println("KMA_05.02.2025_02:11:00");
     debug_show_tempC_offsets();
 
     pinMode(INT, INPUT_PULLDOWN);
@@ -176,15 +176,17 @@ void loop()
     Blowing_control->do_blowing();
     
 #ifdef IS_SSPS3F1_BLACKOUT_EDITION
-    digitalWrite(BUZZER_PIN, LOW);
+    //digitalWrite(BUZZER_PIN, LOW);
 
     if (interrupted_by_kb)
     {
         read_digital_signals(false);
         
-        //Serial.println("key_press");
         UI_service->UI_notification_bar->key_press(Pressed_key);
         UI_manager->handle_key_press(Pressed_key);
+
+        //Serial.println("key_press");
+        //Serial.println(Pressed_key);
     }
 #endif
 
