@@ -73,6 +73,8 @@ void setup()
     Serial.setRx(S_UART_RX);
     Serial.setTx(S_UART_TX);
     Serial.begin(115200);
+    
+    Serial.println("KMA_04.02.2025");
 #endif
 
     analogWriteResolution(12);

@@ -40,6 +40,7 @@ void setup_watchdogs();
 void setup()
 {
     Serial.begin(115200);
+    Serial.println("KMA_04.02.2025");
     debug_show_tempC_offsets();
 
     pinMode(INT, INPUT_PULLDOWN);

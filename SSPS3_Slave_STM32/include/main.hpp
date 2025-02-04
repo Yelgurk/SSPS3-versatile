@@ -7,7 +7,7 @@
 
 //#define SSPS3F1_V1
 #define SSPS3F1_BLACKOUT_EDITION
-//#define ALLOW_UART_DEBUG
+#define ALLOW_UART_DEBUG
 
 // UART serial debug
 #ifdef ALLOW_UART_DEBUG
