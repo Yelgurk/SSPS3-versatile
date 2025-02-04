@@ -196,6 +196,71 @@ void _call_master_for_kb_read()
 
 void run_kb_dispatcher(char key)
 {
+    // Если полученное значение равно 0 (NO_KEY), трактуем его как отсутствие нажатия.
+    // Иначе преобразуем значение: библиотека возвращает значения 1..16,
+    // а нам нужен диапазон 0..15, поэтому вычтем 1.
+    uint8_t newKey = (key == 0 ? KB_Await : key - 1);
+
+    // Обработка события отпускания:
+    if (newKey == KB_Await)
+    {
+        // Если ранее была зарегистрирована нажатая клавиша,
+        // посылаем событие «отпускания» (путём прибавления KB_Size)
+        if (KeyPressed < KB_Size)
+        {
+            KeyPressed += KB_Size;
+            _call_master_for_kb_read();
+            // Сброс состояния: после отпускания дальнейшие нажатия считаем новыми
+            KeyPressed = KB_Await;
+            is_key_first_call_done = false;
+        }
+        // Если клавиша уже отпущена, ничего не делаем.
+        return;
+    }
+
+    // Обработка нажатия (newKey – валидный номер клавиши от 0 до KB_Size-1):
+    // Если ранее никакая клавиша не была зафиксирована (состояние сброшено)
+    // или предыдущее событие было «отпускание» (KeyPressed >= KB_Size), то это новое нажатие.
+    if (KeyPressed == KB_Await || KeyPressed >= KB_Size)
+    {
+        KeyPressed = newKey;
+        KeyHoldDelay = HOLD_begin_ms;
+        KeyHoldNext = millis() + KeyHoldDelay;
+        is_key_first_call_done = true;
+        _call_master_for_kb_read();
+    }
+    // Если нажата другая клавиша, отличная от текущей
+    else if (KeyPressed < KB_Size && newKey != KeyPressed)
+    {
+        // Сначала посылаем событие отпускания предыдущей клавиши
+        KeyPressed += KB_Size;
+        _call_master_for_kb_read();
+        // Затем регистрируем новое нажатие
+        KeyPressed = newKey;
+        KeyHoldDelay = HOLD_begin_ms;
+        KeyHoldNext = millis() + KeyHoldDelay;
+        is_key_first_call_done = true;
+        _call_master_for_kb_read();
+    }
+    // Если удерживается та же клавиша
+    else if (KeyPressed < KB_Size && newKey == KeyPressed)
+    {
+        // Если время для следующего повторного срабатывания истекло,
+        // обновляем задержку (с геометрической прогрессией) и посылаем уведомление
+        if (millis() >= KeyHoldNext)
+        {
+            KeyHoldDelay = KeyHoldDelay / HOLD_x;
+            if (KeyHoldDelay < HOLD_min_ms)
+                KeyHoldDelay = HOLD_min_ms;
+            KeyHoldNext = millis() + KeyHoldDelay;
+            _call_master_for_kb_read();
+        }
+    }
+}
+
+/*
+void run_kb_dispatcher(char key)
+{
     KeyNew = key;
     KeyNew = KeyNew == 0 ? KB_Await : KeyNew - 1;
 
@@ -235,3 +300,4 @@ void run_kb_dispatcher(char key)
         _call_master_for_kb_read();
     }
 }
+*/

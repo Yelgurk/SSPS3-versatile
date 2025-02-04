@@ -11,7 +11,7 @@ I2C_Service::I2C_Service(
     this->i2c = i2c;
 
     this->i2c->begin(this->addr);
-    this->i2c->setClock(400000);
+    //this->i2c->setClock(100000);
 
     this->set_event = set_event;
     this->get_event = get_event;

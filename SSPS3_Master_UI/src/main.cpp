@@ -52,14 +52,14 @@ void setup()
 #endif
 
     itcw    = new TwoWire(0);
-    itcw    ->begin(SDA, SCL, 400000);
+    itcw    ->begin(SDA, SCL, 100000);
     STM32   = new STM32_slave(STM_I2C_ADDR);
 
 /* #IFDEF PLC VERSION REGION - BEGIN */
 
 #ifdef IS_SSPS3F1_BLACKOUT_EDITION
-    pinMode(BUZZER_PIN, OUTPUT); //Buzzer init
-    digitalWrite(BUZZER_PIN, LOW);
+    //pinMode(BUZZER_PIN, OUTPUT); //Buzzer init
+    //digitalWrite(BUZZER_PIN, LOW);
 
     pinMode(13, OUTPUT); //OK led
     digitalWrite(13, HIGH);
