@@ -1365,7 +1365,7 @@ void UIService::init_prog_selector_part_chm()
             UI_prog_selector_control,
             i < chm_templ_menu_items_name.size()
                 ? chm_templ_menu_items_name.at(i) :
-                Translator::get(TASK_AUTOPROG) + to_string(i - chm_templ_menu_items_name.size() + 1),
+                Translator::get(TASK_OWN) + to_string(i - chm_templ_menu_items_name.size() + 1),
             [](uint8_t index) { prog_stasrtup_wd->start_program(EquipmentType::Cheesemaker, index); },
             i
         ));
