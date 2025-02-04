@@ -94,13 +94,16 @@ void UIService::init_screens()
             }),
             KeyModel(KeyMap::L_STACK_1, [this]()
             {
-                prog_runned.ptr()->end_task_by_user();
-                prog_runned.accept();
+                if (is_pasteur)
+                {
+                    prog_runned.ptr()->end_task_by_user();
+                    prog_runned.accept();
 
-                UI_notification_bar->push_info(SystemNotification::INFO_TASK_CANCELED_BY_USER_PLC);
+                    UI_notification_bar->push_info(SystemNotification::INFO_TASK_CANCELED_BY_USER_PLC);
 
-                UI_task_roadmap_control->update_ui_context();
-                UI_task_roadmap_control->update_task_steps_state();
+                    UI_task_roadmap_control->update_ui_context();
+                    UI_task_roadmap_control->update_task_steps_state();
+                }
             }),
             KeyModel(KeyMap::LEFT_TOP, [this]()
             {
