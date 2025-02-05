@@ -237,7 +237,12 @@ void loop()
         }
 
         if (UI_manager->is_current_control(ScreenType::BLOWING_CONTROL))
+        {
             blowing_proc(OptIn_state[DIN_BLOWGUN_SENS]);
+
+            if(Blowing_control->is_runned && OptIn_state[DIN_STOP_SENS])
+                Blowing_control->blowgun_stop(true);
+        }
         else if (Blowing_control->is_runned)
             Blowing_control->blowgun_stop();
     }
