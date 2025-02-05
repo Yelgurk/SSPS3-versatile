@@ -143,8 +143,9 @@ bool read_digital_signals(bool timer_call = true)
 
 /* 8pt == 1*C */
 static float        pt_to_tempC = 8.f;
-static uint16_t     offset_1    = pt_to_tempC * 28.f,
-                    offset_2    = pt_to_tempC * 0.f;
+static uint16_t     offset_1    = pt_to_tempC * 11.f,
+                    offset_2    = pt_to_tempC * 11.f;
+static uint16_t     offset_prog = offset_1 + pt_to_tempC * 3.f;
 static uint16_t     result_1    = 0,
                     result_2    = 0;
 
@@ -184,6 +185,7 @@ void read_analog_signals(bool is_startup_call = false)
         }
 #else
     if (is_startup_call)
+    {
         for (uint8_t call = 0; call < 10; call++)
         {
             filter_24v_batt->add_value(STM32->get(COMM_GET::ANIN, ADC_VOLTAGE_BATT));
@@ -193,9 +195,22 @@ void read_analog_signals(bool is_startup_call = false)
 
             exp_filter_tempC_product.add_value(result_1 >= offset_1 ? result_1 - offset_1 : result_1);
             exp_filter_tempC_wJacket.add_value(result_2 >= result_2 ? result_2 - offset_2 : result_2);
-            
-            delay(10);
+
+            Serial.println(call+1);
+
+            Serial.print("prod: ");
+            Serial.print(result_1 - offset_1);
+            Serial.print(" = ");
+            Serial.println(filter_tempC_product->get_physical_value());
+
+            Serial.print("wjac: ");
+            Serial.print(result_2 - offset_2);
+            Serial.print(" = ");
+            Serial.println(filter_tempC_wJacket->get_physical_value());
+
+            delay(25);
         }
+    }
 #endif
 }
 
@@ -218,8 +233,17 @@ void read_tempC_sensors(bool is_startup_call)
     tempC_product_val[index = index >= 9 ? 0 : index]
         = result_1 >= offset_1 ? result_1 - offset_1 : result_1;
 
+#ifdef IS_SSPS3F1_BLACKOUT_EDITION
+    static float final_ofs = 0;
+
+    final_ofs = prog_runned.local().is_runned ? offset_prog : offset_2;
+
+    tempC_wJacket_val[index++]
+        = result_2 >= result_2 ? result_2 - final_ofs : result_2;
+#else
     tempC_wJacket_val[index++]
         = result_2 >= result_2 ? result_2 - offset_2 : result_2;
+#endif
 
     if (index >= 9)
     {

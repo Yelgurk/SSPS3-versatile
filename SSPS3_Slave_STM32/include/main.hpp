@@ -95,7 +95,8 @@ I2C_Service * I2C;
 #define CHANGE_INT_SIGNAL()         digitalWrite(INT, !static_cast<bool>(digitalRead(INT)))
 
 #ifdef SSPS3F1_BLACKOUT_EDITION
-    #define CHANGE_KB_SIGNAL()          digitalWrite(INT_KB, !static_cast<bool>(digitalRead(INT_KB)))
+    #define INT_KB_SET_UP()          digitalWrite(INT_KB, HIGH)
+    #define INT_KB_SET_DOWN()        digitalWrite(INT_KB, LOW)
 #endif
 
 String kbMsg = "";

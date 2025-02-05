@@ -61,7 +61,13 @@ uint16_t get_event(I2C_COMM command, uint8_t pin)
     case I2C_COMM::GET_DAC_VAL:     return analogRead(Dac[PIN_EXISTS(pin, Dac, uint8_t)]);
     case I2C_COMM::GET_DGIN_VAL:    return digitalRead(OptIn[PIN_EXISTS(pin, OptIn, uint8_t)]);
     case I2C_COMM::GET_ANIN_VAL:    return analogRead(Adc[PIN_EXISTS(pin, Adc, uint8_t)]);
-    case I2C_COMM::GET_KB_VAL:      return get_pressed_key();
+    case I2C_COMM::GET_KB_VAL:
+        {
+#ifdef SSPS3F1_BLACKOUT_EDITION
+            INT_KB_SET_DOWN();
+#endif
+            return get_pressed_key();
+        }
     default:
         return 0;
     }
@@ -180,6 +186,11 @@ void loop()
 #elif KeyPadVersion == 2
     char keypad_awaiter = myKeypad.getKeyWithDebounce();
     
+#ifdef SSPS3F1_BLACKOUT_EDITION
+    if (digitalRead(INT_KB))
+        INT_KB_SET_DOWN();
+#endif
+
     if (keypad_awaiter != Keypad4495::NO_PIN)
         run_kb_dispatcher(keypad_awaiter);
 #endif
@@ -188,7 +199,7 @@ void loop()
 void _call_master_for_kb_read()
 {
 #ifdef SSPS3F1_BLACKOUT_EDITION
-    CHANGE_KB_SIGNAL();
+    INT_KB_SET_UP();
 #else
     CHANGE_INT_SIGNAL();
 #endif

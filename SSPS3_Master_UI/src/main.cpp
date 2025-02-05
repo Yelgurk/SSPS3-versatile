@@ -43,6 +43,8 @@ void setup()
     Serial.println("KMA_05.02.2025_02:11:00");
     debug_show_tempC_offsets();
 
+    delay(500);
+
     pinMode(INT, INPUT_PULLDOWN);
     attachInterrupt(digitalPinToInterrupt(INT), interrupt_action, CHANGE);
 
@@ -150,6 +152,7 @@ void setup()
     rt_task_manager.execute_task("task_do_programm");
 
     dt_rt->get_rt();
+    prog_runned.get();
 
     if (false)
     {
@@ -349,6 +352,10 @@ static uint16_t V_BAT_COUNTER_CRUTCH = 0;
 
 void setup_task_manager()
 {
+    rt_task_manager.add_task("task_update_opt_in", [](){
+        read_digital_signals();
+    }, 5000);
+
     rt_task_manager.add_task("task_update_filters", [](){
         read_analog_signals();
         //filter_tempC_product->add_value(AnIn_state[ADC_TEMPC_PRODUCT]);
