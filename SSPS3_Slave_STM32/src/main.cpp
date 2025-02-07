@@ -75,6 +75,11 @@ uint16_t get_event(I2C_COMM command, uint8_t pin)
 
 void setup()
 {
+#ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
+    while(1)
+    {}
+#endif
+
 #ifdef ALLOW_UART_DEBUG
     Serial.setRx(S_UART_RX);
     Serial.setTx(S_UART_TX);

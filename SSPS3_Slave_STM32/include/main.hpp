@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "./I2C_Service.hpp"
 
+#define IS_SOFTWARE_DEADLOCK_ON_STARTUP
 
 //#define SSPS3F1_V1
 #define SSPS3F1_BLACKOUT_EDITION
