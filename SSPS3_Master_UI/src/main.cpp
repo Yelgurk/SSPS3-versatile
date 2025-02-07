@@ -37,6 +37,13 @@ void setup_controllers();
 void setup_task_manager();
 void setup_watchdogs();
 
+/******************************************************************************************/
+
+#include "../my_demo/Core/Memory/x_var_data_center.h"
+#include "../my_demo/Core/Memory/Device/mem_i2c_fm24gl64.h"
+
+/******************************************************************************************/
+
 void setup()
 {
     Serial.begin(115200);
@@ -59,9 +66,68 @@ void setup()
 
 /*********************************************************************************************************************************/
 
+    FM24GL64::set_i2c_ch(itcw);
+    FM24GL64 _ee_bank_1(0x50);
+    FM24GL64 _ee_bank_2(0x57);
 
-while(1)
-{}
+    delay(15000);
+
+    XStorageDispatcher->add_device(_ee_bank_1.get_i_read_write());
+    XStorageDispatcher->add_device(_ee_bank_2.get_i_read_write());
+    //XStorage;
+
+    for (unsigned char col = 0; col < 10; col++)
+    {
+        for (unsigned char row = 0; row < 10; row++)
+        {
+            unsigned char _address = col * 10 + row;
+
+            char x = XStorageDispatcher->get_i_read_write()->byte_read(_address);
+            Serial.printf("%03d ", x);
+
+            //XStorageDispatcher->get_i_read_write()->write(_address, &_address, sizeof(_address));
+        }
+
+        Serial.println();
+    }
+    Serial.println();
+
+    unsigned char lol = 123;
+    XStorageDispatcher->write(2, &lol, sizeof(lol));
+
+    for (unsigned char col = 0; col < 10; col++)
+    {
+        for (unsigned char row = 0; row < 10; row++)
+        {
+            unsigned char _address = col * 10 + row;
+
+            char x = XStorageDispatcher->get_i_read_write()->byte_read(_address);
+            Serial.printf("%03d ", x);
+        }
+
+        Serial.println();
+    }
+    Serial.println();
+    
+    //XStorage->TestVar1 = 15;
+    XStorage;
+
+    for (unsigned char col = 0; col < 10; col++)
+    {
+        for (unsigned char row = 0; row < 10; row++)
+        {
+            unsigned char _address = col * 10 + row;
+
+            char x = XStorageDispatcher->get_i_read_write()->byte_read(_address);
+            Serial.printf("%03d ", x);
+        }
+
+        Serial.println();
+    }
+    Serial.println();
+
+    while(1)
+    {}
 
 /*********************************************************************************************************************************/
 

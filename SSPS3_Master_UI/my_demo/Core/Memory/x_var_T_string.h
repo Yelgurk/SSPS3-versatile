@@ -45,7 +45,7 @@ public:
         XVarBase<std::string>(
             default_value,
             ext_mem_address,
-            ext_mem_address < 0 ? 50 : 20, // if local val => 50 char lenght, else if in i2c eeprom/fram external mem => 20 char lenght
+            ext_mem_address < 0 ? 50 : 20, // if local val (addr < 0) => 50 char lenght, else if in i2c eeprom/fram external mem (addr >= 0) => 20 char lenght
             is_system_val,
             is_admin_val
         )

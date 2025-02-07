@@ -57,7 +57,7 @@ protected:
 
             XVarFram::_push_crc(XVarFram::_calc_current_value_crc());
 
-            ExtMemDevicesDispatcher::instance()->write(
+            XStorageDispatcher->write(
                 XVarFram::get_address(),
                 XVarFram::_buffer_ptr(),
                 XVarFram::get_value_with_crc_size()

@@ -16,7 +16,7 @@
     #include "x_var_extension.h"
 #endif
 
-class ExtMemDevicesDispatcher : IReadWrite
+class ExtMemDevicesDispatcher : public IReadWrite
 {
 private:
     ExtMemDevicesDispatcher() {}
@@ -84,18 +84,22 @@ public:
 
     char byte_read(unsigned int addr) override
     {
-        static unsigned char i = 0,
-            byte = 0x00;
+        static unsigned char i = 0, byte = 0x00;
 
         i = 0;
         byte = ext_mem_devices.at(i++)->byte_read(addr);
 
         while (i < ext_mem_devices.size())
             if (ext_mem_devices.at(i++)->byte_read(addr) != byte)
+            {
                 byte = EXT_MEM_BYTE_ERR;
+                break;
+            }
 
         return byte;
     }
 };
+
+#define XStorageDispatcher      ExtMemDevicesDispatcher::instance()
 
 #endif // !MEM_DISPATCHER_H

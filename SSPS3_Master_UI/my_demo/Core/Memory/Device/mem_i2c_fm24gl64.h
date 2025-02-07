@@ -17,20 +17,63 @@
     typedef IArduinoI2C     I2C_CH;
 #endif
 
-class FM24GL64 : IReadWrite
+class FM24GL64 : public IReadWrite
 {
 private:
     static I2C_CH* itcw;
     unsigned char device_i2c_addr = 0x50;
 
 public:
-    FM24GL64(unsigned char _device_i2c_addr = 0x50) : device_i2c_addr(_device_i2c_addr) {}
-    void fill(unsigned int addr, const unsigned char& filler, size_t size) override;
-    bool read(unsigned int addr, unsigned char* data, size_t size, bool check_last_short_crc = false) override;
-    void write(unsigned int addr, const unsigned char* data, size_t size) override;
-    char byte_read(unsigned int addr) override;
+    FM24GL64(unsigned char _device_i2c_addr = 0x50)
+    : device_i2c_addr(_device_i2c_addr)
+    {}
 
-    void set_i2c_ch(I2C_CH* _itcw);
+    static void set_i2c_ch(I2C_CH* _itcw)
+    {
+        FM24GL64::itcw = _itcw;
+    }
+    
+    void fill(unsigned int addr, const unsigned char& filler, size_t size) override
+    {
+        itcw->beginTransmission(this->device_i2c_addr);
+        itcw->write((addr >> 8) & 0xFF);
+        itcw->write(addr & 0xFF);
+        for (size_t i = 0; i < size; ++i)
+            itcw->write(filler);
+        itcw->endTransmission();
+    }
+
+    bool read(unsigned int addr, unsigned char* data, size_t size, bool check_last_short_crc = false) override
+    {
+        itcw->beginTransmission(this->device_i2c_addr);
+        itcw->write((addr >> 8) & 0xFF);
+        itcw->write(addr & 0xFF);
+        itcw->endTransmission();
+
+        itcw->requestFrom(this->device_i2c_addr, size);
+        for (size_t i = 0; i < size; ++i)
+            if (itcw->available())
+                *(data + i) = itcw->read();
+
+        return false;
+    }
+
+    void write(unsigned int addr, const unsigned char* data, size_t size) override
+    {
+        itcw->beginTransmission(this->device_i2c_addr);
+        itcw->write((addr >> 8) & 0xFF);
+        itcw->write(addr & 0xFF);
+        for (size_t i = 0; i < size; ++i)
+            itcw->write(*(data + i));
+        itcw->endTransmission();
+    }
+
+    char byte_read(unsigned int addr) override
+    {
+        unsigned char byte = 0;
+        this->read(addr, &byte, 1);
+        return byte;
+    }
 };
 
 I2C_CH* FM24GL64::itcw = NULL;

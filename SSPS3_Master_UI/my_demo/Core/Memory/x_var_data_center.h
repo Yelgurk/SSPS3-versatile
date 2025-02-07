@@ -119,9 +119,9 @@ public:
     std::unique_ptr<ExtMemTaskCluster> TestStore;
 };
 
-#define Storage                     XVarDataCenter::get()
-#define StorageTaskCluster(value)   Storage->TestStore.get()->select_page(value)
-#define StorageTaskPage(value)      Storage->TestStore.get()->select_collection(value)
-#define StorageTaskSelected         Storage->TestStore.get()->get_collection()
+#define XStorage                    XVarDataCenter::get()
+#define XStorageTaskCluster(value)  XStorage->TestStore.get()->select_page(value)
+#define XStorageTaskPage(value)     XStorage->TestStore.get()->select_collection(value)
+#define XStorageTaskSelected        XStorage->TestStore.get()->get_collection()
 
 #endif // !MEM_VAR_STORAGE_H
