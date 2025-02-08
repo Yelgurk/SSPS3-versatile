@@ -27,13 +27,13 @@ private:
     char minute_;
     char second_;
 
-    bool is_leap_year() { return is_leap_year(year_); }
+    bool is_leap_year() const { return is_leap_year(year_); }
     bool is_leap_year(int Year) const
     {
         return (Year % 4 == 0 && Year % 100 != 0) || (Year % 400 == 0);
     }
 
-    int days_in_month() { return days_in_month(year_, month_); }
+    int days_in_month() const { return days_in_month(year_, month_); }
     int days_in_month(int Year, int Month) const
     {
         return (
@@ -45,8 +45,8 @@ private:
             );
     }
 
-    char day_of_the_week() { return day_of_the_week(year_, month_, day_); }
-    char day_of_the_week(int Year, int Month, int Day)
+    char day_of_the_week() const { return day_of_the_week(year_, month_, day_); }
+    char day_of_the_week(int Year, int Month, int Day) const
     {
         if (Month < 3u)
         {
@@ -59,13 +59,13 @@ private:
         return (Day + (31u * Month / 12u) + Year + (Year / 4u) - (Year / 100u) + (Year / 400u)) % 7u;
     }
 
-    short days_from_start_of_year() { return days_from_start_of_year(year_, month_, day_); }
-    short days_from_start_of_year(int Year, int Month, int Day)
+    short days_from_start_of_year() const { return days_from_start_of_year(year_, month_, day_); }
+    short days_from_start_of_year(int Year, int Month, int Day) const
     {
         int days = 0;
 
         for (int m = 1; m < Month; m++)
-            days += days_in_month(m, Year);
+            days += days_in_month(Year, m);
 
         days += Day;
         return days;
@@ -74,22 +74,40 @@ private:
     void normalize()
     {
         while (second_ >= 60)
-            second_ -= 60; ++minute_;
+        {
+            second_ -= 60;
+            ++minute_;
+        }
 
         while (second_ < 0)
-            second_ += 60; --minute_;
+        {
+            second_ += 60;
+            --minute_;
+        }
 
         while (minute_ >= 60)
-            minute_ -= 60; ++hour_;
+        {
+            minute_ -= 60;
+            ++hour_;
+        }
 
         while (minute_ < 0)
-            minute_ += 60; --hour_;
+        {
+            minute_ += 60;
+            --hour_;
+        }
 
         while (hour_ >= 24)
-            hour_ -= 24; ++day_;
+        {
+            hour_ -= 24;
+            ++day_;
+        }
 
         while (hour_ < 0)
-            hour_ += 24; --day_;
+        {
+            hour_ += 24;
+            --day_;
+        }
 
         if (year_ < 2000)
             year_ = 2000;
@@ -104,7 +122,10 @@ private:
             ++month_;
 
             if (month_ > 12)
-                month_ = 1; ++year_;
+            {
+                month_ = 1;
+                ++year_;
+            }
         }
 
         while (day_ < 1)
@@ -112,7 +133,10 @@ private:
             --month_;
 
             if (month_ < 1)
-                month_ = 12; --year_;
+            {
+                month_ = 12;
+                --year_;
+            }
 
             day_ += days_in_month(year_, month_);
         }
@@ -131,6 +155,30 @@ private:
         day_ += static_cast<char>(total_days);
         
         normalize();
+    }
+
+    long long to_epoch_seconds() const
+    {
+        long long days = 0;
+        
+        for (int y = 2000; y < year_; ++y)
+            days += is_leap_year(y) ? 366 : 365;
+
+        for (int y = year_; y < 2000; ++y)
+            days -= is_leap_year(y) ? 366 : 365;
+
+        for (int m = 1; m < month_; ++m)
+            days += days_in_month(year_, m);
+
+        days += (day_ - 1);
+
+        long long total_seconds =
+            days * SECONDS_IN_DAY +
+            hour_ * SECONDS_IN_HOUR +
+            minute_ * SECONDS_IN_MINUTE +
+            second_;
+
+        return total_seconds;
     }
 
 public:
@@ -167,7 +215,7 @@ public:
 
     virtual std::string to_string() override
     {
-        static char buffer[20];
+        char buffer[20];
 
         snprintf(
             buffer,
@@ -181,27 +229,8 @@ public:
 
     TimeSpan operator-(const DateTime& other) const
     {
-        int days_diff = 0;
-        for (short y = other.year_; y < year_; ++y)
-            days_diff += is_leap_year(y) ? 366 : 365;
-
-        for (short y = year_; y < other.year_; ++y)
-            days_diff -= is_leap_year(y) ? 366 : 365;
-
-        for (char m = 1; m < month_; ++m)
-            days_diff += days_in_month(year_, m);
-
-        for (char m = 1; m < other.month_; ++m)
-            days_diff -= days_in_month(other.year_, m);
-
-        days_diff += day_ - other.day_;
-
-        int total_seconds = days_diff * HOURS_IN_DAY * MINUTES_IN_HOUR * SECONDS_IN_MINUTE;
-        total_seconds += (hour_ - other.hour_) * MINUTES_IN_HOUR * SECONDS_IN_MINUTE;
-        total_seconds += (minute_ - other.minute_) * SECONDS_IN_MINUTE;
-        total_seconds += (second_ - other.second_);
-
-        return TimeSpan(total_seconds);
+        long long diff = this->to_epoch_seconds() - other.to_epoch_seconds();
+        return TimeSpan(static_cast<int>(diff));
     }
 
     DateTime& operator++()                          { adjust_from_timespan(1);          return *this; }
