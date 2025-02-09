@@ -19,9 +19,10 @@
 class XVarMVC_LVGL_V9
 {
 private:
+    lv_subject_t*   _lv_subject                 = nullptr;
     unsigned char   _lv_subject_str_buf_size    = 0;
-    char*           _lv_subject_buf         = nullptr;
-    char*           _lv_subject_prev_buf    = nullptr;
+    char*           _lv_subject_buf             = nullptr;
+    char*           _lv_subject_prev_buf        = nullptr;
 
 protected:
     virtual void update_lv_subject()
@@ -35,12 +36,6 @@ protected:
         _lv_subject_prev_buf = new char[buffer_size]();
 #endif
     }
-
-#ifdef DEV_USE_X_VAR_MVC_LVGL_V9
-    lv_subject_t* _lv_subject = nullptr;
-#else
-    void* _lv_subject = nullptr;
-#endif
 
     void init_lv_subject_int(int32_t value)
     {
@@ -99,13 +94,9 @@ public:
 #endif
     }
 
-    void* get_lv_subject()
+    lv_subject_t* get_lv_observable()
     {
-#ifdef DEV_USE_X_VAR_MVC_LVGL_V9
-        return static_cast<void*>(_lv_subject);
-#else
         return _lv_subject;
-#endif
     }
 };
 
