@@ -12,8 +12,8 @@
 #else
     #include <vector>
     #include "i_read_write.h"
-    #include "ext_mem_defines.h"
     #include "x_var_extension.h"
+    #include "ext_mem_defines.h"
 #endif
 
 class ExtMemDevicesDispatcher : public IReadWrite
@@ -99,7 +99,5 @@ public:
         return byte;
     }
 };
-
-#define XStorageDispatcher      ExtMemDevicesDispatcher::instance()
 
 #endif // !MEM_DISPATCHER_H

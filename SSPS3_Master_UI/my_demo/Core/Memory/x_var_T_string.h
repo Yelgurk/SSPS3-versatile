@@ -20,8 +20,15 @@ protected:
         if (string_size >= buffer_size)
             string_size = buffer_size - 1; // -1 => space for end-string symbol
 
-        memcpy(XVarFram::_buffer_ptr(), this->_value.c_str(), string_size);
+        memcpy(
+            XVarFram::_buffer_ptr(),
+            this->_value.c_str(),
+            string_size
+        );
+
         XVarFram::_buffer_ptr()[string_size] = '\0';
+
+        _pull_value_from_buffer();
     }
 
     virtual void _pull_value_from_buffer() override
@@ -30,14 +37,16 @@ protected:
     }
 
 protected:
+    // for XVarMVC_String
     virtual std::string _get_str_from_x_var_t() override
     {
         return this->_value;
     }
 
-    void update_lv_subject() override
+    // for XVarMVC_LVGL_V9
+    void _mvc_lvgl_x_var_notify_value_changed() override
     {
-        XVarMVC::update_lv_subject_string(this->_get_str_from_x_var_t());
+        XVarMVC_LVGL_V9::update_lv_subject_string(this->_get_str_from_x_var_t());
     }
 
 public:
@@ -52,8 +61,8 @@ public:
     {
         this->load_from_ext_mem();
 
-        XVarMVC::init_lv_subject_buffer(this->get_value_size());
-        XVarMVC::init_lv_subject_string(this->_get_str_from_x_var_t());
+        XVarMVC_LVGL_V9::init_lv_subject_buffer(this->get_value_size());
+        XVarMVC_LVGL_V9::init_lv_subject_string(this->_get_str_from_x_var_t());
     }
 
     XVar& operator=(const std::string& other) { this->_set_new_value_and_notify_subs(other); return *this; }

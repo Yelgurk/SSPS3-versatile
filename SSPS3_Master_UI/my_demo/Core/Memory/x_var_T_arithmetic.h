@@ -12,14 +12,30 @@ template<typename T>
 class XVar<T, std::enable_if_t<!std::is_class_v<T>>> : public XVarBase<T>
 {
 protected:
+    // for XVarMVC_String
     virtual std::string _get_str_from_x_var_t() override
     {
         return std::to_string(this->_value);
     }
 
-    void update_lv_subject() override
+    // for XVarMVC_LVGL_V9
+    virtual void _mvc_lvgl_x_var_notify_value_changed() override
     {
-        XVarMVC::update_lv_subject_int(static_cast<int32_t>(this->_value));
+#ifdef DEV_USE_X_VAR_MVC_LVGL_V9
+        XVarMVC_LVGL_V9::update_lv_subject_int(static_cast<int32_t>(this->_value));
+#endif
+    }
+
+    // for XVarMVC_LVGL_V9 one_way_to_source
+    virtual void _mvc_lvgl_x_var_notify_ui_changed() override
+    {
+#ifdef DEV_USE_X_VAR_MVC_LVGL_V9
+        this->_set_new_value_and_notify_subs
+        (
+            static_cast<T>(lv_subject_get_int(XVarMVC_LVGL_V9::get_lv_observable())),
+            true
+        );
+#endif
     }
 
 public:
@@ -34,7 +50,7 @@ public:
     {
         this->load_from_ext_mem();
 
-        XVarMVC::init_lv_subject_int(static_cast<int32_t>(this->_value));
+        XVarMVC_LVGL_V9::init_lv_subject_int(static_cast<int32_t>(this->_value));
     }
 
     T operator+ (const XVar& other) { return this->_value + other._value; }
@@ -47,6 +63,8 @@ public:
     T operator-- () { this->_set_new_value_and_notify_subs(this->_value - 1); return this->_value; }
     T operator++ (int) { this->_set_new_value_and_notify_subs(this->_value + 1); return this->_value - 1; }
     T operator-- (int) { this->_set_new_value_and_notify_subs(this->_value - 1); return this->_value + 1; }
+
+    XVar& operator=(const XVar& other) { this->_set_new_value_and_notify_subs(other._value); return *this; }
 
     bool operator==(const XVar& other) { return this->_value == other._value; }
     bool operator!=(const XVar& other) { return this->_value != other._value; }

@@ -6,28 +6,26 @@
     #include "./External/ext_mem_dispatcher.h"
     #include "./x_var_extension.h"
     #include "./x_var_fram.h"
-    #include "./x_var_mvc.h"
+    #include "./x_var_mvc_string.h"
+    #include "./x_var_mvc_obj.h"
 #else
     #include "ext_mem_dispatcher.h"
     #include "x_var_extension.h"
     #include "x_var_fram.h"
-    #include "x_var_mvc.h"
+    #include "x_var_mvc_string.h"
+    #include "x_var_mvc_obj.h"
 #endif
 
 template<typename T>
-class XVarBase : public XVarFram, public XVarMVC
+class XVarBase :
+    public XVarFram,
+    public XVarMVC_String,
+    public XVarMVC_LVGL_V9,
+    public XVarMVC_Obj
 {
 protected:
     T   _value,
         _default_value;
-
-    virtual std::string _get_str_from_x_var_t()
-    {
-        return "<NAN>";
-    }
-
-    //virtual void _push_value_into_buffer() = 0;
-    //virtual void _pull_value_from_buffer() = 0;
 
     virtual void _push_value_into_buffer()
     {
@@ -47,8 +45,16 @@ protected:
         );
     }
 
-    void _set_new_value_and_notify_subs(T new_value) //(T& new_value) <- ???
+    virtual std::string _get_str_from_x_var_t()
     {
+        return "<NAN>";
+    }
+
+    void _set_new_value_and_notify_subs(T new_value, bool _mvc_target_one_way_to_source = false, bool _force_data_update_anyway = false)
+    {
+        if (!_force_data_update_anyway && _value == new_value)
+            return;
+
         _value = new_value;
 
         if (!XVarFram::get_is_local_val())
@@ -57,15 +63,18 @@ protected:
 
             XVarFram::_push_crc(XVarFram::_calc_current_value_crc());
 
-            XStorageDispatcher->write(
+            ExtMemDevicesDispatcher::instance()->write(
                 XVarFram::get_address(),
                 XVarFram::_buffer_ptr(),
                 XVarFram::get_value_with_crc_size()
             );
         }
 
-        load_value_into_ui();   
-        XVarMVC::update_lv_subject();
+        load_value_into_ui();
+        _mvc_obj_bindings_notify_value_changed(std::any(_value));
+
+        if (!_mvc_target_one_way_to_source)
+            _mvc_lvgl_x_var_notify_value_changed();
     }
 
 public:
@@ -80,7 +89,7 @@ public:
         _value(default_value)
     {}
 
-    void load_from_ext_mem() override
+    virtual void load_from_ext_mem() override
     {
         if (!XVarFram::get_is_local_val() &&
             ExtMemDevicesDispatcher::instance()->read(
@@ -94,14 +103,12 @@ public:
             return;
         }
 
-        //get_crc_match_ext_mem() can be used instead included CRC comparator in ExtMemDevicesDispatcher::instance()->read(...) which one return true/false if readed successfully
-
         default_value_reset(0, 0, 1);
     }
 
     virtual void load_value_into_ui(bool only_last_subscriber_notify = false) override
     {
-        XVarMVC::_notify_ui_subscribers
+        XVarMVC_String::_mvc_string_ui_notify_x_var_changed
         (
             _get_str_from_x_var_t(),
             only_last_subscriber_notify
@@ -126,13 +133,13 @@ public:
         );
     }
 
-    void subscribe_ui_label(void* lv_label_ptr) override
+    void mvc_string_bind(void* lv_label_ptr) override
     {
-        XVarMVC::subscribe_ui_label(lv_label_ptr);
+        XVarMVC_String::mvc_string_bind(lv_label_ptr);
         load_value_into_ui(true);
     }
 
-    void save_changes()     { _set_new_value_and_notify_subs(_value); }
+    void save_changes()     { _set_new_value_and_notify_subs(_value, false, true); }
     void set(T new_value)   { _set_new_value_and_notify_subs(new_value); }
     T& get()                { return _value; }
 

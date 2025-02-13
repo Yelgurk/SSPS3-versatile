@@ -55,7 +55,6 @@ public:
     XVar<T>& allocate(T default_value, signed int ext_mem_var_addr, bool is_system_val, bool is_admin_val)
     {        
         _free_addr = ext_mem_var_addr > _free_addr ? ext_mem_var_addr : _free_addr;
-        Serial.printf("start addr: %d\n", _free_addr);
 
         auto _unique_ptr = custom_unique_init<XVar<T>>(
             default_value,
@@ -69,12 +68,6 @@ public:
 
         if (!_ptr->get_is_local_val())
             _free_addr += _ptr->get_value_with_crc_size();
-
-        Serial.printf("size: %d\n", _ptr->get_value_with_crc_size());
-        if (!_ptr->get_is_local_val())
-            Serial.printf("end addr: %d\n\n", _free_addr - 1);
-        else
-            Serial.println("local var!\n");
 
         return *_ptr;
     }

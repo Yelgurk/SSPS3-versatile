@@ -15,11 +15,11 @@
 class ExtMemTaskPage
 {
 private:
-    //std::vector<ExtMemTaskCollection> stages;
+    //std::vector<ExtMemTaskGroup> stages;
 
-    std::list<ExtMemTaskCollection>::iterator l_front;
-    std::list<ExtMemTaskCollection> stages;
-    ExtMemTaskCollection* _selected;
+    std::list<ExtMemTaskGroup>::iterator l_front;
+    std::list<ExtMemTaskGroup> stages;
+    ExtMemTaskGroup* _selected;
 
     XVar<std::string>& page_name;
 
@@ -38,13 +38,13 @@ public:
         XVar<bool>& is_await_user_ok,
         XVar<bool>& is_stage_turned_on)
     {
-        stages.push_back(ExtMemTaskCollection(name, rpm, temperature, duration_ss, is_active_cooling, is_await_user_ok, is_stage_turned_on));
+        stages.push_back(ExtMemTaskGroup(name, rpm, temperature, duration_ss, is_active_cooling, is_await_user_ok, is_stage_turned_on));
         _selected = &stages.back();
 
         return this;
     }
 
-    ExtMemTaskPage* select_collection(unsigned char index)
+    ExtMemTaskPage* select_group(unsigned char index)
     {
         //_selected = &stages.at(index >= stages.size() ? stages.size() - 1 : index); | the same like in ext_mem_task_cluster.h
 
@@ -60,7 +60,7 @@ public:
         return this;
     }
 
-    ExtMemTaskCollection* get_collection()
+    ExtMemTaskGroup* get_group()
     {
         return _selected;
     }

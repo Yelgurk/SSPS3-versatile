@@ -14,6 +14,7 @@ template <typename T>
 class XVar<T, std::enable_if_t<std::is_class_v<T>>> : public XVarBase<T>
 {
 protected:
+    // for XVarMVC_String
     virtual std::string _get_str_from_x_var_t() override
     {
         if constexpr (std::is_base_of<IStructToString, T>::value)
@@ -25,9 +26,10 @@ protected:
             return "<STRUCT>";
     }
 
-    void update_lv_subject() override
+    // for XVarMVC_LVGL_V9
+    void _mvc_lvgl_x_var_notify_value_changed() override
     {
-        XVarMVC::update_lv_subject_string(this->_get_str_from_x_var_t());
+        XVarMVC_LVGL_V9::update_lv_subject_string(this->_get_str_from_x_var_t());
     }
 
 public:
@@ -42,8 +44,8 @@ public:
     {
         this->load_from_ext_mem();
 
-        XVarMVC::init_lv_subject_buffer(50);
-        XVarMVC::init_lv_subject_string(this->_get_str_from_x_var_t());
+        XVarMVC_LVGL_V9::init_lv_subject_buffer(50);
+        XVarMVC_LVGL_V9::init_lv_subject_string(this->_get_str_from_x_var_t());
     }
 
     XVar& operator=(const T& other)

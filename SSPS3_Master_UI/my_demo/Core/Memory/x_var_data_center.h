@@ -63,6 +63,7 @@ public:
 
     XVar<short>& TestVar1 = _init<short>(0);
     XVar<short>& TestVar2 = _init<short>(0);
+    XVar<short>& TestVar3 = _init<short>(0);
 
     XVar<std::string>&    TV_1_page_name          = _init<std::string>("page 1");
     XVar<std::string>&    TV_2_page_name          = _init<std::string>("page 2");
@@ -118,10 +119,5 @@ public:
 
     std::unique_ptr<ExtMemTaskCluster> TestStore;
 };
-
-#define XStorage                    XVarDataCenter::get()
-#define XStorageTaskCluster(value)  XStorage->TestStore.get()->select_page(value)
-#define XStorageTaskPage(value)     XStorage->TestStore.get()->select_collection(value)
-#define XStorageTaskSelected        XStorage->TestStore.get()->get_collection()
 
 #endif // !MEM_VAR_STORAGE_H

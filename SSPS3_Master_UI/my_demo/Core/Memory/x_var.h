@@ -1,6 +1,6 @@
-#pragma once
-#ifndef X_VAR_CORE_H
-#define X_VAR_CORE_H
+﻿#pragma once
+#ifndef X_VAR_H
+#define X_VAR_H
 
 #ifdef DEV_SSPS3_RUN_ON_PLC
     #include "./x_var_data_center.h"
@@ -10,4 +10,10 @@
     #include "mem_i2c_fm24gl64.h"
 #endif
 
-#endif // !X_VAR_CORE_H
+#define XStorage                    XVarDataCenter::get()
+#define XStorageTaskPage(value)     XVarDataCenter::get()->TestStore.get()->select_page(value)
+#define XStorageTaskGroup(value)    XVarDataCenter::get()->TestStore.get()->select_group(value)
+#define XStorageTaskGet             XVarDataCenter::get()->TestStore.get()->get_group()
+#define XStorageDispatcher          ExtMemDevicesDispatcher::instance()
+
+#endif // !X_VAR_H

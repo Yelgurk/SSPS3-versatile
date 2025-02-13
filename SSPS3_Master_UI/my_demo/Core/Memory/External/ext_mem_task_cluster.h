@@ -37,13 +37,13 @@ public:
 
         _selected = &(*l_front);
 
-        select_collection(0);
+        select_group(0);
         return this;
     }
 
-    ExtMemTaskCluster* select_collection(unsigned char index)
+    ExtMemTaskCluster* select_group(unsigned char index)
     {
-        _selected->select_collection(index);
+        _selected->select_group(index);
         return this;
     }
 
@@ -52,9 +52,9 @@ public:
         return _selected;
     }
 
-    ExtMemTaskCollection* get_collection()
+    ExtMemTaskGroup* get_group()
     {
-        return _selected->get_collection();
+        return _selected->get_group();
     }
 };
 

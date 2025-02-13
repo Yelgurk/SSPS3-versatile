@@ -1,6 +1,6 @@
 ﻿#pragma once
-#ifndef EXT_MEM_TASK_COLLECTION_H
-#define EXT_MEM_TASK_COLLECTION_H
+#ifndef EXT_MEM_TASK_GROUP_H
+#define EXT_MEM_TASK_GROUP_H
 
 #ifdef DEV_SSPS3_RUN_ON_PLC
     #include <string>
@@ -14,10 +14,10 @@
     #include "x_var_T_arithmetic.h"
 #endif
 
-class ExtMemTaskCollection
+class ExtMemTaskGroup
 {
 public:
-    ExtMemTaskCollection(
+    ExtMemTaskGroup(
         XVar<std::string>& name,
         XVar<unsigned char>& rpm,
         XVar<unsigned char>& temperature,
@@ -54,4 +54,4 @@ public:
     }
 };
 
-#endif // !MEM_EXT_STAGE_UNIT_H
+#endif // !EXT_MEM_TASK_GROUP_H
