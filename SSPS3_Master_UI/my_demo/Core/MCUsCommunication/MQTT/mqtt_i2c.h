@@ -200,6 +200,9 @@ public:
         if (_is_master) {
             _i2c->begin();
         } else {
+            if (notify_pin != -1)
+                pinMode(notify_pin, OUTPUT);
+
             _i2c->begin(_address);
             _i2c->onReceive(MqttI2C::static_on_receive);
             _i2c->onRequest(MqttI2C::static_on_request);
@@ -217,7 +220,12 @@ public:
         _global_ack_timeout = 100;
         _global_max_retries = 3;
         _i2c = external_i2c;
-        if (!_is_master) {
+        
+        if (!_is_master)
+        {
+            if (notify_pin != -1)
+                pinMode(notify_pin, OUTPUT);
+
             _i2c->onReceive(MqttI2C::static_on_receive);
             _i2c->onRequest(MqttI2C::static_on_request);
             _packet_received_flag = false;
@@ -241,6 +249,9 @@ public:
         if (_is_master) {
             _i2c->begin(sda, scl, frequency);
         } else {
+            if (notify_pin != -1)
+                pinMode(notify_pin, OUTPUT);
+                
             _i2c->begin(sda, scl, frequency);
             _i2c->onReceive(MqttI2C::static_on_receive);
             _i2c->onRequest(MqttI2C::static_on_request);
@@ -269,6 +280,7 @@ public:
                               uint8_t max_retries = 0, unsigned long ack_timeout = 0) override {
         if (length > MAX_PAYLOAD_SIZE_I2C)
             return;
+
         MqttMessageI2C msg;
         msg.start = START_DELIMITER;
         msg.src   = _address;
@@ -288,6 +300,7 @@ public:
         out.max_retries = (max_retries == 0) ? _global_max_retries : max_retries;
         out.ack_timeout_ms = (ack_timeout == 0) ? _global_ack_timeout : ack_timeout;
         out.waiting_ack = false;
+
         _send_queue.push_back(out);
     }
     
