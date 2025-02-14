@@ -40,16 +40,9 @@ void setup_watchdogs();
 /******************************************************************************************/
 #define DEV_DEMO
 #ifdef DEV_DEMO
-#include "../my_demo/Core/Memory/x_var.h"
-#include "../my_demo/Core/MCUsCommunication/MQTT/new_mqtt_i2c.h"
 
-void onReceivedHandler(const MqttMessage& msg)
-{
-    Serial.print("Получено сообщение от slave: command=0x");
-    Serial.print(msg.command, HEX);
-    Serial.print(", addr=");
-    Serial.println(msg.addr);
-}
+#include "../my_demo/Core/Memory/x_var.h"
+#include "../my_demo/Core/MCUsCommunication/MQTT/my_mqtt_i2c.h"
 
 #endif
 /******************************************************************************************/
@@ -81,14 +74,22 @@ void setup()
     //FM24GL64 _ee_bank_1(0x50);
     //FM24GL64 _ee_bank_2(0x57);
 
-    MQTT::getInstance().begin(true, SDA, SCL, 100000, INT);
-    MQTT::getInstance().registerOnReceived(GET_A_IN, onReceivedHandler);
-    MQTT::getInstance().subscribeSlave(STM_I2C_ADDR, INT);
+    MyMqttI2C::instance()->begin(SDA, SCL, 400000, true);
+    MyMqttI2C::instance()->subscribe_slave(STM_I2C_ADDR, INT);
+    MyMqttI2C::instance()->set_after_receive_handler(
+        MqttCommand::GET_D_IO,
+        [](MqttMessage message)
+        {
+            short _out = 0;
+            message.get_content<short>(&_out);
+
+            Serial.println(_out);
+        }
+    );
 
     while(1)
     {
-        MQTT::getInstance().update(3);
-        delay(10);
+        MyMqttI2C::instance()->update();
     }    
 #endif
 /*********************************************************************************************************************************/

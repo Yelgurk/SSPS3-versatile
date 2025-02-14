@@ -74,12 +74,7 @@ uint16_t get_event(I2C_COMM command, uint8_t pin)
 }
 
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
-#include "../../SSPS3_Master_UI/my_demo/Core/MCUsCommunication/MQTT/new_mqtt_i2c.h"
-
-void onRequestHandler() {
-    // Дополнительные действия при запросе мастера
-    Serial.println("Мастер запрашивает данные");
-}
+#include "../../SSPS3_Master_UI/my_demo/Core/MCUsCommunication/MQTT/my_mqtt_i2c.h"
 #endif
 
 void setup()
@@ -93,29 +88,28 @@ void setup()
 #endif
 
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
-
-    MQTT::getInstance().setSlaveAddress(STM_I2C_ADR);
-    MQTT::getInstance().begin(false, SDA, SCL, 100000, INT);
-    MQTT::getInstance().registerOnRequest(GET_D_IO, onRequestHandler);
-
+    MyMqttI2C::instance()->begin(SDA, SCL, 400000, false, STM_I2C_ADR, INT);
+    
     while(1)
     {
         static unsigned long lastPush = 0;
+        static short counter = 0;
 
         if (millis() - lastPush > 2000)
         {
             lastPush = millis();
+            counter++;
 
             MqttMessage msg;
             msg.command = GET_D_IO;
-            msg.addr = 8;
-            msg.content[0] = 0xAA;
-            msg.content[1] = 0x55;
+            msg.set_content<short>(&counter);
             
-            MQTT::getInstance().pushMessage(msg);
+            MyMqttI2C::instance()->push_message(msg);
             
             Serial.println("Сообщение добавлено в очередь");
         }
+
+        //MyMqttI2C::instance()->update();
     }
 #endif
 
