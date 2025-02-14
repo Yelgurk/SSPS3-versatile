@@ -41,21 +41,18 @@ void setup_watchdogs();
 #define DEV_DEMO
 #ifdef DEV_DEMO
 #include "../my_demo/Core/Memory/x_var.h"
-#include "../my_demo/Core/MCUsCommunication/MQTT/mqtt_i2c.h"
+#include "../my_demo/Core/MCUsCommunication/MQTT/new_mqtt_i2c.h"
 
-void on_slave_response(const MqttMessageI2C &msg)
+void onReceivedHandler(const MqttMessage& msg)
 {
-  Serial.print("Master получил ответ, cmd: 0x");
-  Serial.println(msg.cmd, HEX);
-  // Если полезная нагрузка содержит float (4 байта):
-  float value;
-  memcpy(&value, msg.payload, sizeof(float));
-  Serial.print("Значение: ");
-  Serial.println(value);
+    Serial.print("Получено сообщение от slave: command=0x");
+    Serial.print(msg.command, HEX);
+    Serial.print(", addr=");
+    Serial.println(msg.addr);
 }
+
 #endif
 /******************************************************************************************/
-
 void setup()
 {
     Serial.begin(115200);
@@ -80,45 +77,17 @@ void setup()
 
 /*********************************************************************************************************************************/
 #ifdef DEV_DEMO
-    itcw    = new TwoWire(0);
-    itcw    ->begin(SDA, SCL, 400000);
-
     //FM24GL64::set_i2c_ch(itcw);
     //FM24GL64 _ee_bank_1(0x50);
     //FM24GL64 _ee_bank_2(0x57);
 
-      // Инициализируем MQTT по I2C в режиме мастера:
-    // is_master = true, адрес мастера 0x01 (можно задать произвольно)
-    // Обратите внимание: в режиме мастера для запроса данных используется внешний slave-адрес,
-    // поэтому для уведомления используем входной пин 38.
-    MqttI2C::getInstance().begin(itcw, true, 0x01);
-    MqttI2C::getInstance().setSlaveNotifyPin(38);  // Пин, по которому мастер опрашивает уведомления от slave
-    MqttI2C::getInstance().set_remote_address(0x30);
-
-    // Регистрируем обработчик для команды 0x10 (ответ от slave)
-    MqttI2C::getInstance().registerHandler(0x10, on_slave_response);
-
-    // Опционально устанавливаем глобальные параметры для ожидания ACK и числа повторов
-    MqttI2C::getInstance().setGlobalAckTimeout(50);
-    MqttI2C::getInstance().setGlobalMaxRetries(3);
-
-    // Пример отправки: мастер отправляет команду 0x01 с данными (один байт, например, значение 5) slave с адресом 0x30
-    uint8_t data = 5;
-    MqttI2C::getInstance().queueMessage(0x30, 0x01, &data, 1);
+    MQTT::getInstance().begin(true, SDA, SCL, 100000, INT);
+    MQTT::getInstance().registerOnReceived(GET_A_IN, onReceivedHandler);
+    MQTT::getInstance().subscribeSlave(STM_I2C_ADDR, INT);
 
     while(1)
     {
-        //static uint8_t _l_counter = 0;
-        //
-        //if (++_l_counter >= 100)
-        //{
-        //    MqttI2C::getInstance().queueMessage(STM_I2C_ADDR, 0x01, &_l_counter, 1);
-        //    _l_counter = 0;
-        //
-        //    Serial.println("> стало в очередь");
-        //}
-
-        MqttI2C::getInstance().update();
+        MQTT::getInstance().update(3);
         delay(10);
     }    
 #endif

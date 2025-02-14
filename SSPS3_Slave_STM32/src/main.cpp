@@ -74,59 +74,40 @@ uint16_t get_event(I2C_COMM command, uint8_t pin)
 }
 
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
-#include "../../SSPS3_Master_UI/my_demo/Core/MCUsCommunication/MQTT/mqtt_i2c.h"
+#include "../../SSPS3_Master_UI/my_demo/Core/MCUsCommunication/MQTT/new_mqtt_i2c.h"
 
-void on_master_command(const MqttMessageI2C &msg) {
-  Serial.print("Slave получил команду, cmd: 0x");
-  Serial.println(msg.cmd, HEX);
-  // Если данные содержат float (4 байта), выводим значение:
-  float value;
-  memcpy(&value, msg.payload, sizeof(float));
-  Serial.print("Полученное значение: ");
-  Serial.println(value);
-  
-  // Пример ответа: отправляем обратно значение, умноженное на 2, с командой 0x10
-  float response_value = value * 2;
-  MqttI2C::getInstance().queueMessage(0x01, 0x10, reinterpret_cast<const uint8_t*>(&response_value), sizeof(float));
+void onRequestHandler() {
+    // Дополнительные действия при запросе мастера
+    Serial.println("Мастер запрашивает данные");
 }
-
 #endif
 
 void setup()
 {
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
 
-    itcw = new TwoWire(SDA, SCL);
-    itcw->begin(STM_I2C_ADR);
-    itcw->setClock(400000);
-    
-    //pinMode(INT, OUTPUT);
-    //MqttI2C::getInstance().begin(itcw, false, STM_I2C_ADR, INT);
-    
-    // Инициализируем MQTT по I2C в режиме slave:
-    // is_master = false, адрес slave 0x30, notify пин для уведомления мастера – PA6 (здесь используем число 6)
-    MqttI2C::getInstance().begin(itcw, false, 0x30, PA6);
-    MqttI2C::getInstance().setAddress(0x30);
-
-    // Регистрируем обработчик для входящих команд (например, команда 0x01)
-    MqttI2C::getInstance().registerHandler(0x01, on_master_command);
-
-    // Опционально устанавливаем глобальные параметры
-    MqttI2C::getInstance().setGlobalAckTimeout(50);
-    MqttI2C::getInstance().setGlobalMaxRetries(3);
+    MQTT::getInstance().setSlaveAddress(STM_I2C_ADR);
+    MQTT::getInstance().begin(false, SDA, SCL, 100000, INT);
+    MQTT::getInstance().registerOnRequest(GET_D_IO, onRequestHandler);
     
     while(1)
     {
-        static uint8_t _l_counter = 0;
-    
-        if (++_l_counter >= 100)
+        static unsigned long lastPush = 0;
+
+        if (millis() - lastPush > 2000)
         {
-            MqttI2C::getInstance().queueMessage(0x01, 0x10, &_l_counter, 1);
-            _l_counter = 0;
+            lastPush = millis();
+
+            MqttMessage msg;
+            msg.command = GET_D_IO;
+            msg.addr = 8;
+            msg.content[0] = 0xAA;
+            msg.content[1] = 0x55;
+            
+            MQTT::getInstance().pushMessage(msg);
+            
+            Serial.println("Сообщение добавлено в очередь");
         }
-    
-        MqttI2C::getInstance().update();
-        delay(10);
     }
 #endif
 
