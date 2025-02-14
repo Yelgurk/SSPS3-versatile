@@ -84,12 +84,20 @@ void onRequestHandler() {
 
 void setup()
 {
+#ifdef ALLOW_UART_DEBUG
+    Serial.setRx(S_UART_RX);
+    Serial.setTx(S_UART_TX);
+    Serial.begin(115200);
+    
+    Serial.println("KMA_05.02.2025_02:11:00");
+#endif
+
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
 
     MQTT::getInstance().setSlaveAddress(STM_I2C_ADR);
     MQTT::getInstance().begin(false, SDA, SCL, 100000, INT);
     MQTT::getInstance().registerOnRequest(GET_D_IO, onRequestHandler);
-    
+
     while(1)
     {
         static unsigned long lastPush = 0;
@@ -109,14 +117,6 @@ void setup()
             Serial.println("Сообщение добавлено в очередь");
         }
     }
-#endif
-
-#ifdef ALLOW_UART_DEBUG
-    Serial.setRx(S_UART_RX);
-    Serial.setTx(S_UART_TX);
-    Serial.begin(115200);
-    
-    Serial.println("KMA_05.02.2025_02:11:00");
 #endif
 
     analogWriteResolution(12);
