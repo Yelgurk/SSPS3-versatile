@@ -96,8 +96,6 @@ struct MqttMessage
 #pragma pack(pop)
 
 // Определения типов обработчиков событий
-typedef std::function<void(int)> OnReceiveEvent;
-typedef std::function<void()> OnRequestEvent;
 typedef std::function<void(MqttMessage)> AfterReceiveEvent;
 
 // Структура подписчика слейва (на стороне мастера)
@@ -105,7 +103,6 @@ struct MqttSlaveSubscriber
 {
     uint8_t address = 0x02;         // Адрес слейва
     char interrupt_pin = -1;      // Номер пина для прерываний
-    volatile bool is_master_called = false;  // Флаг прерывания
 
     // Вектор пар: (команда, обработчик)
     std::vector<std::pair<uint8_t, AfterReceiveEvent>> command_handlers;
@@ -114,7 +111,8 @@ struct MqttSlaveSubscriber
     {}
 
     MqttSlaveSubscriber(uint8_t address, uint8_t interrupt_pin)
-        : address(address), interrupt_pin(interrupt_pin), is_master_called(false) {}
+        : address(address), interrupt_pin(interrupt_pin)
+    {}
 };
 
 class MyMqttI2C
@@ -131,22 +129,12 @@ private:
     std::queue<MqttMessage> _mqtt_incoming_queue;
     std::queue<MqttMessage> _mqtt_outgoing_queue;
 
+    uint8_t _max_messages_per_subscription = 10;
+
     TwoWire* _i2c = nullptr;      // Интерфейс I2C
     uint8_t _address = 0x01;      // Адрес устройства
     bool _is_master = false;      // Режим работы (мастер/слейв)
     char _interrupt_pin = -1;     // Пин для сигнализации (используется на стороне слейва)
-
-    // Обработчик прерывания для мастера: проверяет состояние пинов от подписанных слейвов
-    static void static_interrupt_wrapper()
-    {
-        noInterrupts();
-        for(auto& sub_pair : MyMqttI2C::instance()->_master_side_subscriptions)
-        {
-            // Чтение состояния пина прерывания
-            sub_pair.second.is_master_called = digitalRead(sub_pair.second.interrupt_pin);
-        }
-        interrupts();
-    }
 
     // Колбэк обработки события onReceive для I2C
     static void static_on_receive(int numBytes)
@@ -180,7 +168,7 @@ private:
     static void static_on_request()
     {
         MyMqttI2C* inst = MyMqttI2C::instance();
-        size_t queue_size = inst->_mqtt_outgoing_queue.size();
+        signed short queue_size = inst->_mqtt_outgoing_queue.size();
 
         if (queue_size <= 0)
         {
@@ -194,9 +182,7 @@ private:
             MqttMessage outgoing_message = inst->_mqtt_outgoing_queue.front();
             inst->_mqtt_outgoing_queue.pop();
 
-            size_t queue_size = inst->_mqtt_outgoing_queue.size();
-
-            if (queue_size == 0)
+            if ((queue_size -= 1) == 0)
                 inst->_set_interrupt_signal(false);
 
             outgoing_message.set_has_a_following_messages(queue_size > 0);
@@ -238,21 +224,22 @@ private:
 
     // Проверка подписчиков на стороне мастера – получение входящих сообщений от слейвов
     void read_subscribers()
+
     {
-        if (!_is_master)
-            return;
+    if (!_is_master)
+        return;
 
-        // Обновляем флаги прерывания
-        static_interrupt_wrapper();
-
-        // Для каждого подписчика, если флаг установлен, запрашиваем сообщение по I2C
+    // Для каждого подписчика, если флаг установлен, запрашиваем сообщение по I2C
         for (auto& sub_pair : _master_side_subscriptions)
         {
-            // while (sub.second.is_master_called = digitalRead(sub.second.interrupt_pin))
-            while (sub_pair.second.is_master_called)
+            uint8_t messagesReceived = 0;
+            // Ограничиваем количество обработанных сообщений за один проход
+            while (digitalRead(sub_pair.second.interrupt_pin) && messagesReceived < _max_messages_per_subscription)
             {
+                delayMicroseconds(80);
                 _i2c->requestFrom(sub_pair.second.address, MqttMessage::get_size_of());
-                delayMicroseconds(100);
+                delayMicroseconds(20);
+
                 if (_i2c->available())
                 {
                     MqttMessage incoming;
@@ -261,16 +248,14 @@ private:
                     _mqtt_incoming_queue.push(incoming);
                     interrupts();
 
-                    // Если в сообщении не установлен флаг, завершаем цикл для данного подписчика
+                    messagesReceived++;
+
+                    // Если флаг, указывающий на наличие следующих сообщений, не установлен – прекращаем опрос данного подписчика
                     if (!incoming.get_has_a_following_messages())
-                    {
-                        sub_pair.second.is_master_called = false;
                         break;
-                    }
                 }
                 else
                 {
-                    sub_pair.second.is_master_called = false;
                     break;
                 }
             }
@@ -294,6 +279,7 @@ private:
                 auto it = _master_side_subscriptions.find(message.addr);
                 if (it != _master_side_subscriptions.end())
                 {
+                    
                     // Если найден, перебираем его обработчики и вызываем тот, что соответствует команде
                     for (auto &handler_pair : it->second.command_handlers)
                     {
@@ -312,13 +298,15 @@ private:
         }
         else // Если устройство – слейв, перебираем все входящие сообщения и вызываем обработчики
         {
+            signed short queue_size = _mqtt_incoming_queue.size();
+
             noInterrupts();
-            while (!_mqtt_incoming_queue.empty())
+            while (queue_size-- > 0)
             {
                 MqttMessage message = _mqtt_incoming_queue.front();
                 _mqtt_incoming_queue.pop();
                 interrupts();
-
+            
                 for (auto &handler_pair : _slave_side_command_handlers)
                 {
                     if (handler_pair.first == message.get_command())
@@ -327,6 +315,7 @@ private:
                     }
                 }
             }
+            interrupts();
         }
     }
 
@@ -335,7 +324,7 @@ private:
     {
         if (_is_master)
         {
-            size_t queue_size = _mqtt_outgoing_queue.size();
+            signed short queue_size = _mqtt_outgoing_queue.size();
             while (queue_size-- > 0)
             {
                 MqttMessage outgoing = _mqtt_outgoing_queue.front();
@@ -345,7 +334,7 @@ private:
                 _i2c->write(reinterpret_cast<uint8_t*>(&outgoing), MqttMessage::get_size_of());
                 _i2c->endTransmission();
 
-                delayMicroseconds(100);
+                delayMicroseconds(80);
             } 
         }
         else if (!_mqtt_outgoing_queue.empty())
@@ -369,12 +358,12 @@ public:
         {
 #ifdef DEV_SSPS3_IS_MASTER
             _i2c = new TwoWire(0);
-            _i2c->begin(sda, scl, freq);      
+            _i2c->begin(sda, scl, freq);
 #endif
         }
         else
         {
-#ifdef DEV_SSPS3_IS_SLAVE
+#ifndef DEV_SSPS3_IS_MASTER
             _interrupt_pin = interrupt_pin;
             // Если адрес меньше или равен 0x01, выбираем 0x02 по умолчанию (т.к. 0x01 у мастера)
             _address = (addr <= 0x01) ? 0x02 : addr;
@@ -394,6 +383,11 @@ public:
         }
         
         return _i2c;
+    }
+
+    // Метод для установки максимального числа сообщений, обрабатываемых для каждого подписчика за один вызов read_subscribers() master-ом
+    void set_max_messages_per_subscription(uint8_t maxMessages) {
+        _max_messages_per_subscription = maxMessages;
     }
 
     // Регистрация обработчика для определённой команды
@@ -417,15 +411,9 @@ public:
     {
         if (!this->_is_master)
             return;
-
+        
+        pinMode(master_to_slave_interrupt_pin, INPUT_PULLDOWN);
         _master_side_subscriptions[address] = MqttSlaveSubscriber(address, master_to_slave_interrupt_pin);
-
-        pinMode(_master_side_subscriptions[address].interrupt_pin, INPUT_PULLDOWN);
-
-        // Прикрепляем обработчик прерывания для данного пина
-        attachInterrupt(digitalPinToInterrupt(_master_side_subscriptions[address].interrupt_pin),
-                        MyMqttI2C::instance()->static_interrupt_wrapper,
-                        CHANGE);
     }
 
     // Добавление сообщения в очередь исходящих сообщений
@@ -434,12 +422,19 @@ public:
         if (_is_master && address > 0x01 && _master_side_subscriptions.find(address) != _master_side_subscriptions.end())
         {
             new_message.set_addr(address);
+            noInterrupts();
             _mqtt_outgoing_queue.push(new_message);
+            interrupts();
+
             return true;
         }
         else if (!_is_master)
         {
+            new_message.set_addr(this->_address);
+            noInterrupts();
             _mqtt_outgoing_queue.push(new_message);
+            interrupts();
+
             _set_interrupt_signal(true);
             return true;
         }

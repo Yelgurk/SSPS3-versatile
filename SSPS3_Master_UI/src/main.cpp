@@ -42,7 +42,7 @@ void setup_watchdogs();
 #ifdef DEV_DEMO
 
 #include "../my_demo/Core/Memory/x_var.h"
-#include "../my_demo/Core/MCUsCommunication/MQTT/my_mqtt_i2c.h"
+#include "../my_demo/Core/MCUsCommunication/MQTT/my_2_mqtt_i2c.h"
 
 #endif
 /******************************************************************************************/
@@ -74,6 +74,8 @@ void setup()
     //FM24GL64 _ee_bank_1(0x50);
     //FM24GL64 _ee_bank_2(0x57);
 
+static unsigned int _counter = 0;
+
     MyMqttI2C::instance()->begin(SDA, SCL, 400000, true);
     MyMqttI2C::instance()->subscribe_slave(STM_I2C_ADDR, INT);
     MyMqttI2C::instance()->set_after_receive_handler(
@@ -84,12 +86,26 @@ void setup()
             message.get_content<short>(&_out);
 
             Serial.println(_out);
-        }
+
+            ++_counter;
+        },
+        STM_I2C_ADDR
     );
 
     while(1)
     {
+        static unsigned long long _last_call = 0;
+
         MyMqttI2C::instance()->update();
+
+        if (millis() - _last_call >= 1000)
+        {
+            //Serial.print("Прочитано за 1000мс: ");
+            //Serial.println(_counter);
+
+            _counter = 0;
+            _last_call = millis();
+        }
     }    
 #endif
 /*********************************************************************************************************************************/

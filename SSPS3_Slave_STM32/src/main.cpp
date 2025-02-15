@@ -74,7 +74,7 @@ uint16_t get_event(I2C_COMM command, uint8_t pin)
 }
 
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
-#include "../../SSPS3_Master_UI/my_demo/Core/MCUsCommunication/MQTT/my_mqtt_i2c.h"
+#include "../../SSPS3_Master_UI/my_demo/Core/MCUsCommunication/MQTT/my_2_mqtt_i2c.h"
 #endif
 
 void setup()
@@ -95,7 +95,8 @@ void setup()
         static unsigned long lastPush = 0;
         static short counter = 0;
 
-        if (millis() - lastPush > 2000)
+        if (millis() - lastPush > 100)
+        //if(1)
         {
             lastPush = millis();
             counter++;
@@ -105,11 +106,9 @@ void setup()
             msg.set_content<short>(&counter);
             
             MyMqttI2C::instance()->push_message(msg);
-            
-            Serial.println("Сообщение добавлено в очередь");
         }
 
-        //MyMqttI2C::instance()->update();
+        MyMqttI2C::instance()->update();
     }
 #endif
 
