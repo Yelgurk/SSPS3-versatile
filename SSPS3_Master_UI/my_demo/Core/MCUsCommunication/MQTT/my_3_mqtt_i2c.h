@@ -109,7 +109,7 @@ struct RingBuffer {
     volatile uint8_t tail = 0;
     T buffer[Size];
 
-    // Добавление элемента. Функция не выполняет переприсваивания динамической памяти.
+    // Добавление элемента
     bool push(const T &item) {
         uint8_t nextTail = (tail + 1) % Size;
         if (nextTail == head) {
@@ -121,7 +121,7 @@ struct RingBuffer {
         return true;
     }
 
-    // Извлечение элемента
+    // Извлечение элемента (удаляет элемент из буфера)
     bool pop(T &item) {
         if (head == tail) {
             // Буфер пуст
@@ -129,6 +129,15 @@ struct RingBuffer {
         }
         item = buffer[head];
         head = (head + 1) % Size;
+        return true;
+    }
+
+    // Функция peek() возвращает элемент из начала буфера без удаления
+    bool peek(T &item) const {
+        if (head == tail) {
+            return false;
+        }
+        item = buffer[head];
         return true;
     }
 
@@ -165,11 +174,34 @@ private:
     uint8_t _max_messages_per_subscription = 10;
 
     TwoWire* _i2c = nullptr;      // Интерфейс I2C
+    short _sda = -1;
+    short _scl = -1;
+    unsigned int _freq = 400000;
     uint8_t _address = 0x01;      // Адрес устройства
     bool _is_master = false;      // Режим работы (мастер/слейв)
-    char _interrupt_pin = -1;     // Пин для сигнала (используется на стороне слейва)
+    char _interrupt_pin = -1;     // Пин для сигнала (на стороне слейва)
 
-    // Колбэк обработки события onReceive для I2C (вызывается в прерывании)
+    void _recover_bus(void)
+    {
+        pinMode(_sda, INPUT);
+
+        if (digitalRead(_sda) == LOW)
+        {
+            pinMode(_scl, OUTPUT);
+
+            for (int i = 0; i < 20; i++)
+            {
+                digitalWrite(_scl, LOW);
+                delayMicroseconds(10);
+                digitalWrite(_scl, HIGH);
+                delayMicroseconds(10);
+            }
+
+            pinMode(_scl, INPUT);
+        }
+    }
+
+    // Колбэк onReceive для I2C (вызывается в прерывании)
     static void static_on_receive(int numBytes) {
         MyMqttI2C* inst = MyMqttI2C::instance();
         uint8_t msgSize = MqttMessage::get_size_of();
@@ -184,17 +216,20 @@ private:
                 numBytes -= msgSize;
             }
         } else {
-            while (inst->_i2c->available())
-                inst->_i2c->read();
+            inst->_i2c->flush();
         }
     }
 
-    // Колбэк обработки события onRequest для I2C (передача сообщений)
+    // Колбэк onRequest для I2C (передача сообщений)
+    // Изменения:
+    // 1. Используем peek() для получения сообщения без удаления.
+    // 2. Если отправка успешна, сообщение удаляется из буфера.
+    // 3. Если отправка не удалась (error -1), сообщение остается для повторной отправки.
     static void static_on_request() {
         MyMqttI2C* inst = MyMqttI2C::instance();
         MqttMessage outgoing_message;
         noInterrupts();
-        bool hasMessage = inst->_mqtt_outgoing_buffer.pop(outgoing_message);
+        bool hasMessage = inst->_mqtt_outgoing_buffer.peek(outgoing_message);
         uint8_t remaining = inst->_mqtt_outgoing_buffer.count();
         interrupts();
 
@@ -204,8 +239,20 @@ private:
         } else {
             if (remaining == 0)
                 inst->_set_interrupt_signal(false);
-            outgoing_message.set_has_a_following_messages(remaining > 0);
-            inst->_i2c->write(reinterpret_cast<uint8_t*>(&outgoing_message), MqttMessage::get_size_of());
+            outgoing_message.set_has_a_following_messages(remaining > 1);
+            size_t bytesWritten = inst->_i2c->write(reinterpret_cast<uint8_t*>(&outgoing_message), MqttMessage::get_size_of());
+            // Если отправка прошла успешно, удаляем сообщение из буфера
+            if (bytesWritten == MqttMessage::get_size_of()) {
+                noInterrupts();
+                MqttMessage dummy;
+                inst->_mqtt_outgoing_buffer.pop(dummy);
+                interrupts();
+            }
+            // Иначе (например, error == -1) сообщение остаётся для повторной отправки,
+            // а для восстановления шины вызываем встроенный метод recoverBus()
+            else {
+                inst->_recover_bus();
+            }
         }
     }
 
@@ -232,30 +279,64 @@ private:
     }
 
     // Проверка подписчиков на стороне мастера – получение входящих сообщений от слейва
-    void read_subscribers() {
+    //void read_subscribers() {
+    //    if (!_is_master)
+    //        return;
+    //    for (auto& sub_pair : _master_side_subscriptions) {
+    //        uint8_t messagesReceived = 0;
+    //        while (digitalRead(sub_pair.second.interrupt_pin) && messagesReceived < _max_messages_per_subscription) {
+    //            delayMicroseconds(80);
+    //            _i2c->requestFrom(sub_pair.second.address, MqttMessage::get_size_of());
+    //            delayMicroseconds(20);
+    //            if (_i2c->available()) {
+    //                MqttMessage incoming;
+    //                _i2c->readBytes(reinterpret_cast<uint8_t*>(&incoming), MqttMessage::get_size_of());
+    //                noInterrupts();
+    //                _mqtt_incoming_buffer.push(incoming);
+    //                interrupts();
+    //                messagesReceived++;
+    //                if (!incoming.get_has_a_following_messages())
+    //                    break;
+    //            } else {
+    //                break;
+    //            }
+    //        }
+    //    }
+    //}
+    // Проверка подписчиков на стороне мастера – получение входящих сообщений от слейва с обработкой ошибок через recoverBus()
+    void read_subscribers()
+    {
         if (!_is_master)
             return;
         for (auto& sub_pair : _master_side_subscriptions) {
             uint8_t messagesReceived = 0;
+            // Пока пин сигнала активен и не достигнут лимит сообщений для одного прохода
             while (digitalRead(sub_pair.second.interrupt_pin) && messagesReceived < _max_messages_per_subscription) {
-                //delayMicroseconds(80);
-                _i2c->requestFrom(sub_pair.second.address, MqttMessage::get_size_of());
-                //delayMicroseconds(20);
-                if (_i2c->available()) {
+                delayMicroseconds(80);
+                // Запрос данных от slave: ожидается размер одного сообщения
+                int bytesRead = _i2c->requestFrom(sub_pair.second.address, MqttMessage::get_size_of());
+                delayMicroseconds(20);
+                // Если получено ожидаемое число байт, читаем сообщение
+                if (bytesRead == MqttMessage::get_size_of()) {
                     MqttMessage incoming;
                     _i2c->readBytes(reinterpret_cast<uint8_t*>(&incoming), MqttMessage::get_size_of());
                     noInterrupts();
                     _mqtt_incoming_buffer.push(incoming);
                     interrupts();
                     messagesReceived++;
+                    // Если в сообщении не установлен флаг наличия следующих, завершаем цикл для данного подписчика
                     if (!incoming.get_has_a_following_messages())
                         break;
                 } else {
-                    break;
+                    // Если получено некорректное число байт или произошла ошибка,
+                    // вызываем встроенный метод recoverBus() для восстановления I²C-шины
+                    this->_recover_bus();
+                    break; // Выходим из цикла для этого подписчика
                 }
             }
         }
     }
+
 
     // Обработка входящих сообщений
     void update_incoming() {
@@ -291,7 +372,8 @@ private:
         }
     }
 
-    // Обработка исходящих сообщений
+    // Обработка исходящих сообщений для мастера
+    // Здесь отправка сообщения выполняется и проверяется код ошибки, чтобы при error -1 вызвать recoverBus()
     void update_outgoing() {
         if (_is_master) {
             MqttMessage outgoing;
@@ -300,7 +382,14 @@ private:
                 interrupts();
                 _i2c->beginTransmission(outgoing.addr);
                 _i2c->write(reinterpret_cast<uint8_t*>(&outgoing), MqttMessage::get_size_of());
-                _i2c->endTransmission();
+                int error = _i2c->endTransmission();
+                // Если возникла ошибка -1, восстанавливаем шину и возвращаем сообщение в буфер
+                if (error == -1) {
+                    this->_recover_bus();
+                    noInterrupts();
+                    _mqtt_outgoing_buffer.push(outgoing);
+                    interrupts();
+                }
                 delayMicroseconds(80);
                 noInterrupts();
             }
@@ -318,20 +407,28 @@ public:
     }
 
     // Инициализация I2C-интерфейса
+    // Обратите внимание: метод recover() удалён, поскольку используется встроенный TwoWire::recoverBus()
     TwoWire* begin(uint8_t sda, uint8_t scl, unsigned int freq, bool is_master, uint8_t addr = 0x01, char interrupt_pin = -1) {
         _is_master = is_master;
         if (_is_master) {
 #ifdef DEV_SSPS3_IS_MASTER
             _i2c = new TwoWire(0);
-            _i2c->begin(sda, scl, freq);
+            _i2c->begin(
+                _sda = sda,
+                _scl = scl,
+                _freq = freq
+            );
 #endif
         } else {
 #ifndef DEV_SSPS3_IS_MASTER
             _interrupt_pin = interrupt_pin;
             _address = (addr <= 0x01) ? 0x02 : addr;
-            _i2c = new TwoWire(sda, scl);
+            _i2c = new TwoWire(
+                _sda = sda,
+                _scl = scl
+            );
             _i2c->begin(_address);
-            _i2c->setClock(freq);
+            _i2c->setClock(_freq = freq);
             if (_interrupt_pin != -1) {
                 pinMode(_interrupt_pin, OUTPUT);
                 digitalWrite(_interrupt_pin, LOW);

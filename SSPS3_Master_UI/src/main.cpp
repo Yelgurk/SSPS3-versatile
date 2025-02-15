@@ -42,7 +42,7 @@ void setup_watchdogs();
 #ifdef DEV_DEMO
 
 #include "../my_demo/Core/Memory/x_var.h"
-#include "../my_demo/Core/MCUsCommunication/MQTT/my_2_mqtt_i2c.h"
+#include "../my_demo/Core/MCUsCommunication/MQTT/my_3_mqtt_i2c.h"
 
 #endif
 /******************************************************************************************/
@@ -74,7 +74,7 @@ void setup()
     //FM24GL64 _ee_bank_1(0x50);
     //FM24GL64 _ee_bank_2(0x57);
 
-static unsigned int _counter = 0;
+    static short _local_master_counter = 0;
 
     MyMqttI2C::instance()->begin(SDA, SCL, 400000, true);
     MyMqttI2C::instance()->subscribe_slave(STM_I2C_ADDR, INT);
@@ -82,30 +82,27 @@ static unsigned int _counter = 0;
         MqttCommand::GET_D_IO,
         [](MqttMessage message)
         {
-            short _out = 0;
-            message.get_content<short>(&_out);
+            short _received_slave_counter = 0;
+            message.get_content<short>(&_received_slave_counter);
 
-            Serial.println(_out);
-
-            ++_counter;
+            Serial.println(_received_slave_counter);
         },
         STM_I2C_ADDR
     );
 
     while(1)
     {
-        static unsigned long long _last_call = 0;
-
-        MyMqttI2C::instance()->update();
-
-        if (millis() - _last_call >= 1000)
+        if(1)
         {
-            //Serial.print("Прочитано за 1000мс: ");
-            //Serial.println(_counter);
+            _local_master_counter++;
 
-            _counter = 0;
-            _last_call = millis();
+            MqttMessage msg;
+            msg.command = GET_D_IO;
+            msg.set_content<short>(&_local_master_counter);
+            
+            MyMqttI2C::instance()->push_message(msg, STM_I2C_ADDR);
         }
+        MyMqttI2C::instance()->update();
     }    
 #endif
 /*********************************************************************************************************************************/
