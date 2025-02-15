@@ -181,6 +181,9 @@ private:
     bool _is_master = false;      // Режим работы (мастер/слейв)
     char _interrupt_pin = -1;     // Пин для сигнала (на стороне слейва)
 
+    volatile bool _slaveReceivedFlag = false;  // Флаг, устанавливаемый в onReceive при получении данных
+    unsigned long _lastSlaveActivity = 0;        // Время последней активности
+
     void _recover_bus(void)
     {
         pinMode(_sda, INPUT);
@@ -199,14 +202,22 @@ private:
 
             pinMode(_scl, INPUT);
         }
+#ifdef DEV_SSPS3_IS_MASTER
+        _i2c->flush();
+        _i2c->begin(_sda, _scl, _freq);
+#endif
     }
 
     // Колбэк onReceive для I2C (вызывается в прерывании)
     static void static_on_receive(int numBytes) {
         MyMqttI2C* inst = MyMqttI2C::instance();
         uint8_t msgSize = MqttMessage::get_size_of();
+
         if (inst->_i2c->available() >= msgSize &&
-            inst->_i2c->available() % msgSize == 0) {
+            inst->_i2c->available() % msgSize == 0)
+        {
+            inst->_slaveReceivedFlag = true;
+
             while (numBytes >= msgSize) {
                 MqttMessage incoming_message;
                 inst->_i2c->readBytes(reinterpret_cast<uint8_t*>(&incoming_message), msgSize);
@@ -485,10 +496,46 @@ public:
     }
 
     // Основной метод обновления: обработка подписчиков, входящих и исходящих сообщений
-    void update() {
+    //void update() {
+    //    read_subscribers();
+    //    update_incoming();
+    //    update_outgoing();
+    //}
+
+    // Основной метод обновления: обработка подписчиков, входящих и исходящих сообщений,
+    // а также восстановление I2C-шины на стороне slave по флагу активности.
+    void update()
+    {
         read_subscribers();
         update_incoming();
         update_outgoing();
+
+        // Логика восстановления шины для slave
+        if (!_is_master) {
+            static const unsigned long inactivityThreshold = 5000; // Порог неактивности: 5000 мс
+            unsigned long currentMillis = millis();
+
+            // Если в onReceive была получена активность, флаг _slaveReceivedFlag устанавливается в true,
+            // здесь обновляем время последней активности и сбрасываем флаг.
+            if (_slaveReceivedFlag) {
+                _lastSlaveActivity = currentMillis;
+                _slaveReceivedFlag = false;
+            }
+
+            // Если с момента последней активности прошло больше порогового времени, выполняем восстановление шины:
+            if (currentMillis - _lastSlaveActivity > inactivityThreshold) {
+                Serial.println("recovery");
+                // Восстанавливаем I2C-шину (функция _recover_bus() реализует генерацию тактов SCL и т.п.)
+                //_recover_bus();
+                // Переинициализируем I2C для slave
+                 
+                _i2c->flush();
+                _i2c->begin(_address);
+                _i2c->setClock(_freq);
+                // Обновляем время последней активности после восстановления
+                _lastSlaveActivity = currentMillis;
+            }
+        }
     }
 };
 
