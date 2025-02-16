@@ -42,7 +42,7 @@ void setup_watchdogs();
 #ifdef DEV_DEMO
 
 #include "../my_demo/Core/Memory/x_var.h"
-#include "../my_demo/Core/MCUsCommunication/MQTT/my_4_mqtt_i2c.h"
+#include "../my_demo/Core/MCUsCommunication/MQTT/mqtt_i2c.h"
 
 #endif
 /******************************************************************************************/
@@ -76,12 +76,12 @@ void setup()
 
     static short _local_master_counter = 0;
 
-    MyMqttI2C::instance()->begin(SDA, SCL, 400000, true);
-    MyMqttI2C::instance()->subscribe_slave(STM_I2C_ADDR, INT, INT_KB);
-    MyMqttI2C::instance()->useAckNack(true);
-    MyMqttI2C::instance()->set_after_receive_handler(
-        MqttCommand::GET_D_IO,
-        [](MqttMessage message)
+    MqttI2C::instance()->begin(SDA, SCL, 400000, true);
+    MqttI2C::instance()->subscribe_slave(STM_I2C_ADDR, INT, INT_KB);
+    MqttI2C::instance()->set_use_ack_nack(true);
+    MqttI2C::instance()->register_handler(
+        MqttCommandI2C::GET_D_IO,
+        [](MqttMessageI2C message)
         {
             short _received_slave_counter = 0;
             message.get_content<short>(&_received_slave_counter);
@@ -96,14 +96,9 @@ void setup()
         if(1)
         {
             _local_master_counter++;
-
-            MqttMessage msg;
-            msg.command = GET_D_IO;
-            msg.set_content<short>(&_local_master_counter);
-            
-            MyMqttI2C::instance()->push_message(msg, STM_I2C_ADDR);
+            MqttI2C::instance()->push_message(GET_D_IO, &_local_master_counter, 2, STM_I2C_ADDR);
         }
-        MyMqttI2C::instance()->update();
+        MqttI2C::instance()->update();
     }    
 #endif
 /*********************************************************************************************************************************/

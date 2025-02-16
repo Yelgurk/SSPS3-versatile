@@ -10,6 +10,16 @@
     #include "./i_mqtt.h"
 #endif
 
+#define OUTGOING_MESSAGE_FAILED_PUSH_BACK   false
+
+static const constexpr uint8_t  START_DELIMITER = 0xAA;
+static const constexpr uint8_t  END_DELIMITER = 0x55;
+
+static const constexpr uint8_t  CMD_ACK = 0xFE;
+static const constexpr uint8_t  CMD_NACK = 0xFF;
+
+static const constexpr size_t   MAX_PAYLOAD_SIZE_SPI = 32;
+
 //-----------------------------------------------------------------
 // Структура MqttMessageSPI – формат передаваемого сообщения
 //-----------------------------------------------------------------

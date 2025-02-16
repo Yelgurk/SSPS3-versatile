@@ -10,71 +10,168 @@
     #include "./i_mqtt.h"
 #endif
 
+static const constexpr size_t   MAX_PAYLOAD_SIZE_I2C = 2;
+#define MPSI2C                  MAX_PAYLOAD_SIZE_I2C
+
+//-----------------------------------------------------------------
+// MqttCommandI2C – список доступных команд при работе по I2C (для SSPS3[F1/G4])
+//-----------------------------------------------------------------
+enum MqttCommandI2C : uint8_t
+{
+    CMD_NAN,
+    ACK,
+    NACK,
+    GET_D_IO,
+    GET_A_IN,
+    GET_KB,
+    SET_A_OUT,
+    SET_R_OUT
+};
+
 //-----------------------------------------------------------------
 // Структура MqttMessageI2C – формат передаваемого сообщения
 //-----------------------------------------------------------------
 #pragma pack(push, 1)
 struct MqttMessageI2C
 {
-    uint8_t start;                          // стартовый делимитер (0xAA)
-    uint8_t src;                            // адрес отправителя
-    uint8_t dst;                            // адрес получателя
-    uint8_t cmd;                            // код команды
-    uint8_t seq;                            // порядковый номер сообщения (для контроля повторов)
-    uint8_t len;                            // длина полезной нагрузки (значимы только первые len байт массива payload)
-    uint8_t payload[MAX_PAYLOAD_SIZE_I2C];  // полезная нагрузка до 4-х байт
-    uint16_t crc;                           // CRC-16 (вычисляется по всем байтам, кроме crc и end)
-    uint8_t end;                            // конечный делимитер (0x55)
+    uint8_t command         = MqttCommandI2C::CMD_NAN;  // Команда (с флагом наличия следующих сообщений в старшем бите)
+    uint8_t addr            = 0x02;                     // Адрес slave-а
+    uint8_t content[MPSI2C] = {0x00};                   // Небольшой буфер данных как полезная нагрузка сообщения
+    uint8_t seq             = 0;                        // Последовательный номер сообщения
+
+    MqttMessageI2C()
+    {}
+
+    MqttMessageI2C(uint8_t command, uint8_t addr)
+    {
+        this->command = command;
+        this->addr = addr;
+    }
+
+    // Заполнение поля content данными
+    void set_content(const void* value_in, size_t length)
+    {
+        memset(content, 0, sizeof(content));
+        memcpy(content, value_in, length);
+    }
+
+    // Заполнение поля content данными, размер которых соответствует типу T
+    template<typename T>
+    void set_content(void* value_in) {
+        this->set_content(value_in, sizeof(T));
+    }
+
+    // Извлечение данных из content в переменную типа T
+    template<typename T>
+    void get_content(T* value_out) {
+        memcpy(reinterpret_cast<uint8_t*>(value_out), content, sizeof(T));
+    }
+
+    // Установка флага наличия следующих сообщений
+    MqttMessageI2C* set_has_a_following_messages(bool valid)
+    {
+        if (valid)
+            command |= 0b10000000;
+        else
+            command &= 0b01111111;
+        return this;
+    }
+
+    // Получение флага наличия следующих сообщений
+    bool get_has_a_following_messages() const {
+        return (command & 0b10000000) != 0;
+    }
+
+    // Получение команды без флага
+    MqttCommandI2C get_command() const {
+        return static_cast<MqttCommandI2C>(command & 0b01111111);
+    }
+
+    // Установка адреса получателя
+    MqttMessageI2C* set_addr(uint8_t addr)
+    {
+        this->addr = addr;
+        return this;
+    }
+
+    // Возвращает указатель на dummy-сообщение с заданным адресом
+    static MqttMessageI2C* get_dummy(uint8_t addr)
+    {
+        static MqttMessageI2C dummy;
+        return dummy.set_addr(addr);
+    }
+
+    // Размер структуры сообщения
+    static uint8_t get_size_of()
+    {
+        static uint8_t _size_of = sizeof(MqttMessageI2C);
+        return _size_of;
+    }
 };
 #pragma pack(pop)
 
 //-----------------------------------------------------------------
-// Структура для хранения информации об исходящем сообщении
-//-----------------------------------------------------------------
-struct MqttOutgoingMessageI2C
-{
-    MqttMessageI2C  msg;
-    uint8_t         retries;
-    uint8_t         max_retries;
-    unsigned long   last_attempt_ms;
-    unsigned long   ack_timeout_ms;
-    bool            waiting_ack;
-};
-
-//-----------------------------------------------------------------
 // Тип для обработчиков команд: функция, принимающая полученное сообщение
 //-----------------------------------------------------------------
-using MqttReceivedI2CCommandHandler = std::function<void(const MqttMessageI2C&)>;
+using AfterReceiveHandler = std::function<void(MqttMessageI2C)>;
+
+//-----------------------------------------------------------------
+// Структура подписчика/slave (на стороне мастера)
+//-----------------------------------------------------------------
+struct MqttSlaveSubscriber
+{
+    uint8_t address     = 0x02; // Адрес слейва
+    char interrupt_pin  = -1;   // Пин для сигнала (уведомления о сообщениях)
+    char restart_pin    = -1;   // Пин для вызова рестарта I²C на стороне слейва
+
+    // Вектор пар: (команда, обработчик)
+    std::vector<std::pair<uint8_t, AfterReceiveHandler>> command_handlers;
+    
+    MqttSlaveSubscriber() {}
+    
+    // Конструктор с дополнительным параметром restart_pin
+    MqttSlaveSubscriber(uint8_t address, uint8_t interrupt_pin, uint8_t restart_pin = -1)
+        : address(address), interrupt_pin(interrupt_pin), restart_pin(restart_pin)
+    {}
+};
 
 class IMqttI2C : public IMqtt
 {
+public:
     virtual I2C_CH* begin(
-        bool isMaster,
-        int addr,
-        int notifyPin = -1
+        uint8_t sda,
+        uint8_t scl,
+        unsigned int freq,
+        bool is_master,
+        uint8_t addr = 0x01,
+        char interrupt_pin = -1,
+        int i2c_restart_call_pin = -1
     ) = 0;
 
     virtual I2C_CH* begin(
-        I2C_CH* externalI2C,
-        bool isMaster,
-        int addr,
-        int notifyPin = -1
-    ) = 0;
-
-    
-    virtual I2C_CH* begin(
-        bool isMaster,
-        int addr,
-        int sda,
-        int scl,
-        int frequency = 400000,
-        int notifyPin = -1
+        I2C_CH* i2c_inited,
+        uint8_t sda,
+        uint8_t scl,
+        unsigned int freq,
+        bool is_master,
+        uint8_t addr = 0x01,
+        char interrupt_pin = -1,
+        int i2c_restart_call_pin = -1
     ) = 0;
 
     // Регистрация обработчика для указанного кода команды.
-    virtual void registerHandler(
+    virtual bool register_handler(
         uint8_t cmd,
-        MqttReceivedI2CCommandHandler handler
+        AfterReceiveHandler handler,
+        uint8_t address = 0x01
+    ) = 0;
+
+    // Регистрация slave-а со стороны master-a для регистрации обработчиков и
+    // выполнения прослушивания поступающих сообщений
+    virtual void subscribe_slave(
+        uint8_t address,
+        uint8_t master_to_slave_signal_pin,
+        uint8_t master_to_slave_restart_pin = -1
     ) = 0;
 };
 

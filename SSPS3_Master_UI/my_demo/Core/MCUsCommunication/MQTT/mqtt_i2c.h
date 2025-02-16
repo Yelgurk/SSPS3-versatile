@@ -8,331 +8,593 @@
   #include "./i_mqtt_i2c.h"
 #endif
 
-class MqttI2C : public IMqttI2C {
+#define INCOMING_BUFFER_SIZE 64
+#define OUTGOING_BUFFER_SIZE 64
+
+class MqttI2C : public IMqttI2C
+{
 private:
-    I2C_CH* _i2c;
-    bool    _is_master;
-    int     _address;                     // Локальный адрес устройства (мастера или slave)
-    int     _remote_address;              // Для мастера: адрес slave, с которого запрашивать данные
-    int     _slave_intrpt_pin;            // Для slave: пин, которым slave уведомляет мастера (выставляется HIGH при наличии данных)
-    int     _master_intrpt_await_pin;       // Для мастера: пин, по которому мастер ожидает уведомления от slave
+    // Приватный конструктор (синглтон)
+    MqttI2C() {}
 
-    uint8_t _listener_rx_buffer[sizeof(MqttMessageI2C)];
-    bool    _packet_received_flag;
+    // Подписки на стороне мастера: ключ – адрес слейва
+    std::unordered_map<uint8_t, MqttSlaveSubscriber> _master_side_subscriptions;
 
-    std::vector<MqttOutgoingMessageI2C> _send_queue;
-    MqttMessageI2C                      _pending_message;
-    uint8_t                               _tx_seq_counter;
+    // Обработчики на стороне слейва
+    std::vector<std::pair<uint8_t, AfterReceiveHandler>> _slave_side_command_handlers;
     
-    unsigned long   _global_ack_timeout;
-    uint8_t         _global_max_retries;
-    
-    std::vector<std::pair<uint8_t, MqttReceivedI2CCommandHandler>> _handlers;
-    
-    MqttI2C() :
-        _i2c(nullptr),
-        _is_master(true),
-        _address(0),
-        _remote_address(0),
-        _slave_intrpt_pin(-1),
-        _master_intrpt_await_pin(-1),
-        _packet_received_flag(false),
-        _tx_seq_counter(0),
-        _global_ack_timeout(100),
-        _global_max_retries(3)
-    {}
+    // Кольцевые буферы для входящих и исходящих сообщений
+    ArrayRingBuffer<MqttMessageI2C, INCOMING_BUFFER_SIZE> _mqtt_incoming_buffer;
+    ArrayRingBuffer<MqttMessageI2C, OUTGOING_BUFFER_SIZE> _mqtt_outgoing_buffer;
 
-    MqttI2C(const MqttI2C&) = delete;
-    MqttI2C& operator=(const MqttI2C&) = delete;
+    // Всё связанное с инициализацией и работой I2C
+    I2C_CH* _i2c = nullptr;        // Интерфейс I2C
+    uint8_t _sda = 0, _scl = 0;     // Пины I2C
+    unsigned int _freq = 0;         // Частота работы I2C
+    uint8_t _address = 0x01;        // Адрес устройства
+    bool _is_master = false;        // Режим работы (мастер/слейв)
+    short _interrupt_pin = -1;      // Пин для сигнала о наличии сообщений (используется на стороне слейва)
+    short _i2cRestartCallPin = -1;  // Пин для сигнала о необходимости рестарта I2C (используется на стороне мастера)
+    
+    // ACK/NACK (сторона master-а): при отправке от master к slave сообщение остается в ожидании подтверждения
+    // (при отключенном _use_ack_nack не используются)
+    std::unordered_map<uint8_t, MqttMessageI2C> _master_pending_messages;   // Ключ – адрес slave
+    std::unordered_map<uint8_t, unsigned long> _master_pending_timestamps;  // Время отправки для таймаута
+    uint8_t _master_seq_counter = 0;                                        // Счётчик последовательных номеров для master
 
-    // Статический обработчик onReceive для slave
-    static void static_on_receive(int num_bytes) {
-        MqttI2C& inst = MqttI2C::getInstance();
-        if (num_bytes == sizeof(MqttMessageI2C)) {
-            inst._i2c->readBytes(inst._listener_rx_buffer, sizeof(MqttMessageI2C));
-            inst._packet_received_flag = true;
-        }
+    // ACK/NACK (сторона slave-а): для сообщений, отправляемых от slave к master, необходимо сохранять pending-сообщение,
+    // пока master не пришлёт ACK. Также pending-ответ slave для подтверждения получения от master.
+    bool _slave_has_pending_outgoing = false;
+    bool _slave_has_pending_response = false;
+    MqttMessageI2C _slave_pending_outgoing;
+    MqttMessageI2C _slave_pending_response;
+    unsigned long _ackTimeout = 1000; // Таймаут ожидания ACK (для master->slave) в мс
+
+    // Независимо от вызванного begin() сохраняем все данные об i2c шине
+    // пригодится для случаев, когда необходимо будет выполнить рестарт i2c
+    // с обеих сторон (master-a и slave-ов) при потере связи
+    void _init_save_i2c_data(
+        uint8_t sda,
+        uint8_t scl,
+        unsigned int freq,
+        bool is_master,
+        uint8_t addr,
+        char interrupt_pin,
+        int i2c_restart_call_pin
+    )
+    {
+        this->_sda = sda;
+        this->_scl = scl;
+        this->_freq = freq;
+        this->_is_master = is_master;
+#ifdef DEV_SSPS3_IS_MASTER
+        this->_address = addr;
+#else
+        this->_address = (addr <= 0x01) ? 0x02 : addr;
+#endif
+        this->_interrupt_pin = interrupt_pin;
+        this->_i2cRestartCallPin = i2c_restart_call_pin;
     }
-    
-    // Статический обработчик onRequest для slave
-    static void static_on_request() {
-        MqttI2C& inst = MqttI2C::getInstance();
-        inst._i2c->write(reinterpret_cast<const uint8_t*>(&(inst._pending_message)), sizeof(MqttMessageI2C));
+
+    // настройка логики "прерываний" для slave
+    void _init_slave_i2c_interrupts()
+    {
+#ifdef DEV_SSPS3_IS_MASTER
+#else
+        if (_interrupt_pin != -1)
+        {
+            pinMode(_interrupt_pin, OUTPUT);
+            digitalWrite(_interrupt_pin, LOW);
+        }
+        
+        if (_i2cRestartCallPin != -1)
+        {
+            pinMode(_i2cRestartCallPin, INPUT_PULLUP);
+            attachInterrupt(
+                digitalPinToInterrupt(_i2cRestartCallPin),
+                static_i2cRestartISR,
+                FALLING
+            );
+        }
+
+        this->_i2c->onReceive(static_on_receive);
+        this->_i2c->onRequest(static_on_request);
+#endif
     }
 
 protected:
-    // Низкоуровневая отправка сообщения по I2C целым пакетом.
-    void send_message_internal(const MqttMessageI2C& msg) {
-        if (_is_master) {
-            _i2c->beginTransmission(msg.dst);
-            _i2c->write(reinterpret_cast<const uint8_t*>(&msg), sizeof(MqttMessageI2C));
-            _i2c->endTransmission();
+    // Колбэк обработки события onReceive для I2C (вызывается в прерывании)
+    static void static_on_receive(int numBytes)
+    {
+        MqttI2C* inst = MqttI2C::instance();
+        uint8_t msgSize = MqttMessageI2C::get_size_of();
+
+        // Если устройство slave – обрабатываем входящие данные от master
+        if (!inst->_is_master) {
+            // Читаем все доступные байты
+            while (inst->_i2c->available() >= msgSize) {
+                MqttMessageI2C incoming_message;
+                inst->_i2c->readBytes(reinterpret_cast<uint8_t*>(&incoming_message), msgSize);
+
+                // *** Изменение ACK/NACK (слейв): Если режим включён, проверяем, является ли полученное сообщение ACK/NACK
+                if (inst->_use_ack_nack) {
+                    // Если команда ACK или NACK, то это ответ от master на ранее отправленное сообщение slave
+                    if (incoming_message.get_command() == MqttCommandI2C::ACK || incoming_message.get_command() == MqttCommandI2C::NACK) {
+                        // Сравниваем seq с pending-сообщением
+                        if (inst->_slave_has_pending_outgoing && inst->_slave_pending_outgoing.seq == incoming_message.seq) {
+                            if (incoming_message.get_command() == MqttCommandI2C::ACK) {
+                                // ACK получен – удаляем pending-сообщение
+                                inst->_slave_has_pending_outgoing = false;
+                            }
+                            // Если получен NACK – оставляем pending, чтобы повторно отсылать
+                        } 
+                        // Если это ACK/NACK для ответа на сообщение, отправленное master,
+                        // его обработка происходит на стороне master, здесь ничего не делаем.
+                    } else {
+                        // Если получено обычное сообщение от master, обрабатываем его
+                        for (auto &handler_pair : inst->_slave_side_command_handlers) {
+                            if (handler_pair.first == incoming_message.get_command()) {
+                                handler_pair.second(incoming_message);
+                            }
+                        }
+                        // Затем сразу формируем pending-ответ для master
+                        MqttMessageI2C response;
+                        response.command = MqttCommandI2C::ACK; // Если требуется можно добавить логику NACK при ошибке
+                        response.addr = 0x01;   // Предполагаемый адрес мастера
+                        response.seq = incoming_message.seq;
+                        noInterrupts();
+                        inst->_slave_pending_response = response;
+                        inst->_slave_has_pending_response = true;
+                        interrupts();
+                    }
+                } else {
+                    // Режим без ACK/NACK – простая обработка
+                    for (auto &handler_pair : inst->_slave_side_command_handlers) {
+                        if (handler_pair.first == incoming_message.get_command()) {
+                            handler_pair.second(incoming_message);
+                        }
+                    }
+                }
+            }
         } else {
-            _pending_message = msg;
+            // Если устройство master, onReceive используется в другом контексте – обрабатываем как обычно
+            if (inst->_i2c->available() >= msgSize && inst->_i2c->available() % msgSize == 0) {
+                while (numBytes >= msgSize) {
+                    MqttMessageI2C incoming_message;
+                    inst->_i2c->readBytes(reinterpret_cast<uint8_t*>(&incoming_message), msgSize);
+                    noInterrupts();
+                    inst->_mqtt_incoming_buffer.push(incoming_message);
+                    interrupts();
+                    numBytes -= msgSize;
+                }
+            } else {
+                while (inst->_i2c->available())
+                    inst->_i2c->read();
+            }
         }
     }
-    
-    // State-machine отправки
-    void update_send() {
-        if (_send_queue.empty()) return;
-        MqttOutgoingMessageI2C& current = _send_queue.front();
-        unsigned long now = millis();
-        if (!current.waiting_ack) {
-            current.last_attempt_ms = now;
-            current.waiting_ack = true;
-            send_message_internal(current.msg);
-            if (!_is_master && _slave_intrpt_pin != -1)
-                digitalWrite(_slave_intrpt_pin, HIGH); // Уведомляем мастера
-        } else {
-            if (now - current.last_attempt_ms >= current.ack_timeout_ms) {
-                if (current.retries < current.max_retries) {
-                    current.retries++;
-                    current.last_attempt_ms = now;
-                    send_message_internal(current.msg);
-                    if (!_is_master && _slave_intrpt_pin != -1)
-                        digitalWrite(_slave_intrpt_pin, HIGH);
-                } else {
-                    current.waiting_ack = false;
-                    if (!_is_master && _slave_intrpt_pin != -1)
-                        digitalWrite(_slave_intrpt_pin, LOW); // Сброс уведомляющего сигнала
-                    if (OUTGOING_MESSAGE_FAILED_PUSH_BACK) {
-                        MqttOutgoingMessageI2C failed = current;
-                        _send_queue.erase(_send_queue.begin());
-                        _send_queue.push_back(failed);
+
+    // ================================
+    // Колбэк обработки события onRequest для I2C (передача сообщений)
+    // Вызывается на стороне slave, когда master запрашивает данные
+    // ================================
+    static void static_on_request() {
+        MqttI2C* inst = MqttI2C::instance();
+        uint8_t msgSize = MqttMessageI2C::get_size_of();
+        // На стороне slave, если используется ACK/NACK, сначала проверяем pending-ответ от master
+        if (!inst->_is_master) {
+            noInterrupts();
+            if (inst->_use_ack_nack && inst->_slave_has_pending_response) {
+                // *** Изменение ACK/NACK (слейв): Отправляем pending-ответ (ACK/NACK) от slave
+                inst->_i2c->write(reinterpret_cast<uint8_t*>(&inst->_slave_pending_response), msgSize);
+                inst->_slave_has_pending_response = false; // После отправки сбрасываем pending-ответ
+                interrupts();
+                return;
+            }
+            // Если нет pending-ответа, проверяем pending-сообщение для отправки slave->master
+            if (inst->_use_ack_nack) {
+                if (!inst->_slave_has_pending_outgoing) {
+                    // Берём новое сообщение из очереди, но не удаляем его окончательно – ждем ACK от master
+                    bool messageAvailable = inst->_mqtt_outgoing_buffer.pop(inst->_slave_pending_outgoing);
+                    if (messageAvailable) {
+                        inst->_slave_has_pending_outgoing = true;
                     }
+                }
+                if (inst->_slave_has_pending_outgoing) {
+                    inst->_i2c->write(reinterpret_cast<uint8_t*>(&inst->_slave_pending_outgoing), msgSize);
+                } else {
+                    inst->_i2c->write(reinterpret_cast<uint8_t*>(MqttMessageI2C::get_dummy(inst->_address)), msgSize);
+                }
+            } else {
+                // Режим без ACK/NACK – как было раньше: просто извлекаем сообщение из очереди
+                MqttMessageI2C outgoing_message;
+                if (inst->_mqtt_outgoing_buffer.pop(outgoing_message)) {
+                    inst->_i2c->write(reinterpret_cast<uint8_t*>(&outgoing_message), msgSize);
+                } else {
+                    inst->_i2c->write(reinterpret_cast<uint8_t*>(MqttMessageI2C::get_dummy(inst->_address)), msgSize);
+                }
+            }
+            interrupts();
+        }
+    }
+
+    // ================================
+    // Установка состояния сигнала (на стороне слейва)
+    // ================================
+    void _set_interrupt_signal(bool state) {
+        if (!_is_master)
+            digitalWrite(_interrupt_pin, state);
+    }
+
+    // ================================
+    // Получение состояния сигнала по пину
+    // ================================
+    bool _get_interrupt_signal(uint8_t address = 0x01) {
+        if (!_is_master) {
+            return digitalRead(_interrupt_pin);
+        } else if (address > 0x01 && _master_side_subscriptions.find(address) != _master_side_subscriptions.end()) {
+            return digitalRead(_master_side_subscriptions[address].interrupt_pin);
+        } else if (!_master_side_subscriptions.empty()) {
+            for (auto& sub_pair : _master_side_subscriptions)
+                if (digitalRead(sub_pair.second.interrupt_pin))
+                    return true;
+            return false;
+        } else {
+            return false;
+        }
+    }
+
+    // ================================
+    // Метод рестарта I2C для мастера
+    // Вызывается при обнаружении ошибок (например, -1 или 263)
+    // ================================
+    void restart_i2c_bus() {
+        if (_i2c) {
+            _i2c->end();
+            _i2c->flush();
+            _i2c->begin(_sda, _scl, _freq);
+            delay(100);
+        }
+    }
+
+    // ================================
+    // Метод рестарта I2C для слейва
+    // Вызывается при срабатывании прерывания на пине i2cRestartCallPin
+    // ================================
+    void _restart_i2c_slave() {
+        if (_i2c) {
+            _i2c->end();
+            _i2c->flush();
+            _i2c->begin(_address);
+            _i2c->setClock(_freq);
+            _i2c->onReceive(static_on_receive);
+            _i2c->onRequest(static_on_request);
+            delay(100);
+        }
+    }
+
+    // ================================
+    // Статическая ISR-функция для рестарта I2C на слейве
+    // ================================
+    static void static_i2cRestartISR() {
+        MqttI2C::instance()->_restart_i2c_slave();
+    }
+
+    // ================================
+    // Обработка подписчиков на стороне мастера – получение входящих сообщений от slave
+    // Если режим ACK/NACK включён, после успешного чтения master сразу отправляет ACK на адрес slave,
+    // чтобы slave мог удалить сообщение из очереди и не отсылать его повторно.
+    // ================================
+    void read_subscribers() {
+        if (!_is_master)
+            return;
+        for (auto& sub_pair : _master_side_subscriptions) {
+            uint8_t messagesReceived = 0;
+            while (digitalRead(sub_pair.second.interrupt_pin) && messagesReceived < _max_messages_per_subscription) {
+                int bytesReceived = _i2c->requestFrom(sub_pair.second.address, MqttMessageI2C::get_size_of());
+                if (bytesReceived != MqttMessageI2C::get_size_of()) {
+                    restart_i2c_bus();
+                    if(sub_pair.second.restart_pin != -1) {
+                        digitalWrite(sub_pair.second.restart_pin, HIGH);
+                        delay(10);
+                        digitalWrite(sub_pair.second.restart_pin, LOW);
+                    }
+                    break;
+                }
+                if (_i2c->available() >= MqttMessageI2C::get_size_of()) {
+                    MqttMessageI2C incoming;
+                    _i2c->readBytes(reinterpret_cast<uint8_t*>(&incoming), MqttMessageI2C::get_size_of());
+                    
+                    // *** Изменение ACK/NACK (master, slave->master):
+                    // Если режим включён, сразу после получения отправляем ACK на slave, чтобы он удалил сообщение.
+                    if(_use_ack_nack) {
+                        _i2c->beginTransmission(incoming.addr);
+                        MqttMessageI2C ackMsg;
+                        ackMsg.command = MqttCommandI2C::ACK;
+                        ackMsg.seq = incoming.seq;
+                        _i2c->write(reinterpret_cast<uint8_t*>(&ackMsg), MqttMessageI2C::get_size_of());
+                        _i2c->endTransmission();
+                    }
+                    
+                    noInterrupts();
+                    _mqtt_incoming_buffer.push(incoming);
+                    interrupts();
+                    messagesReceived++;
+                    if (!incoming.get_has_a_following_messages())
+                        break;
+                } else {
+                    break;
                 }
             }
         }
     }
-    
-    // State-machine приёма
-    void update_receive() {
+
+    // ================================
+    // Обработка входящих сообщений (у master и slave)
+    // Здесь просто вызываются соответствующие обработчики для каждого полученного сообщения.
+    // *** В master данная функция НЕ содержит логики ACK/NACK, т.к. подтверждения отправляются в read_subscribers()
+    // ================================
+    void update_incoming() {
         if (_is_master) {
-            if (_master_intrpt_await_pin != -1 && digitalRead(_master_intrpt_await_pin) == HIGH) {
-                MqttMessageI2C msg;
-                // Запрашиваем с slave по его адресу (_remote_address)
-                uint8_t bytes_read = _i2c->requestFrom(_remote_address, (uint8_t)sizeof(MqttMessageI2C));
-                uint8_t* p = reinterpret_cast<uint8_t*>(&msg);
-                size_t index = 0;
-                while (_i2c->available() && index < sizeof(MqttMessageI2C))
-                    p[index++] = _i2c->read();
-                process_received_packet(msg);
+            MqttMessageI2C message;
+            noInterrupts();
+            while (_mqtt_incoming_buffer.pop(message)) {
+                interrupts();
+                auto it = _master_side_subscriptions.find(message.addr);
+                if (it != _master_side_subscriptions.end()) {
+                    for (auto &handler_pair : it->second.command_handlers) {
+                        if (handler_pair.first == message.get_command()) {
+                            handler_pair.second(message);
+                        }
+                    }
+                }
+                noInterrupts();
             }
+            interrupts();
         } else {
-            if (_packet_received_flag) {
-                _packet_received_flag = false;
-                MqttMessageI2C msg;
-                memcpy(&msg, _listener_rx_buffer, sizeof(MqttMessageI2C));
-                process_received_packet(msg);
+            MqttMessageI2C message;
+            noInterrupts();
+            while (_mqtt_incoming_buffer.pop(message)) {
+                interrupts();
+                for (auto &handler_pair : _slave_side_command_handlers) {
+                    if (handler_pair.first == message.get_command()) {
+                        handler_pair.second(message);
+                    }
+                }
+                noInterrupts();
             }
+            interrupts();
         }
     }
-    
-    // Обработка полученного пакета
-    void process_received_packet(const MqttMessageI2C& msg) {
-        if (msg.start != START_DELIMITER || msg.end != END_DELIMITER)
-            return;
-        uint16_t crc_calc = calculateCRC(reinterpret_cast<const uint8_t*>(&msg),
-                            sizeof(msg) - sizeof(msg.crc) - sizeof(msg.end));
-        if (crc_calc != msg.crc) {
-            send_ack_nack(msg, false);
-            return;
-        }
-        if (msg.cmd == CMD_ACK) {
-            if (!_send_queue.empty() && msg.seq == _send_queue.front().msg.seq)
-                _send_queue.erase(_send_queue.begin());
-            if (!_is_master && _slave_intrpt_pin != -1)
-                digitalWrite(_slave_intrpt_pin, LOW);
-        }
-        else if (msg.cmd == CMD_NACK) {
-            if (!_send_queue.empty() && msg.seq == _send_queue.front().msg.seq)
-                _send_queue.front().last_attempt_ms = 0;
-            if (!_is_master && _slave_intrpt_pin != -1)
-                digitalWrite(_slave_intrpt_pin, LOW);
-        }
-        else {
-            send_ack_nack(msg, true);
-            if (!_is_master && _slave_intrpt_pin != -1)
-                digitalWrite(_slave_intrpt_pin, LOW);
-            for (auto& pair : _handlers) {
-                if (pair.first == msg.cmd)
-                    pair.second(msg);
+
+    // ================================
+    // Обработка исходящих сообщений
+    // Для мастера, если включён режим ACK/NACK, после отправки сообщения выполняется запрос для получения ACK/NACK от slave.
+    // Если ACK получен с правильным seq – сообщение считается доставленным, иначе – возвращается в очередь для повторной отправки.
+    // Для slave логика остаётся прежней – просто выставляется сигнал.
+    // ================================
+    void update_outgoing() {
+        if (_is_master) {
+            if (_use_ack_nack) {
+                // Обработка сообщений master->slave с механизмом подтверждения
+                MqttMessageI2C next;
+                noInterrupts();
+                bool hasMsg = _mqtt_outgoing_buffer.pop(next);
+                interrupts();
+                if (hasMsg) {
+                    next.seq = _master_seq_counter++; // Присваиваем последовательный номер
+                    _i2c->beginTransmission(next.addr);
+                    _i2c->write(reinterpret_cast<uint8_t*>(&next), MqttMessageI2C::get_size_of());
+                    int result = _i2c->endTransmission();
+                    if(result != 0) {
+                        restart_i2c_bus();
+                        if (_master_side_subscriptions[next.addr].restart_pin != -1) {
+                            digitalWrite(_master_side_subscriptions[next.addr].restart_pin, HIGH);
+                            delay(10);
+                            digitalWrite(_master_side_subscriptions[next.addr].restart_pin, LOW);
+                        }
+                        // В случае ошибки возвращаем сообщение в очередь
+                        noInterrupts();
+                        _mqtt_outgoing_buffer.push(next);
+                        interrupts();
+                        return;
+                    }
+                    // Запрашиваем у slave подтверждение (ACK/NACK)
+                    int ackBytes = _i2c->requestFrom(next.addr, MqttMessageI2C::get_size_of());
+                    bool ackOk = false;
+                    if (ackBytes >= MqttMessageI2C::get_size_of() && _i2c->available() >= MqttMessageI2C::get_size_of()) {
+                        MqttMessageI2C ackMsg;
+                        _i2c->readBytes(reinterpret_cast<uint8_t*>(&ackMsg), MqttMessageI2C::get_size_of());
+                        if (ackMsg.get_command() == MqttCommandI2C::ACK && ackMsg.seq == next.seq) {
+                            ackOk = true;
+                        }
+                    }
+                    if (!ackOk) {
+                        // Если не получен корректный ACK, возвращаем сообщение в очередь для повторной отправки
+                        noInterrupts();
+                        _mqtt_outgoing_buffer.push(next);
+                        interrupts();
+                    }
+                }
+            } else {
+                // Режим без ACK/NACK – простая отправка
+                MqttMessageI2C outgoing;
+                noInterrupts();
+                while (_mqtt_outgoing_buffer.pop(outgoing)) {
+                    interrupts();
+                    _i2c->beginTransmission(outgoing.addr);
+                    _i2c->write(reinterpret_cast<uint8_t*>(&outgoing), MqttMessageI2C::get_size_of());
+                    int result = _i2c->endTransmission();
+                    if(result != 0) {
+                        restart_i2c_bus();
+                        if (_master_side_subscriptions[outgoing.addr].restart_pin != -1) {
+                            digitalWrite(_master_side_subscriptions[outgoing.addr].restart_pin, HIGH);
+                            delay(10);
+                            digitalWrite(_master_side_subscriptions[outgoing.addr].restart_pin, LOW);
+                        }
+                    }
+                    delayMicroseconds(80);
+                    noInterrupts();
+                }
+                interrupts();
             }
+        } else if (!_mqtt_outgoing_buffer.empty()) {
+            _set_interrupt_signal(true);
         }
     }
-    
-    // Отправка ACK или NACK
-    void send_ack_nack(const MqttMessageI2C& rec_msg, bool ack) {
-        MqttMessageI2C ack_msg;
-        ack_msg.start = START_DELIMITER;
-        ack_msg.src   = _address;
-        ack_msg.dst   = rec_msg.src;
-        ack_msg.cmd   = ack ? CMD_ACK : CMD_NACK;
-        ack_msg.seq   = rec_msg.seq;
-        ack_msg.len   = 0;
-        ack_msg.crc   = calculateCRC(reinterpret_cast<const uint8_t*>(&ack_msg),
-                         sizeof(ack_msg) - sizeof(ack_msg.crc) - sizeof(ack_msg.end));
-        ack_msg.end   = END_DELIMITER;
-        send_message_internal(ack_msg);
-    }
-    
+
 public:
-    static MqttI2C& getInstance() {
-        static MqttI2C instance;
-        return instance;
+    static MqttI2C* instance()
+    {
+        static MqttI2C inst;
+        return &inst;
     }
-    
-    // Дополнительный метод для мастера: установка адреса slave, с которого запрашивать данные
-    void set_remote_address(uint8_t remote_addr) {
-        _remote_address = remote_addr;
-    }
-    
-    // Три перегрузки begin():
-    // 1) Инициализация с использованием внутреннего объекта Wire
-    virtual I2C_CH* begin(bool is_master, int addr, int notify_pin = -1) override {
-        _i2c = &Wire;
-        _is_master = is_master;
-        _address = addr;
-        _slave_intrpt_pin = notify_pin;
-        _tx_seq_counter = 0;
-        _global_ack_timeout = 100;
-        _global_max_retries = 3;
-        if (_is_master) {
-            _i2c->begin();
-        } else {
-            if (notify_pin != -1)
-                pinMode(notify_pin, OUTPUT);
 
-            _i2c->begin(_address);
-            _i2c->onReceive(MqttI2C::static_on_receive);
-            _i2c->onRequest(MqttI2C::static_on_request);
-            _packet_received_flag = false;
-        }
-        return _i2c;
-    }
-    
-    // 2) Инициализация с внешне проинициализированным объектом I2C
-    virtual I2C_CH* begin(I2C_CH* external_i2c, bool is_master, int addr, int notify_pin = -1) override {
-        _is_master = is_master;
-        _address = addr;
-        _slave_intrpt_pin = notify_pin;
-        _tx_seq_counter = 0;
-        _global_ack_timeout = 100;
-        _global_max_retries = 3;
-        _i2c = external_i2c;
-        
-        if (!_is_master)
+    virtual I2C_CH* begin(
+        uint8_t sda,
+        uint8_t scl,
+        unsigned int freq,
+        bool is_master,
+        uint8_t addr = 0x01,
+        char interrupt_pin = -1,
+        int i2c_restart_call_pin = -1
+    ) override
+    {
+        _init_save_i2c_data(sda, scl, freq, is_master, addr, interrupt_pin, i2c_restart_call_pin);
+
+        if (_is_master)
         {
-            if (notify_pin != -1)
-                pinMode(notify_pin, OUTPUT);
-
-            _i2c->onReceive(MqttI2C::static_on_receive);
-            _i2c->onRequest(MqttI2C::static_on_request);
-            _packet_received_flag = false;
-        }
-        return _i2c;
-    }
-    
-    // 3) Инициализация по пинам (sda, scl, частота)
-    virtual I2C_CH* begin(bool is_master, int addr, int sda, int scl, int frequency = 400000, int notify_pin = -1) override {
-        _is_master = is_master;
-        _address = addr;
-        _slave_intrpt_pin = notify_pin;
-        _tx_seq_counter = 0;
-        _global_ack_timeout = 100;
-        _global_max_retries = 3;
 #ifdef DEV_SSPS3_IS_MASTER
-        _i2c = new I2C_CH(0);
+            this->_i2c = new I2C_CH(0);
+            this->_i2c->begin(_sda, _scl, _freq);
+#endif // !DEV_SSPS3_IS_MASTER
+        }
+        else
+        {
+#ifdef DEV_SSPS3_IS_MASTER
 #else
-        _i2c = new I2C_CH();
-#endif
-        if (_is_master) {
-            _i2c->begin(sda, scl, frequency);
-        } else {
-            if (notify_pin != -1)
-                pinMode(notify_pin, OUTPUT);
-                
-            _i2c->begin(sda, scl, frequency);
-            _i2c->onReceive(MqttI2C::static_on_receive);
-            _i2c->onRequest(MqttI2C::static_on_request);
-            _packet_received_flag = false;
+            this->_i2c = new I2C_CH(_sda, _scl);
+            this->_i2c->begin(_address);
+            this->_i2c->setClock(_freq);
+
+            this->_init_slave_i2c_interrupts();
+#endif // !DEV_SSPS3_IS_MASTER
         }
-        return _i2c;
+
+        return this->_i2c;
     }
     
-    virtual void setAddress(uint8_t addr) override {
-        _address = addr;
+    virtual I2C_CH* begin(
+        I2C_CH* i2c_inited,
+        uint8_t sda,
+        uint8_t scl,
+        unsigned int freq,
+        bool is_master,
+        uint8_t addr = 0x01,
+        char interrupt_pin = -1,
+        int i2c_restart_call_pin = -1
+    ) override
+    {
+        _init_save_i2c_data(sda, scl, freq, is_master, addr, interrupt_pin, i2c_restart_call_pin);
+        this->_i2c = i2c_inited;
+
+        return this->_i2c;
     }
-    
-    virtual void registerHandler(uint8_t cmd, MqttReceivedI2CCommandHandler handler) override {
-        _handlers.push_back({cmd, handler});
+
+    virtual bool register_handler(
+        uint8_t cmd,
+        AfterReceiveHandler handler,
+        uint8_t address = 0x01
+    ) override
+    {
+        if (_is_master &&
+            _master_side_subscriptions.find(address) != _master_side_subscriptions.end())
+        {
+            _master_side_subscriptions[address]
+                .command_handlers
+                .push_back({ cmd, handler });
+
+            return true;
+        }
+        else if (!_is_master)
+        {
+            _slave_side_command_handlers
+                .push_back({ cmd, handler });
+
+            return true;
+        }
+
+        return false;
     }
-    
-    virtual void setGlobalAckTimeout(unsigned long timeout) override {
-        _global_ack_timeout = timeout;
-    }
-    
-    virtual void setGlobalMaxRetries(uint8_t retries) override {
-        _global_max_retries = retries;
-    }
-    
-    virtual void queueMessage(uint8_t dst, uint8_t cmd, const uint8_t* data, uint8_t length,
-                              uint8_t max_retries = 0, unsigned long ack_timeout = 0) override {
-        if (length > MAX_PAYLOAD_SIZE_I2C)
+
+    virtual void subscribe_slave(
+        uint8_t address,
+        uint8_t master_to_slave_signal_pin,
+        uint8_t master_to_slave_restart_pin = -1
+    ) override
+    {
+        if (!_is_master)
             return;
 
-        MqttMessageI2C msg;
-        msg.start = START_DELIMITER;
-        msg.src   = _address;
-        msg.dst   = dst;
-        msg.cmd   = cmd;
-        msg.seq   = _tx_seq_counter++;
-        msg.len   = length;
-        memcpy(msg.payload, data, length);
-        msg.crc   = calculateCRC(reinterpret_cast<const uint8_t*>(&msg),
-                    sizeof(msg) - sizeof(msg.crc) - sizeof(msg.end));
-        msg.end   = END_DELIMITER;
+        pinMode(master_to_slave_signal_pin, INPUT_PULLDOWN);
+
+        if(master_to_slave_restart_pin != -1)
+        {
+            pinMode(master_to_slave_restart_pin, OUTPUT);
+            digitalWrite(master_to_slave_restart_pin, LOW);
+        }
+
+        _master_side_subscriptions[address] =
+            MqttSlaveSubscriber(
+                address,
+                master_to_slave_signal_pin,
+                master_to_slave_restart_pin
+            );
+    }
+
+    virtual bool push_message(
+        uint8_t cmd,
+        const void* data,
+        uint8_t length,
+        uint8_t dst = 0x01, // dst, он же address для I2C реализации MQTT
+        uint8_t max_retries_spi = 0,
+        unsigned long ack_timeout_spi = 0
+    ) override
+    {
+        if (_is_master &&
+            dst > 0x01 &&
+            _master_side_subscriptions.find(dst) != _master_side_subscriptions.end())
+        {
+            MqttMessageI2C new_message(cmd, dst);
+            new_message.set_content(data, length);
+
+            noInterrupts();
+            bool result = _mqtt_outgoing_buffer.push(new_message);
+            interrupts();
+            
+            return result;
+        }
+        else if (!_is_master)
+        {
+            MqttMessageI2C new_message(cmd, this->_address);
+            new_message.set_content(data, length);
+
+            noInterrupts();
+            bool result = _mqtt_outgoing_buffer.push(new_message);
+            interrupts();
+
+            _set_interrupt_signal(true);
+            return result;
+        }
         
-        MqttOutgoingMessageI2C out;
-        out.msg = msg;
-        out.retries = 0;
-        out.last_attempt_ms = 0;
-        out.max_retries = (max_retries == 0) ? _global_max_retries : max_retries;
-        out.ack_timeout_ms = (ack_timeout == 0) ? _global_ack_timeout : ack_timeout;
-        out.waiting_ack = false;
+        return false;
+    }
 
-        _send_queue.push_back(out);
-    }
-    
-    virtual void update() override {
-        update_send();
-        update_receive();
-    }
-    
-    virtual void setSlaveNotifyPin(int pin) override {
-        _master_intrpt_await_pin = pin;
-        pinMode(_master_intrpt_await_pin, INPUT);
-    }
-    
-    virtual void notifyPacketReceived(const uint8_t* data, size_t length) override {
-        if (length != sizeof(MqttMessageI2C))
-            return;
-        memcpy(_listener_rx_buffer, data, length);
-        _packet_received_flag = true;
-    }
-    
-    virtual uint16_t calculateCRC(const uint8_t* data, size_t length) override {
-        uint16_t crc = 0xFFFF;
-        for (size_t i = 0; i < length; i++) {
-            crc ^= static_cast<uint16_t>(data[i]) << 8;
-            for (uint8_t j = 0; j < 8; j++) {
-                if (crc & 0x8000)
-                    crc = (crc << 1) ^ 0x1021;
-                else
-                    crc <<= 1;
-            }
-        }
-        return crc;
+    virtual void update() override
+    {
+        read_subscribers();
+        update_incoming();
+        update_outgoing();
     }
 };
 

@@ -73,9 +73,11 @@ uint16_t get_event(I2C_COMM command, uint8_t pin)
     }
 }
 
+/******************************************************************************************/
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
-#include "../../SSPS3_Master_UI/my_demo/Core/MCUsCommunication/MQTT/my_4_mqtt_i2c.h"
+#include "../../SSPS3_Master_UI/my_demo/Core/MCUsCommunication/MQTT/mqtt_i2c.h"
 #endif
+/******************************************************************************************/
 
 void setup()
 {
@@ -87,14 +89,15 @@ void setup()
     Serial.println("KMA_05.02.2025_02:11:00");
 #endif
 
+/******************************************************************************************/
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
     static short _local_slave_counter = 0;
 
-    MyMqttI2C::instance()->begin(SDA, SCL, 400000, false, STM_I2C_ADR, INT, INT_KB);
-    MyMqttI2C::instance()->useAckNack(true);
-    MyMqttI2C::instance()->set_after_receive_handler(
-        MqttCommand::GET_D_IO,
-        [](MqttMessage message)
+    MqttI2C::instance()->begin(SDA, SCL, 400000, false, STM_I2C_ADR, INT, INT_KB);
+    MqttI2C::instance()->set_use_ack_nack(true);
+    MqttI2C::instance()->register_handler(
+        MqttCommandI2C::GET_D_IO,
+        [](MqttMessageI2C message)
         {
             short _received_master_counter = 0;
             message.get_content<short>(&_received_master_counter);
@@ -108,16 +111,12 @@ void setup()
         if(1)
         {
             _local_slave_counter++;
-
-            MqttMessage msg;
-            msg.command = GET_D_IO;
-            msg.set_content<short>(&_local_slave_counter);
-            
-            MyMqttI2C::instance()->push_message(msg);
+            MqttI2C::instance()->push_message(GET_D_IO, &_local_slave_counter, 2);
         }
-        MyMqttI2C::instance()->update();
+        MqttI2C::instance()->update();
     }
-#endif  
+#endif
+/******************************************************************************************/
 
     analogWriteResolution(12);
     analogReadResolution(12);
