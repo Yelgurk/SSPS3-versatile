@@ -180,12 +180,22 @@ private:
     uint8_t _address = 0x01;      // Адрес устройства
     bool _is_master = false;      // Режим работы (мастер/слейв)
     char _interrupt_pin = -1;     // Пин для сигнала (на стороне слейва)
+    bool _is_after_restart = false;
 
     volatile bool _slaveReceivedFlag = false;  // Флаг, устанавливаемый в onReceive при получении данных
     unsigned long _lastSlaveActivity = 0;        // Время последней активности
 
     void _recover_bus(void)
     {
+        Serial.println("recovery");
+
+#ifdef DEV_SSPS3_IS_MASTER
+        if (this->_is_after_restart)
+            return;
+
+        _i2c->end();
+        _i2c->flush();
+
         pinMode(_sda, INPUT);
 
         if (digitalRead(_sda) == LOW)
@@ -202,9 +212,29 @@ private:
 
             pinMode(_scl, INPUT);
         }
-#ifdef DEV_SSPS3_IS_MASTER
-        _i2c->flush();
+
+        this->_is_after_restart = true;
         _i2c->begin(_sda, _scl, _freq);
+#else
+        // Восстанавливаем шину
+        // Переинициализируя I2C-периферию slave с повторной регистрацией обработчиков
+        _i2c->end();
+        _i2c->flush();
+
+        MqttMessage dummy;
+
+        while(!_mqtt_incoming_buffer.empty())
+            _mqtt_incoming_buffer.pop(dummy);
+
+        while(!_mqtt_outgoing_buffer.empty())
+            _mqtt_outgoing_buffer.pop(dummy);
+
+        _slaveReceivedFlag = false;
+
+        _i2c->begin(_address);
+        _i2c->setClock(_freq);
+        //_i2c->onReceive(static_on_receive);
+        //_i2c->onRequest(static_on_request);
 #endif
     }
 
@@ -354,7 +384,9 @@ private:
         if (_is_master) {
             MqttMessage message;
             noInterrupts();
-            while (_mqtt_incoming_buffer.pop(message)) {
+            while (_mqtt_incoming_buffer.pop(message))
+            {
+                this->_is_after_restart = false;
                 interrupts();
                 auto it = _master_side_subscriptions.find(message.addr);
                 if (it != _master_side_subscriptions.end()) {
@@ -386,29 +418,30 @@ private:
     // Обработка исходящих сообщений для мастера
     // Здесь отправка сообщения выполняется и проверяется код ошибки, чтобы при error -1 вызвать recoverBus()
     void update_outgoing() {
-        if (_is_master) {
-            MqttMessage outgoing;
-            noInterrupts();
-            while (_mqtt_outgoing_buffer.pop(outgoing)) {
-                interrupts();
-                _i2c->beginTransmission(outgoing.addr);
-                _i2c->write(reinterpret_cast<uint8_t*>(&outgoing), MqttMessage::get_size_of());
-                int error = _i2c->endTransmission();
-                // Если возникла ошибка -1, восстанавливаем шину и возвращаем сообщение в буфер
-                if (error == -1) {
-                    this->_recover_bus();
-                    noInterrupts();
-                    _mqtt_outgoing_buffer.push(outgoing);
-                    interrupts();
-                }
-                delayMicroseconds(80);
-                noInterrupts();
-            }
+    if (_is_master) {
+        MqttMessage outgoing;
+        noInterrupts();
+        while (_mqtt_outgoing_buffer.pop(outgoing)) {
             interrupts();
-        } else if (!_mqtt_outgoing_buffer.empty()) {
-            _set_interrupt_signal(true);
+            _i2c->beginTransmission(outgoing.addr);
+            _i2c->write(reinterpret_cast<uint8_t*>(&outgoing), MqttMessage::get_size_of());
+            int error = _i2c->endTransmission();
+            // Если возникла ошибка -1, выполняем восстановление шины через встроенный метод и оставляем сообщение для повторной отправки
+            if (error == -1) {
+                this->_recover_bus();
+                noInterrupts();
+                _mqtt_outgoing_buffer.push(outgoing);
+                interrupts();
+                delay(50); // Небольшая задержка для стабилизации шины
+            }
+            delayMicroseconds(80);
+            noInterrupts();
         }
+        interrupts();
+    } else if (!_mqtt_outgoing_buffer.empty()) {
+        _set_interrupt_signal(true);
     }
+}
 
 public:
     // Получение экземпляра синглтона
@@ -511,28 +544,18 @@ public:
         update_outgoing();
 
         // Логика восстановления шины для slave
-        if (!_is_master) {
-            static const unsigned long inactivityThreshold = 5000; // Порог неактивности: 5000 мс
+        if (!_is_master)
+        {
+            static const unsigned long inactivityThreshold = 5000; // 5000 мс
             unsigned long currentMillis = millis();
-
-            // Если в onReceive была получена активность, флаг _slaveReceivedFlag устанавливается в true,
-            // здесь обновляем время последней активности и сбрасываем флаг.
-            if (_slaveReceivedFlag) {
+            if (_slaveReceivedFlag)
+            {
                 _lastSlaveActivity = currentMillis;
                 _slaveReceivedFlag = false;
             }
-
-            // Если с момента последней активности прошло больше порогового времени, выполняем восстановление шины:
-            if (currentMillis - _lastSlaveActivity > inactivityThreshold) {
-                Serial.println("recovery");
-                // Восстанавливаем I2C-шину (функция _recover_bus() реализует генерацию тактов SCL и т.п.)
-                //_recover_bus();
-                // Переинициализируем I2C для slave
-                 
-                _i2c->flush();
-                _i2c->begin(_address);
-                _i2c->setClock(_freq);
-                // Обновляем время последней активности после восстановления
+            if (currentMillis - _lastSlaveActivity > inactivityThreshold)
+            {
+                _recover_bus();
                 _lastSlaveActivity = currentMillis;
             }
         }
