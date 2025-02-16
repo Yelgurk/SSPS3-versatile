@@ -74,7 +74,7 @@ uint16_t get_event(I2C_COMM command, uint8_t pin)
 }
 
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
-#include "../../SSPS3_Master_UI/my_demo/Core/MCUsCommunication/MQTT/my_3_mqtt_i2c.h"
+#include "../../SSPS3_Master_UI/my_demo/Core/MCUsCommunication/MQTT/my_4_mqtt_i2c.h"
 #endif
 
 void setup()
@@ -90,7 +90,8 @@ void setup()
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
     static short _local_slave_counter = 0;
 
-    MyMqttI2C::instance()->begin(SDA, SCL, 400000, false, STM_I2C_ADR, INT);
+    MyMqttI2C::instance()->begin(SDA, SCL, 400000, false, STM_I2C_ADR, INT, INT_KB);
+    MyMqttI2C::instance()->useAckNack(true);
     MyMqttI2C::instance()->set_after_receive_handler(
         MqttCommand::GET_D_IO,
         [](MqttMessage message)

@@ -42,7 +42,7 @@ void setup_watchdogs();
 #ifdef DEV_DEMO
 
 #include "../my_demo/Core/Memory/x_var.h"
-#include "../my_demo/Core/MCUsCommunication/MQTT/my_3_mqtt_i2c.h"
+#include "../my_demo/Core/MCUsCommunication/MQTT/my_4_mqtt_i2c.h"
 
 #endif
 /******************************************************************************************/
@@ -77,7 +77,8 @@ void setup()
     static short _local_master_counter = 0;
 
     MyMqttI2C::instance()->begin(SDA, SCL, 400000, true);
-    MyMqttI2C::instance()->subscribe_slave(STM_I2C_ADDR, INT);
+    MyMqttI2C::instance()->subscribe_slave(STM_I2C_ADDR, INT, INT_KB);
+    MyMqttI2C::instance()->useAckNack(true);
     MyMqttI2C::instance()->set_after_receive_handler(
         MqttCommand::GET_D_IO,
         [](MqttMessage message)
