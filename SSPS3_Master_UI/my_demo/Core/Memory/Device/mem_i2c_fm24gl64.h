@@ -47,10 +47,13 @@
             itcw->write(addr & 0xFF);
             itcw->endTransmission();
 
-            itcw->requestFrom(this->device_i2c_addr, size);
-            for (size_t i = 0; i < size; ++i)
-                if (itcw->available())
-                    *(data + i) = itcw->read();
+            if (itcw->requestFrom(this->device_i2c_addr, size) == size && itcw->available())
+                itcw->readBytes(data, size);
+
+            //itcw->requestFrom(this->device_i2c_addr, size);
+            //for (size_t i = 0; i < size; ++i)
+            //    if (itcw->available())
+            //        *(data + i) = itcw->read();
 
             return false;
         }
@@ -60,6 +63,7 @@
             itcw->beginTransmission(this->device_i2c_addr);
             itcw->write((addr >> 8) & 0xFF);
             itcw->write(addr & 0xFF);
+            
             for (size_t i = 0; i < size; ++i)
                 itcw->write(*(data + i));
             itcw->endTransmission();

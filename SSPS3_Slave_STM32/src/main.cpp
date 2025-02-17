@@ -91,32 +91,10 @@ void setup()
 
 /******************************************************************************************/
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
-    static short _local_slave_counter       = 0;
-    static unsigned long long _last_call_ms = 0;
-
-    MqttI2C::instance()->begin(SDA, SCL, 400000, false, STM_I2C_ADR, INT, INT_KB);
-    MqttI2C::instance()->set_use_ack_nack(true);
-    MqttI2C::instance()->register_handler(
-        MqttCommandI2C::GET_D_IO,
-        [](MqttMessageI2C message)
-        {
-            short _received_master_counter = 0;
-            message.get_content<short>(&_received_master_counter);
-
-            Serial.println(_received_master_counter);
-        }
-    );
 
     while(1)
     {
-        if(1)
-        //if (millis() - _last_call_ms >= 2000)
-        {
-            _local_slave_counter++;
-            _last_call_ms = millis();
-            MqttI2C::instance()->push_message(GET_D_IO, &_local_slave_counter, 2);
-        }
-        MqttI2C::instance()->update();
+
     }
 #endif
 /******************************************************************************************/
