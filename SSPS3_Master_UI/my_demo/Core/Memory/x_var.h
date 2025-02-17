@@ -15,5 +15,6 @@
 #define XStorageTaskGroup(value)    XVarDataCenter::get()->TestStore.get()->select_group(value)
 #define XStorageTaskGet             XVarDataCenter::get()->TestStore.get()->get_group()
 #define XStorageDispatcher          ExtMemDevicesDispatcher::instance()
+#define XAllocator                  XVarAllocator::instance()
 
 #endif // !X_VAR_H

@@ -4,10 +4,10 @@
 
 #ifdef DEV_SSPS3_RUN_ON_PLC
     #include "./External/ext_mem_task_cluster.h"
-    #include "./x_var_allocator.h"
+    #include "./x_var_array.h"
 #else
-    #include "x_var_allocator.h"
     #include "ext_mem_task_cluster.h"
+    #include "x_var_array.h"
 #endif
 
 class XVarDataCenter
@@ -18,7 +18,7 @@ private:
     template<typename T>
     XVar<T>& _init(T default_value, signed int ext_mem_var_addr = 0, bool is_system_val = false, bool is_admin_val = false)
     {
-        return XVarAllocator::instance()->allocate(default_value, ext_mem_var_addr, is_system_val, is_admin_val);
+        return XVarAllocator::instance()->allocate<T>(default_value, ext_mem_var_addr, is_system_val, is_admin_val);
     }
 
     XVarDataCenter()
@@ -60,6 +60,10 @@ public:
         ...       - without prefix. Just any template/task vars
 */
     //XVar<DataStageTemplate> TestVarTempl1;
+
+    XVar<std::string> Startup_checksum = _init<std::string>("Krugley Maxim 12.09");
+
+    XVarArray<short, 3>    TV_short_arr{ 3, 3, 3 };
 
     XVar<short>& TestVar1 = _init<short>(0);
     XVar<short>& TestVar2 = _init<short>(0);
@@ -116,6 +120,8 @@ public:
     XVar<bool>&           TV_6_is_active_cooling  = _init<bool>(1);
     XVar<bool>&           TV_6_is_await_user_ok   = _init<bool>(1);
     XVar<bool>&           TV_6_is_stage_turned_on = _init<bool>(1);
+
+    XVarArray<bool, 5>    TV_bool_arr{ true, true, true, false, false };
 
     std::unique_ptr<ExtMemTaskCluster> TestStore;
 };

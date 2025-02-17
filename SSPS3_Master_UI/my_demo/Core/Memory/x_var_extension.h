@@ -6,12 +6,21 @@
 
 static unsigned char extension_calc_crc(const unsigned char* data, size_t size)
 {
-    static unsigned char crc = 0;
-    crc = 0;
-
+    unsigned char crc = 0xFF;
+    
     for (size_t i = 0; i < size; ++i)
-        crc ^= *(data + i);
-
+    {
+        crc ^= data[i];
+        
+        for (int bit = 0; bit < 8; ++bit)
+        {
+            if (crc & 0x80)
+                crc = (crc << 1) ^ 0x07;
+            else
+                crc <<= 1;
+        }
+    }
+    
     return crc;
 }
 

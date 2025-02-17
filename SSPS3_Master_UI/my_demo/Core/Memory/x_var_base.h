@@ -16,6 +16,12 @@
     #include "x_var_mvc_obj.h"
 #endif
 
+template<typename U, typename = void>
+struct is_equality_comparable : std::false_type {};
+
+template<typename U>
+struct is_equality_comparable<U, std::void_t<decltype(std::declval<U>() == std::declval<U>())>> : std::true_type {};
+
 template<typename T>
 class XVarBase :
     public XVarFram,
@@ -121,7 +127,7 @@ public:
             (XVarFram::get_is_admin_val() && admin_val_reset) ||
             (XVarFram::get_is_system_val() && system_val_reset) ||
             full_hard_reset)
-            _set_new_value_and_notify_subs(_default_value);
+            _set_new_value_and_notify_subs(_default_value, false, true);
     }
 
     void clear_ext_mem_area(unsigned char filler = 0x00) override
@@ -142,6 +148,13 @@ public:
     void save_changes()     { _set_new_value_and_notify_subs(_value, false, true); }
     void set(T new_value)   { _set_new_value_and_notify_subs(new_value); }
     T& get()                { return _value; }
+    T  get_default()        { return _default_value; }
+
+    template<typename U = T>
+    std::enable_if_t<is_equality_comparable<U>::value, bool>
+    is_equal_to_default() const {
+        return _value == _default_value;
+    }
 
     operator T&()           { return _value; }
 };
