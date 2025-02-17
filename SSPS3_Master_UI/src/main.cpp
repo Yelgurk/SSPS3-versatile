@@ -96,7 +96,7 @@ void setup()
     while(1)
     {
         if(1)
-        //if (millis() - _last_call_ms >= 500)
+        //if (millis() - _last_call_ms >= 1000)
         {
             _local_master_counter++;
             _last_call_ms = millis();

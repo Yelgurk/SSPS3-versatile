@@ -10,16 +10,37 @@ struct ArrayRingBuffer
     T buffer[Size];
 
     // Добавление элемента. Функция не выполняет переприсваивания динамической памяти.
-    bool push(const T &item)
+    bool push(const T &item, bool place_in_front = false)
     {
-        uint8_t nextTail = (tail + 1) % Size;
-        if (nextTail == head) {
-            // Буфер переполнен
-            return false;
+        if (!place_in_front)
+        {
+            uint8_t nextTail = (tail + 1) % Size;
+
+            if (nextTail == head)
+            {
+                // Буфер переполнен
+                return false;
+            }
+
+            buffer[tail] = item;
+            tail = nextTail;
+            return true;
         }
-        buffer[tail] = item;
-        tail = nextTail;
-        return true;
+        else
+        {
+            // вставка элемента в начало буфера
+            uint8_t newHead = (head == 0) ? (Size - 1) : (head - 1);
+
+            if (newHead == tail)
+            {
+                // Буфер переполнен
+                return false;
+            }
+
+            head = newHead;
+            buffer[head] = item;
+            return true;
+        }
     }
 
     // Извлечение элемента. True == сообщение назначено; False == буфер сообщений был пуст, сообщений нет

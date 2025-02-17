@@ -110,7 +110,7 @@ void setup()
     while(1)
     {
         if(1)
-        //if (millis() - _last_call_ms >= 1000)
+        //if (millis() - _last_call_ms >= 2000)
         {
             _local_slave_counter++;
             _last_call_ms = millis();

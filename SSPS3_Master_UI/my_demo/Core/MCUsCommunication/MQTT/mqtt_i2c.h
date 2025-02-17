@@ -106,8 +106,8 @@ protected:
     // Callback обработки события onReceive для I2C (вызывается в прерывании)
     static void static_on_receive(int numBytes)
     {
-        MqttI2C* inst = MqttI2C::instance();
-        uint8_t msgSize = MqttMessageI2C::get_size_of();
+        static MqttI2C* inst = MqttI2C::instance();
+        static uint8_t msgSize = MqttMessageI2C::get_size_of();
 
         // Читаем все доступные байты
         while (inst->_i2c->available() >= msgSize)
@@ -165,12 +165,9 @@ protected:
             else
             {
                 // Режим без ACK/NACK – простая обработка
-                for (auto &handler_pair : inst->_slave_side_command_handlers)
-                {
-                    if (handler_pair.first == incoming_message.get_command()) {
-                        handler_pair.second(incoming_message);
-                    }
-                }
+                noInterrupts();
+                inst->_mqtt_incoming_buffer.push(incoming_message);
+                interrupts();
             }
         }
     }
@@ -179,8 +176,8 @@ protected:
     // Вызывается на стороне slave, когда master запрашивает данные
     static void static_on_request()
     {
-        MqttI2C* inst = MqttI2C::instance();
-        uint8_t msgSize = MqttMessageI2C::get_size_of();
+        static MqttI2C* inst = MqttI2C::instance();
+        static uint8_t msgSize = MqttMessageI2C::get_size_of();
 
         // На стороне slave, если используется ACK/NACK, сначала проверяем pending-ответ от master
         noInterrupts();
@@ -225,6 +222,9 @@ protected:
             {
                 if (inst->_mqtt_outgoing_buffer.count() == 0)
                     inst->_set_interrupt_signal(false);
+                else
+                    outgoing_message.set_has_a_following_messages(true);
+
                 inst->_i2c->write(reinterpret_cast<uint8_t*>(&outgoing_message), msgSize);
             }
             else
@@ -447,7 +447,6 @@ protected:
 
                     _i2c->beginTransmission(next.addr);
                     _i2c->write(reinterpret_cast<uint8_t*>(&next), MqttMessageI2C::get_size_of());
-
                     int result = _i2c->endTransmission();
 
                     // Если результат передачи по I2C != 0, т.е. != I2C::OK, то инициируем рестарт I2C с обеих сторон (master и slave)
@@ -463,9 +462,9 @@ protected:
                             digitalWrite(_master_side_subscriptions[next.addr].restart_pin, LOW);
                         }
 
-                        // Т.к. произошла ошибкаа - возвращаем сообщение в очередь
+                        // Т.к. произошла ошибка - возвращаем сообщение в очередь
                         noInterrupts();
-                        _mqtt_outgoing_buffer.push(next);
+                        _mqtt_outgoing_buffer.push(next, true);
                         interrupts();
 
                         // Выходим из метода update_outgoing();
@@ -494,7 +493,7 @@ protected:
                     {
                         // Если не получен корректный ACK, возвращаем сообщение в очередь для повторной отправки
                         noInterrupts();
-                        _mqtt_outgoing_buffer.push(next);
+                        _mqtt_outgoing_buffer.push(next, true);
                         interrupts();
                     }
                 }
