@@ -15,7 +15,7 @@
 class IMqtt
 {
 protected:
-    unsigned short _max_messages_per_subscription = 50;
+    unsigned short _max_messages_per_subscription = 64;
     bool _use_ack_nack = false;
 
 public:
@@ -27,6 +27,10 @@ public:
 
     void set_use_ack_nack(bool flag) {
         _use_ack_nack = flag;
+    }
+
+    IMqtt* get_this_imqtt() {
+        return this;
     }
 
     virtual bool push_message(

@@ -52,7 +52,8 @@ void setup()
     Serial.println("KMA_05.02.2025_02:11:00");
     debug_show_tempC_offsets();
 
-#ifndef DEV_DEMO
+#ifdef DEV_DEMO
+#else
     delay(500);
 
     pinMode(INT, INPUT_PULLDOWN);
@@ -74,7 +75,8 @@ void setup()
     //FM24GL64 _ee_bank_1(0x50);
     //FM24GL64 _ee_bank_2(0x57);
 
-    static short _local_master_counter = 0;
+    static short _local_master_counter      = 0;
+    static unsigned long long _last_call_ms = 0;
 
     MqttI2C::instance()->begin(SDA, SCL, 400000, true);
     MqttI2C::instance()->subscribe_slave(STM_I2C_ADDR, INT, INT_KB);
@@ -94,8 +96,10 @@ void setup()
     while(1)
     {
         if(1)
+        //if (millis() - _last_call_ms >= 500)
         {
             _local_master_counter++;
+            _last_call_ms = millis();
             MqttI2C::instance()->push_message(GET_D_IO, &_local_master_counter, 2, STM_I2C_ADDR);
         }
         MqttI2C::instance()->update();

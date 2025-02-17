@@ -22,7 +22,7 @@ struct ArrayRingBuffer
         return true;
     }
 
-    // Извлечение элемента
+    // Извлечение элемента. True == сообщение назначено; False == буфер сообщений был пуст, сообщений нет
     bool pop(T &item)
     {
         if (head == tail) {

@@ -91,7 +91,8 @@ void setup()
 
 /******************************************************************************************/
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
-    static short _local_slave_counter = 0;
+    static short _local_slave_counter       = 0;
+    static unsigned long long _last_call_ms = 0;
 
     MqttI2C::instance()->begin(SDA, SCL, 400000, false, STM_I2C_ADR, INT, INT_KB);
     MqttI2C::instance()->set_use_ack_nack(true);
@@ -109,8 +110,10 @@ void setup()
     while(1)
     {
         if(1)
+        //if (millis() - _last_call_ms >= 1000)
         {
             _local_slave_counter++;
+            _last_call_ms = millis();
             MqttI2C::instance()->push_message(GET_D_IO, &_local_slave_counter, 2);
         }
         MqttI2C::instance()->update();

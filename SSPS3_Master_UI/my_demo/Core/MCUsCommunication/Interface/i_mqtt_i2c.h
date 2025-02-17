@@ -13,9 +13,9 @@
 static const constexpr size_t   MAX_PAYLOAD_SIZE_I2C = 2;
 #define MPSI2C                  MAX_PAYLOAD_SIZE_I2C
 
-//-----------------------------------------------------------------
 // MqttCommandI2C – список доступных команд при работе по I2C (для SSPS3[F1/G4])
-//-----------------------------------------------------------------
+// CMD_END - лимит для команд по I2C, т.к. "старший" бит является "системным",
+// т.е. только 7 из 8 бит доступно для инициализации команд
 enum MqttCommandI2C : uint8_t
 {
     CMD_NAN,
@@ -25,12 +25,11 @@ enum MqttCommandI2C : uint8_t
     GET_A_IN,
     GET_KB,
     SET_A_OUT,
-    SET_R_OUT
+    SET_R_OUT,
+    CMD_END = 0b01111111
 };
 
-//-----------------------------------------------------------------
 // Структура MqttMessageI2C – формат передаваемого сообщения
-//-----------------------------------------------------------------
 #pragma pack(push, 1)
 struct MqttMessageI2C
 {
@@ -70,10 +69,8 @@ struct MqttMessageI2C
     // Установка флага наличия следующих сообщений
     MqttMessageI2C* set_has_a_following_messages(bool valid)
     {
-        if (valid)
-            command |= 0b10000000;
-        else
-            command &= 0b01111111;
+        if (valid)  command |= 0b10000000;
+        else        command &= 0b01111111;
         return this;
     }
 
@@ -110,19 +107,15 @@ struct MqttMessageI2C
 };
 #pragma pack(pop)
 
-//-----------------------------------------------------------------
 // Тип для обработчиков команд: функция, принимающая полученное сообщение
-//-----------------------------------------------------------------
 using AfterReceiveHandler = std::function<void(MqttMessageI2C)>;
 
-//-----------------------------------------------------------------
 // Структура подписчика/slave (на стороне мастера)
-//-----------------------------------------------------------------
 struct MqttSlaveSubscriber
 {
     uint8_t address     = 0x02; // Адрес слейва
     char interrupt_pin  = -1;   // Пин для сигнала (уведомления о сообщениях)
-    char restart_pin    = -1;   // Пин для вызова рестарта I²C на стороне слейва
+    char restart_pin    = -1;   // Пин для вызова рестарта I2C на стороне слейва
 
     // Вектор пар: (команда, обработчик)
     std::vector<std::pair<uint8_t, AfterReceiveHandler>> command_handlers;
@@ -138,6 +131,10 @@ struct MqttSlaveSubscriber
 class IMqttI2C : public IMqtt
 {
 public:
+    IMqttI2C* get_this_imqtt_i2c() {
+        return this;
+    }
+
     virtual I2C_CH* begin(
         uint8_t sda,
         uint8_t scl,
