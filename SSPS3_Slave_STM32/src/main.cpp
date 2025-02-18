@@ -92,57 +92,9 @@ void setup()
 
 /******************************************************************************************/
 #ifdef IS_SOFTWARE_DEADLOCK_ON_STARTUP
-    static short _local_slave_counter       = 0;
-    static unsigned long long _last_call_ms = 0;
-
-    MqttI2C::instance()->begin(SDA, SCL, 400000, false, STM_I2C_ADR, INT, INT_KB);
-    MqttI2C::instance()->set_use_ack_nack(true);
-    MqttI2C::instance()->register_handler(
-        MqttCommandI2C::GET_D_IO,
-        [](MqttMessageI2C message)
-        {
-            short _received_master_counter = 0;
-            message.get_content<short>(&_received_master_counter);
-
-            Serial.println(_received_master_counter);
-        }
-    );    
-
-    MatrixKeypad* KP = MatrixKeypad::instance();
-    KP->begin(
-        KB_row_pin[0],
-        KB_row_pin[1],
-        KB_row_pin[2],
-        KB_row_pin[3],
-        KB_col_pin[0],
-        KB_col_pin[1],
-        KB_col_pin[2],
-        KB_col_pin[3],
-        false
-    );
-    KP->setPressRepeatAcceleration(500, 0.85f);
-    KP->setNotifyPressAsClick(false);
-    KP->setMinimumPressDelay(50);
-    KP->setDebounceDelay(20);
-    KP->setHandler([](MatrixKeypad::KeyState key) {
-        //Serial.println(key);
-        MqttI2C::instance()->push_message(MqttCommandI2C::GET_KB, &key, 1);
-    });
-
-    
 
     while(1)
     {
-        if(1)
-        if (millis() - _last_call_ms >= 50)
-        {
-            _local_slave_counter++;
-            _last_call_ms = millis();
-            MqttI2C::instance()->push_message(GET_D_IO, &_local_slave_counter, 2);
-        }
-
-        MqttI2C::instance()->update();
-        KP->update();
     }
 #endif
 /******************************************************************************************/

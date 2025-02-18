@@ -86,46 +86,9 @@ void setup()
 
 /*********************************************************************************************************************************/
 #ifdef DEV_DEMO
-    static short _local_master_counter      = 0;
-    static unsigned long long _last_call_ms = 0;
-
-    MqttI2C::instance()->begin(SDA, SCL, 400000, true);
-    MqttI2C::instance()->subscribe_slave(STM_I2C_ADDR, INT, INT_KB);
-    MqttI2C::instance()->set_use_ack_nack(true);
-    MqttI2C::instance()->register_handler(
-        MqttCommandI2C::GET_D_IO,
-        [](MqttMessageI2C message)
-        {
-            short _received_slave_counter = 0;
-            message.get_content<short>(&_received_slave_counter);
-
-            Serial.println(_received_slave_counter);
-        },
-        STM_I2C_ADDR
-    );
-    MqttI2C::instance()->register_handler(
-        MqttCommandI2C::GET_KB,
-        [](MqttMessageI2C message)
-        {
-            uint8_t _received_btn = 0;
-            message.get_content<uint8_t>(&_received_btn);
-
-            Serial.print("key => ");
-            Serial.println(_received_btn);
-        },
-        STM_I2C_ADDR
-    );
 
     while(1)
     {
-        if(1)
-        if (millis() - _last_call_ms >= 50)
-        {
-            _local_master_counter++;
-            _last_call_ms = millis();
-            MqttI2C::instance()->push_message(GET_D_IO, &_local_master_counter, 2, STM_I2C_ADDR);
-        }
-        MqttI2C::instance()->update();
     }    
 #endif
 /*********************************************************************************************************************************/
