@@ -4,22 +4,44 @@
 
 #include <Arduino.h>
 #include "./t_datetime.h"
-#include "./t_task_instruction.h"
+#include "./Provider/task_model_to_memory_provider.h"
 
 #pragma pack(push, 1)
-struct TaskExecutor {
-    char name[20];
-    unsigned char current_instruction_index;   // индекс текущей инструкции (начинается с 0)
-    unsigned char total_instructions_count;      // общее количество инструкций (массив находится вне класса)
-    unsigned char states;                        // битовое поле для состояний исполнителя
-    unsigned short max_idle_on_pause_ss;         // максимальное время простоя в паузе (сек)
-    unsigned long critical_idle_ss;              // накопленное время простоя (сек)
-    unsigned int critical_idle_count;            // счётчик срабатываний простоя
-    DateTime when_started_dt;                     // время старта работы
-    DateTime last_iteration_dt;                   // время последней итерации update()
-    short temperature_condition_offset_C;        // допуск по температуре (например, ±5°C)
+struct TaskExecutor
+{
+private:
+    // Получаем указатель на TaskInstruction из XVarArray<TaskInstruction, SIZE>
+    // за счёт вызова get_task_instruction() метода из синглтон класса-проводника,
+    // до хранилища XVar_*** переменных к которым получаем доступ через передачу
+    // handler-а извне во время инициализации x_var_data_center.h 
+    TaskInstruction* _instruction(short index = -1) {
+        return TaskToMem->get_task_instruction(index < 0 ? current_instruction_index : index);
+    }
 
-    enum TaskExecutorError {
+    // Будет вызываться как раз в секунду, так и по факту изменений
+    void _instruction_save(short index = -1) {
+        TaskToMem->save_task_instruction_changes(index < 0 ? current_instruction_index : index);
+    }
+
+    // По логике будет вызываться раз в секунду, т.к. изменения лишь раз в секунду
+    void _executor_save() {
+        TaskToMem->save_task_executor_changes();
+    }
+
+public:
+    char name[20];
+    unsigned char current_instruction_index;    // индекс текущей инструкции (начинается с 0)
+    unsigned char total_instructions_count;     // общее количество инструкций (массив находится вне класса)
+    unsigned char states;                       // битовое поле для состояний TaskExecutor-исполнителя
+    unsigned short max_idle_on_pause_ss;        // максимальное время простоя в паузе (сек)
+    unsigned long critical_idle_ss;             // накопленное время простоя (сек)
+    unsigned int critical_idle_count;           // счётчик срабатываний простоя
+    DateTime when_started_dt;                   // время старта работы
+    DateTime last_iteration_dt;                 // время последней итерации update()
+    short temperature_condition_offset_C;       // допуск по температуре (например, ±5°C)
+
+    enum TaskExecutorError
+    {
         ErrorLongIdleByUserPause,
         ErrorLongIdleByNo380v,
         ErrorLongIdleByNoWaterInJacket,
@@ -27,7 +49,8 @@ struct TaskExecutor {
     };
 
     // Битовые маски для состояний исполнителя
-    enum ExecutorStateBits {
+    enum ExecutorStateBits
+    {
         IS_RUNNING                = 1 << 0,
         IS_ON_PAUSE               = 1 << 1,
         IS_ON_PAUSE_BY_USER       = 1 << 2,
@@ -37,9 +60,14 @@ struct TaskExecutor {
         IS_COMPLETED_WITH_ERROR   = 1 << 6
     };
 
-    TaskExecutor() : current_instruction_index(0), total_instructions_count(0), states(0),
-                 max_idle_on_pause_ss(0), critical_idle_ss(0), critical_idle_count(0),
-                 temperature_condition_offset_C(5)
+    TaskExecutor() :
+        current_instruction_index(0),
+        total_instructions_count(0),
+        states(0),
+        max_idle_on_pause_ss(0),
+        critical_idle_ss(0),
+        critical_idle_count(0),
+        temperature_condition_offset_C(5)
     {
         name[0] = '\0';
     }
@@ -49,28 +77,27 @@ struct TaskExecutor {
               unsigned char _total_instructions_count,
               unsigned short _max_idle_on_pause_ss,
               const DateTime& _when_started_dt,
-              const DateTime& _last_iteration_dt,
               short _temperature_condition_offset_C)
     {
         if (!(states & IS_COMPLETED || states & IS_COMPLETED_WITH_ERROR))
             return;
             
         strncpy(name, _name, sizeof(name) - 1);
-        name[sizeof(name) - 1] = '\0';
+        name[sizeof(name) - 1]          = '\0';
         
-        current_instruction_index = 0;
-        total_instructions_count = _total_instructions_count;
-        max_idle_on_pause_ss = _max_idle_on_pause_ss;
-        critical_idle_ss = 0;
-        critical_idle_count = 0;
-        when_started_dt = _when_started_dt;
-        last_iteration_dt = _last_iteration_dt;
-        temperature_condition_offset_C = _temperature_condition_offset_C;
+        current_instruction_index       = 0;
+        total_instructions_count        = _total_instructions_count;
+        max_idle_on_pause_ss            = _max_idle_on_pause_ss;
+        critical_idle_ss                = 0;
+        critical_idle_count             = 0;
+        when_started_dt                 = _when_started_dt;
+        last_iteration_dt               = _when_started_dt;
+        temperature_condition_offset_C  = _temperature_condition_offset_C;
         
         // Запускаем исполнение
         states = IS_RUNNING;
     }
-    
+
     // Геттеры и сеттеры для флагов состояния
     bool is_running() const { return states & IS_RUNNING; }
     void set_is_running(bool value) {
@@ -108,20 +135,24 @@ struct TaskExecutor {
     }
     
     // Метод суммирования времени in_process_ss для инструкций от 0 до текущей
-    unsigned long total_in_process_ss(const TaskInstruction instructions[]) const {
+    unsigned long total_in_process_ss()
+    {
         unsigned long total = 0;
-        for (unsigned char i = 0; i <= current_instruction_index && i < total_instructions_count; ++i)
-            total += instructions[i].get_in_process_ss();
+
+        for (unsigned char i = 0; i <= current_instruction_index; i++)
+            total += _instruction(i)->get_in_process_ss();
+
         return total;
     }
     
-    // Возвращает время total_in_process_ss в формате "hhh:mm:ss"
-    const char* total_in_process_ss_to_string(const TaskInstruction instructions[]) const {
+    const char* total_in_process_ss_to_string()
+    {
         static char buffer[16];
-        unsigned long total_sec = total_in_process_ss(instructions);
+        unsigned long total_sec = total_in_process_ss();
         unsigned long hours = total_sec / 3600;
         unsigned long minutes = (total_sec % 3600) / 60;
         unsigned long seconds = total_sec % 60;
+        
         if (hours < 100)
             snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu", hours, minutes, seconds);
         else
@@ -129,65 +160,105 @@ struct TaskExecutor {
         return buffer;
     }
     
+    // ВАЖНО: все методы ниже оказывают влияние на ключевые переменные, отвечающие
+    // как за работоспособность данного класса, так и влияющие на поведение 
+    // исполнения "Инструкций", а отсюда физической периферией соответсвенно.
+    // Данные должны всегда быть актуальными не только в ОЗУ master-а,
+    // но и сразу же сохраняться во внешнюю память. Необходимо для быстрого восстановления
+    // после экстренных ситуаций по типу потери питания у оборудования.
+    // Отсюда уточнение - перепроверить, что бы методах ниже присутствовали
+    // обработчики сохранений "_instruction_save()" и/или "_executor_save()".
+    // Если по какой-то причине метод не нуждается в использовании методов
+    // перезаписи данных во внешней флешке на актуальные - указать на это комментарием.
+
     // Методы для увеличения in_process_ss и уменьшения duration_aim_left_ss для текущей инструкции
-    void instruction_in_process_ss_inc(TaskInstruction instructions[]) {
-        if (current_instruction_index < total_instructions_count)
-            instructions[current_instruction_index].increase_in_process_ss();
+    void instruction_in_process_ss_inc(bool save = true)
+    {
+        _instruction()->increase_in_process_ss();
+        if (save)
+            _instruction_save();
     }
-    void instruction_duration_aim_left_ss_dec(TaskInstruction instructions[]) {
-        if (current_instruction_index < total_instructions_count) {
-            if (instructions[current_instruction_index].duration_aim_left_ss > 0)
-                --instructions[current_instruction_index].duration_aim_left_ss;
-        }
+
+    void instruction_duration_aim_left_ss_dec(bool save = true)
+    {
+        _instruction()->decrease_duration_aim_left_ss();
+        if (save)
+            _instruction_save();
     }
-    
-    // Сохранение состояния во FRAM (вызывается раз в 1000 мс)
-    void save_story_callback() {
-        // Реализуйте сохранение данных во FRAM по необходимости
+
+    void instruction_in_process_and_aim_left_ss_modify()
+    {
+        instruction_in_process_ss_inc(false);
+        instruction_duration_aim_left_ss_dec(false);
+        _instruction_save();
     }
     
     // Методы переключения паузы
-    void pause_by_user_plc_button() {
+    void pause_by_user_plc_button()
+    {
         set_is_on_pause_by_user(!is_on_pause_by_user());
+
         if (!is_on_pause_by_user() &&
             !is_on_pause_by_water_jacket_drain() &&
             !is_on_pause_by_no_380v())
-        {
             set_is_on_pause(false);
-        } else {
+        else
             set_is_on_pause(true);
-        }
+
+        _executor_save();
     }
-    void pause_by_water_jacket_drain(bool flag) {
+
+    void pause_by_water_jacket_drain(bool flag)
+    {
         set_is_on_pause_by_water_jacket_drain(flag);
+
         if(flag)
             set_is_on_pause(true);
         else if (!is_on_pause_by_user() && !is_on_pause_by_no_380v())
             set_is_on_pause(false);
+
+        _executor_save();
     }
-    void pause_by_no_380v(bool flag) {
+
+    void pause_by_no_380v(bool flag)
+    {
         set_is_on_pause_by_no_380v(flag);
+
         if(flag)
             set_is_on_pause(true);
         else if (!is_on_pause_by_user() && !is_on_pause_by_water_jacket_drain())
             set_is_on_pause(false);
+
+        _executor_save();
     }
     
     // Подтверждение завершения (без ошибки)
-    void confirm_as_completed() {
+    void confirm_as_completed()
+    {
+        _instruction()->set_is_in_process(false);
+        _instruction()->set_is_completed(true);
+        _instruction_save();
+
         set_is_running(false);
         set_is_completed(true);
-        save_story_callback();
+        _executor_save();
+
         // Выключение физических устройств:
         // PhysicalController::instance()->turn_on_heaters(false);
         // PhysicalController::instance()->turn_on_water_jacket_valve(false);
         // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, false);
     }
     // Завершение с ошибкой
-    void confirm_as_completed_with_error(TaskExecutorError error) {
+    void confirm_as_completed_with_error(TaskExecutorError error)
+    {
+        _instruction()->set_is_in_process(false);
+        _instruction()->set_is_cancelled(true);
+        _instruction_save();
+        
         set_is_running(false);
         set_is_completed_with_error(true);
-        save_story_callback();
+        _executor_save();
+        
         // Выключение физических устройств:
         // PhysicalController::instance()->turn_on_heaters(false);
         // PhysicalController::instance()->turn_on_water_jacket_valve(false);
@@ -195,26 +266,38 @@ struct TaskExecutor {
     }
     
     // Метод перехода к следующей инструкции (при подтверждении пользователем)
-    void accept_instruction_as_completed_by_user(TaskInstruction instructions[]) {
+    void accept_instruction_as_completed_by_user()
+    {
         if (current_instruction_index < total_instructions_count - 1)
+        {
+            _instruction()->set_is_completed(true);
             ++current_instruction_index;
+        }
         else
             confirm_as_completed();
     }
     
     // Изменение максимального времени простоя в паузе
-    void any_pause_max_idle_duration_ss(unsigned long idle_limit_ss) {
+    void any_pause_max_idle_duration_ss(unsigned long idle_limit_ss)
+    {
         max_idle_on_pause_ss = idle_limit_ss;
+        _executor_save();
     }
     
     // Установка допускового значения температуры (например, ±5°C)
-    void set_temperature_condition_offset(short offset) {
+    void set_temperature_condition_offset(short offset)
+    {
         temperature_condition_offset_C = offset;
+        _executor_save();
     }
     
+    /*****************************************************************************/
+    // тут остановился
+    /*****************************************************************************/
+
     // Полностью реализованный update(), вызываемый каждые 250 мс (или немедленно, если execute_immediately==true)
     // Обратите внимание: массив инструкций передаётся извне
-    void update(TaskInstruction instructions[],
+    void update(//TaskInstruction instructions[], - вместо него далее в update _instruction()
                 DateTime rt_dt,
                 bool have_water_in_water_jacket,
                 bool have_380V_power,
@@ -242,6 +325,7 @@ struct TaskExecutor {
         static unsigned long last_250ms_ms = 0;
         static unsigned long last_1000ms_ms = 0;
         static unsigned long water_jacket_timer_start = 0;
+        static bool water_jacket_timer_is_active = false;
         
         // Если не execute_immediately – обновляем логику раз в 250 мс
         if (!execute_immediately && (currentMillis - last_250ms_ms < 250))
@@ -262,6 +346,12 @@ struct TaskExecutor {
             return;
         }
         
+        // ProgramControl.cpp
+        //if (_was_on_pause && this->state == TaskStateEnum::RUNNED)
+        //{
+        //    last_iteration.set_date(*dt_rt->get_date());
+        //    last_iteration.set_time(*dt_rt->get_time());
+        //}
         // Если включены какие-либо паузы – проверяем время простоя
         if(is_on_pause()) {
             if(critical_idle_ss >= max_idle_on_pause_ss) {
@@ -283,16 +373,23 @@ struct TaskExecutor {
         }
         
         // Обработка воды в рубашке: если воды нет, включаем клапан и запускаем 30-секундный таймер
-        if(!have_water_in_water_jacket) {
+        if(!have_water_in_water_jacket)
+        {
+            water_jacket_timer_is_active = true;
             // Включаем клапан для набора воды
             // PhysicalController::instance()->turn_on_water_jacket_valve(true);
             if(water_jacket_timer_start == 0)
                 water_jacket_timer_start = currentMillis;
-            if(currentMillis - water_jacket_timer_start >= 30000) {
+            if(currentMillis - water_jacket_timer_start >= 30000)
+            {
                 // Если воды так и не появилось – переводим в паузу по сливу рубашки
                 pause_by_water_jacket_drain(true);
             }
-        } else {
+        }
+        else if (water_jacket_timer_is_active)
+        {
+            water_jacket_timer_is_active = false;
+
             // Если вода появилась – отключаем клапан и сбрасываем таймер
             // PhysicalController::instance()->turn_on_water_jacket_valve(false);
             water_jacket_timer_start = 0;
@@ -379,7 +476,7 @@ struct TaskExecutor {
                     last_1000ms_ms = currentMillis;
                     instruction_duration_aim_left_ss_dec(instructions);
                     instruction_in_process_ss_inc(instructions);
-                    save_story_callback();
+                    _executor_save();
                 }
                 // Если таймер истёк и флаг AWAIT_USER_ACCEPT не установлен – завершаем инструкцию
                 if (currentInst.duration_aim_left_ss <= 0 &&
@@ -398,7 +495,7 @@ struct TaskExecutor {
                 last_1000ms_ms = currentMillis;
                 instruction_duration_aim_left_ss_dec(instructions);
                 instruction_in_process_ss_inc(instructions);
-                save_story_callback();
+                _executor_save();
             }
             if (currentInst.duration_aim_left_ss <= 0) {
                 if (currentInst.get_is_await_user_accept_when_completed()) {
