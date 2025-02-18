@@ -86,69 +86,47 @@ void setup()
 
 /*********************************************************************************************************************************/
 #ifdef DEV_DEMO
-    itcw    = new TwoWire(0);
-    itcw    ->begin(SDA, SCL, 400000);
+    static short _local_master_counter      = 0;
+    static unsigned long long _last_call_ms = 0;
 
-    FM24GL64::set_i2c_ch(itcw);
-    FM24GL64 _ee_bank_1(0x50);
-    FM24GL64 _ee_bank_2(0x57);
+    MqttI2C::instance()->begin(SDA, SCL, 400000, true);
+    MqttI2C::instance()->subscribe_slave(STM_I2C_ADDR, INT, INT_KB);
+    MqttI2C::instance()->set_use_ack_nack(true);
+    MqttI2C::instance()->register_handler(
+        MqttCommandI2C::GET_D_IO,
+        [](MqttMessageI2C message)
+        {
+            short _received_slave_counter = 0;
+            message.get_content<short>(&_received_slave_counter);
 
-    delay(15000);
+            Serial.println(_received_slave_counter);
+        },
+        STM_I2C_ADDR
+    );
+    MqttI2C::instance()->register_handler(
+        MqttCommandI2C::GET_KB,
+        [](MqttMessageI2C message)
+        {
+            uint8_t _received_btn = 0;
+            message.get_content<uint8_t>(&_received_btn);
 
-    XStorageDispatcher->add_device(_ee_bank_1.get_i_read_write());
-    XStorageDispatcher->add_device(_ee_bank_2.get_i_read_write());
-    
-    //XStorageDispatcher->get_i_read_write()->fill(0, 0, 2000);
-    _display_10_x_10_eeprom();
-
-    Serial.println();
-    Serial.print("MCS: ");
-    Serial.println(XStorage->Startup_checksum.get().c_str());
-
-    Serial.print("DCS: ");
-    Serial.println(XStorage->Startup_checksum.get_default().c_str());
-    Serial.println();
-
-    if (!XStorage->Startup_checksum.is_equal_to_default())
-        XAllocator->vars_full_hard_reset();
-    _display_10_x_10_eeprom();
-
-    unsigned char lol = 123;
-
-    // set 15 into var (both eeprom will save (uint16_t)15 + (uint8_t)crc)
-    XStorage->TV_short_arr[1] = 93;
-    //XStorage->TestVar1 = 15;
-    _display_10_x_10_eeprom();
-
-
-    // broke crc for "TestVar1" on one of both equal records on both banks
-    _ee_bank_1.write(26, &lol, sizeof(lol)); 
-    _display_10_x_10_eeprom();
-
-
-    // call "load from external mem" for reading + comparing records from both banks and pulling valid one into var (+ rewrite "error banks" with valid data)
-    XStorage->TV_short_arr[1].load_from_ext_mem();
-    //XStorage->TestVar1.load_from_ext_mem();
-    _display_10_x_10_eeprom();
-
-
-    _ee_bank_1.write(26, &lol, sizeof(lol)); // broke crc
-    _ee_bank_2.write(26, &lol, sizeof(lol)); // for both banks (p.s. for checking "set default value")
-    _display_10_x_10_eeprom();
-
-
-    // call "load from extrenal mem" and "set default value" will be called (p.s. default == value on init)
-    XStorage->TV_short_arr[1].load_from_ext_mem();
-    //XStorage->TestVar1.load_from_ext_mem(); 
-    _display_10_x_10_eeprom();
-
-    // call "load from extrenal mem" and "set default value" will be called (p.s. default == value on init)
-    XStorage->TV_short_arr[1] = 111;
-    //XStorage->TestVar1.load_from_ext_mem(); 
-    _display_10_x_10_eeprom();
+            Serial.print("key => ");
+            Serial.println(_received_btn);
+        },
+        STM_I2C_ADDR
+    );
 
     while(1)
-    {}  
+    {
+        if(1)
+        if (millis() - _last_call_ms >= 50)
+        {
+            _local_master_counter++;
+            _last_call_ms = millis();
+            MqttI2C::instance()->push_message(GET_D_IO, &_local_master_counter, 2, STM_I2C_ADDR);
+        }
+        MqttI2C::instance()->update();
+    }    
 #endif
 /*********************************************************************************************************************************/
 
