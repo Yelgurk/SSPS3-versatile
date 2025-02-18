@@ -39,7 +39,8 @@ private:
 
     uint8_t rowPins[4];
     uint8_t colPins[4];
-    bool useAttachInterrupt;
+    bool send_press_once;
+    bool in_press_state;
     bool notifyPressAsClick;
     uint16_t debounceDelay;
     uint16_t initialPressDelay;
@@ -99,20 +100,6 @@ private:
         return -1;
     }
 
-    void interruptHandler(uint8_t col)
-    {
-        lastEventTime = millis();
-        keyEventFlag = true;
-    }
-
-    // Статические обёртки ISR для каждого столбца.
-    static void isr0() { instance()->interruptHandler(0); }
-    static void isr1() { instance()->interruptHandler(1); }
-    static void isr2() { instance()->interruptHandler(2); }
-    static void isr3() { instance()->interruptHandler(3); }
-
-    void (*const isrFunctions[4])() { isr0, isr1, isr2, isr3 };
-
 public:
     static MatrixKeypad* instance() {
         static MatrixKeypad inst;
@@ -122,11 +109,12 @@ public:
     void begin(
         uint8_t r0, uint8_t r1, uint8_t r2, uint8_t r3,
         uint8_t c0, uint8_t c1, uint8_t c2, uint8_t c3,
-        bool useAttachInterrupt = false)
+        bool send_press_once = false)
     {
         rowPins[0] = r0; rowPins[1] = r1; rowPins[2] = r2; rowPins[3] = r3;
         colPins[0] = c0; colPins[1] = c1; colPins[2] = c2; colPins[3] = c3;
-        this->useAttachInterrupt = useAttachInterrupt;
+        this->send_press_once = send_press_once;
+        this->in_press_state = in_press_state;
 
         for (uint8_t i = 0; i < 4; i++)
         {
@@ -137,8 +125,6 @@ public:
         for (uint8_t i = 0; i < 4; i++)
         {
             pinMode(colPins[i], INPUT_PULLDOWN);
-            if (useAttachInterrupt)
-                attachInterrupt(digitalPinToInterrupt(colPins[i]), isrFunctions[i], RISING);
         }
 
         notifyPressAsClick      = false;
@@ -161,45 +147,56 @@ public:
     {
         unsigned long now = millis();
 
-        if (useAttachInterrupt)
+        if (now - lastScanTime < pollInterval)
+            return BTN_DELAY;
+
+        lastScanTime = now;
+
+        int detectedKey = scanKey();
+        if (detectedKey >= 0)
         {
-            // Блок проверки на нажатие (CLICK) с debounce механизмом
-            if (keyEventFlag)
+            if (now - lastEventTime < debounceDelay)
+                return BTN_DELAY;
+
+            lastEventTime = now;
+
+            if (currentKeyIndex != -1 && detectedKey != currentKeyIndex)
             {
-                if (now - lastEventTime < debounceDelay)
-                    return BTN_DELAY;
-
-                lastEventTime = now;
-                keyEventFlag = false;
+                KeyState retRelease = static_cast<KeyState>(BTN_RELEASE_0 + currentKeyIndex);
                 
-                int scannedKey = scanKey();
-                if (scannedKey >= 0 && currentKeyIndex == -1)
-                {
-                    currentKeyIndex = scannedKey;
-                    pressStartTime = now;
-                    lastRepeatTime = now;
-                    KeyState ret = static_cast<KeyState>(BTN_CLICK_0 + currentKeyIndex);
+                if (handler)
+                    handler(retRelease);
 
-                    if (handler)
-                        handler(ret);
-                    return ret;
-                }
+                currentKeyIndex = detectedKey;
+                pressStartTime = now;
+                lastRepeatTime = now;
+
+                KeyState retClick = static_cast<KeyState>(BTN_CLICK_0 + currentKeyIndex);
+
+                if (handler)
+                    handler(retClick);
+
+                in_press_state = false; // сбрасываем состояние удержания
+                return retClick;
             }
 
-            // Блок проверки на удержание (PRESSED)
-            int scannedKey = scanKey();
-            if (currentKeyIndex != -1)
+            if (currentKeyIndex == -1)  // Обнаружение CLICK-а
             {
-                if (scannedKey != currentKeyIndex)
-                {
-                    KeyState ret = static_cast<KeyState>(BTN_RELEASE_0 + currentKeyIndex);
-                    currentKeyIndex = -1;
+                currentKeyIndex = detectedKey;
+                pressStartTime = now;
+                lastRepeatTime = now;
+                KeyState ret = static_cast<KeyState>(BTN_CLICK_0 + currentKeyIndex);
 
-                    if (handler)
-                        handler(ret);
-                    return ret;
-                }
-                else if (now - lastRepeatTime >= currentPressDelay())
+                if (handler)
+                    handler(ret);
+                return ret;
+            }
+            else // Обнаружение PRESSED
+            {
+                if (detectedKey != currentKeyIndex)
+                    return BTN_DELAY;
+
+                if (now - lastRepeatTime >= currentPressDelay())
                 {
                     lastRepeatTime = now;
                     KeyState ret = notifyPressAsClick ?
@@ -207,7 +204,10 @@ public:
                         static_cast<KeyState>(BTN_PRESS_0 + currentKeyIndex);
 
                     if (handler)
-                        handler(ret);
+                        if (!send_press_once || !in_press_state)
+                            handler(ret);
+
+                    in_press_state = true;
                     return ret;
                 }
                 else
@@ -215,70 +215,21 @@ public:
                     return BTN_DELAY;
                 }
             }
-
-            return NO_BTN;
         }
-        else
+        else // Обнаружение RELEASED или NO_BTN
         {
-            if (now - lastScanTime < pollInterval)
-                return BTN_DELAY;
-
-            lastScanTime = now;
-
-            int detectedKey = scanKey();
-            if (detectedKey >= 0)
+            if (currentKeyIndex != -1)
             {
-                if (now - lastEventTime < debounceDelay)
-                    return BTN_DELAY;
+                KeyState ret = static_cast<KeyState>(BTN_RELEASE_0 + currentKeyIndex);
+                currentKeyIndex = -1;
 
-                lastEventTime = now;
+                in_press_state = false;
 
-                if (currentKeyIndex == -1)  // Обнаружение CLICK-а
-                {
-                    currentKeyIndex = detectedKey;
-                    pressStartTime = now;
-                    lastRepeatTime = now;
-                    KeyState ret = static_cast<KeyState>(BTN_CLICK_0 + currentKeyIndex);
-
-                    if (handler)
-                        handler(ret);
-                    return ret;
-                }
-                else // Обнаружение PRESSED
-                {
-                    if (detectedKey != currentKeyIndex)
-                        return BTN_DELAY;
-
-                    if (now - lastRepeatTime >= currentPressDelay())
-                    {
-                        lastRepeatTime = now;
-                        KeyState ret = notifyPressAsClick ?
-                            static_cast<KeyState>(BTN_CLICK_0 + currentKeyIndex) :
-                            static_cast<KeyState>(BTN_PRESS_0 + currentKeyIndex);
-
-                        if (handler)
-                            handler(ret);
-                        return ret;
-                    }
-                    else
-                    {
-                        return BTN_DELAY;
-                    }
-                }
+                if (handler)
+                    handler(ret);
+                return ret;
             }
-            else // Обнаружение RELEASED ли, либо вовсе NO_BTN
-            {
-                if (currentKeyIndex != -1)
-                {
-                    KeyState ret = static_cast<KeyState>(BTN_RELEASE_0 + currentKeyIndex);
-                    currentKeyIndex = -1;
-
-                    if (handler)
-                        handler(ret);
-                    return ret;
-                }
-                return NO_BTN;
-            }
+            return NO_BTN;
         }
     }
 
