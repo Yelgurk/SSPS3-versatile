@@ -54,15 +54,15 @@ struct TaskInstruction {
               bool is_last_step = false,
               bool is_cooling_at_the_end = false,
               bool is_heating_at_the_end = false,
-              bool is_dont_rotate_on_pause = false)
+              bool is_dont_rotate_on_user_await = false)
     {
         strncpy(name, _name, sizeof(name) - 1);
         name[sizeof(name) - 1] = '\0';
         
         rot_per_min = _rot_per_min;
         temperature_C = _temperature_C;
-        duration_aim_ss = _duration_aim_ss;
-        duration_aim_left_ss = _duration_aim_ss;
+        duration_aim_ss = is_only_until_condition_met ? 0 : _duration_aim_ss;
+        duration_aim_left_ss = duration_aim_ss;
         in_process_ss = 0;
         configurations = 0;
         states = 0;
@@ -74,7 +74,7 @@ struct TaskInstruction {
         set_is_last_step(is_last_step);
         set_is_cooling_at_the_end(is_cooling_at_the_end);
         set_is_heating_at_the_end(is_heating_at_the_end);
-        set_is_dont_rotate_on_pause(is_dont_rotate_on_pause);
+        set_is_dont_rotate_on_user_await(is_dont_rotate_on_user_await);
         
         set_is_in_queue(true);
     }
@@ -136,8 +136,8 @@ struct TaskInstruction {
             configurations &= ~HEATING_AT_END;
     }
     
-    bool get_is_dont_rotate_on_pause() const { return configurations & DONT_ROTATE_ON_PAUSE; }
-    void set_is_dont_rotate_on_pause(bool value) {
+    bool get_is_dont_rotate_on_user_await() const { return configurations & DONT_ROTATE_ON_PAUSE; }
+    void set_is_dont_rotate_on_user_await(bool value) {
         if (value)
             configurations |= DONT_ROTATE_ON_PAUSE;
         else
@@ -181,7 +181,13 @@ struct TaskInstruction {
     void increase_in_process_ss() { ++in_process_ss; }
 
     unsigned long get_duration_aim_left_ss() const { return duration_aim_left_ss; }
-    void decrease_duration_aim_left_ss() { --duration_aim_left_ss; }
+    void decrease_duration_aim_left_ss()
+    {
+        if (!get_is_only_until_condition_met())
+            --duration_aim_left_ss;
+        else
+            duration_aim_left_ss = 0;
+    }
 };
 #pragma pack(pop)
 

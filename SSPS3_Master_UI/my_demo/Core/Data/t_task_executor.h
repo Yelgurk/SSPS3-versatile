@@ -64,10 +64,10 @@ public:
         current_instruction_index(0),
         total_instructions_count(0),
         states(0),
-        max_idle_on_pause_ss(0),
+        max_idle_on_pause_ss(1800),
         critical_idle_ss(0),
         critical_idle_count(0),
-        temperature_condition_offset_C(5)
+        temperature_condition_offset_C(3)
     {
         name[0] = '\0';
     }
@@ -96,6 +96,19 @@ public:
         
         // Запускаем исполнение
         states = IS_RUNNING;
+
+        // Выполняем подготовку update(...) метода через сброс его статических таймеров и флагов
+        update(
+            _when_started_dt,
+            true,
+            true,
+            false,
+            false,
+            0,
+            0,
+            false,
+            true // <--- и есть флаг сброса
+        );
     }
 
     // Геттеры и сеттеры для флагов состояния
@@ -172,24 +185,15 @@ public:
     // перезаписи данных во внешней флешке на актуальные - указать на это комментарием.
 
     // Методы для увеличения in_process_ss и уменьшения duration_aim_left_ss для текущей инструкции
-    void instruction_in_process_ss_inc(bool save = true)
+    void instruction_in_process_ss_inc()
     {
         _instruction()->increase_in_process_ss();
-        if (save)
-            _instruction_save();
+        _instruction_save();
     }
 
-    void instruction_duration_aim_left_ss_dec(bool save = true)
+    void instruction_duration_aim_left_ss_dec()
     {
         _instruction()->decrease_duration_aim_left_ss();
-        if (save)
-            _instruction_save();
-    }
-
-    void instruction_in_process_and_aim_left_ss_modify()
-    {
-        instruction_in_process_ss_inc(false);
-        instruction_duration_aim_left_ss_dec(false);
         _instruction_save();
     }
     
@@ -235,8 +239,8 @@ public:
     // Подтверждение завершения (без ошибки)
     void confirm_as_completed()
     {
-        _instruction()->set_is_in_process(false);
         _instruction()->set_is_completed(true);
+        _instruction()->set_is_in_process(false);
         _instruction_save();
 
         set_is_running(false);
@@ -248,11 +252,12 @@ public:
         // PhysicalController::instance()->turn_on_water_jacket_valve(false);
         // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, false);
     }
+
     // Завершение с ошибкой
     void confirm_as_completed_with_error(TaskExecutorError error)
     {
-        _instruction()->set_is_in_process(false);
         _instruction()->set_is_cancelled(true);
+        _instruction()->set_is_in_process(false);
         _instruction_save();
         
         set_is_running(false);
@@ -271,6 +276,8 @@ public:
         if (current_instruction_index < total_instructions_count - 1)
         {
             _instruction()->set_is_completed(true);
+            _instruction()->set_is_in_process(false);
+            _instruction_save();
             ++current_instruction_index;
         }
         else
@@ -284,269 +291,383 @@ public:
         _executor_save();
     }
     
-    // Установка допускового значения температуры (например, ±5°C)
+    // Установка допуска температуры для подтверждения перехода на следующий этап (например, ±5°C)
     void set_temperature_condition_offset(short offset)
     {
         temperature_condition_offset_C = offset;
         _executor_save();
     }
-    
-    /*****************************************************************************/
-    // тут остановился
-    /*****************************************************************************/
 
     // Полностью реализованный update(), вызываемый каждые 250 мс (или немедленно, если execute_immediately==true)
     // Обратите внимание: массив инструкций передаётся извне
-    void update(//TaskInstruction instructions[], - вместо него далее в update _instruction()
-                DateTime rt_dt,
+    // Возвращаемый bool - был ли исполнен обработчик по execute_immediately или через 250мс.
+    // По факту возвращаемый bool будет == false, только во время простоя из-за таймера в методе
+    // if (!execute_immediately && (current_ms - last_250ms_ms < 250)) {
+    // return false;
+    // }
+    bool update(DateTime rt_dt,
                 bool have_water_in_water_jacket,
                 bool have_380V_power,
                 bool mixer_motor_crush,
                 bool is_fast_mixer_motor,
                 short temperature_C_product,
                 short temperature_C_water_jacket = -255,
-                bool execute_immediately = false)
+                bool execute_immediately = false,
+                bool new_task_started = false)
     {
         // Если исполнитель не запущен – раз в 10 сек отключаем физические устройства
         static unsigned long last_disable_ms = 0;
-        unsigned long currentMillis = millis();
-        if (!is_running()) {
-            if (currentMillis - last_disable_ms >= 10000 || execute_immediately) {
+        unsigned long current_ms = millis();
+
+        // Используем static переменные для таймеров внутри update()
+        static unsigned long last_250ms_ms                  = 0;
+        static unsigned long last_1000ms_in_proc_ms         = 0;
+        static unsigned long last_1000ms_aim_left_ms        = 0;
+        static unsigned long any_pause_timer_start_ms       = 0;
+        static unsigned long water_jacket_timer_start_ms    = 0;
+        static bool any_pause_timer_is_active               = false;
+        static bool water_jacket_timer_is_active            = false;
+
+        if (new_task_started)
+        {
+            last_1000ms_aim_left_ms = -1;
+            
+            last_250ms_ms
+                = last_1000ms_in_proc_ms
+                = current_ms;
+
+            any_pause_timer_start_ms
+                = water_jacket_timer_start_ms
+                = 0;
+
+            any_pause_timer_is_active
+                = water_jacket_timer_is_active
+                = false;
+
+            return false;
+        }
+
+        if (!is_running())
+        {
+            if (current_ms - last_disable_ms >= 10000 || execute_immediately)
+            {
                 // Пример вызова физических команд:
                 // PhysicalController::instance()->turn_on_heaters(false);
                 // PhysicalController::instance()->turn_on_water_jacket_valve(false);
                 // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
-                last_disable_ms = currentMillis;
+                last_disable_ms = current_ms;
+                
+                return true;
             }
-            return;
+            else 
+                return false;
         }
-        
-        // Используем static переменные для таймеров внутри update()
-        static unsigned long last_250ms_ms = 0;
-        static unsigned long last_1000ms_ms = 0;
-        static unsigned long water_jacket_timer_start = 0;
-        static bool water_jacket_timer_is_active = false;
         
         // Если не execute_immediately – обновляем логику раз в 250 мс
-        if (!execute_immediately && (currentMillis - last_250ms_ms < 250))
-            return;
-        last_250ms_ms = currentMillis;
+        if (!execute_immediately && (current_ms - last_250ms_ms < 250))
+            return false;
+        last_250ms_ms = current_ms;
+
+        // Если один датчик даёт температуру, сохраняем его значение.
+        // Если два датчика дают температуру, то ищем среднее арифметическое значение
+        // между ((темп. продукта + темп. воды в рубашке) / 2 датчика - 1 градус) для чуть более агресивного нагрева
+        temperature_C_product = temperature_C_water_jacket == -255
+            ? temperature_C_product
+            : ((temperature_C_product + temperature_C_water_jacket) / 2) - 1;
         
         // Вычисляем разницу между rt_dt и последней итерацией (в секундах)
+        // если оборудование включено, то метод update будет вызван раз 400 в 1000мс
+        // однако из-за блока last_250ms_ms до данного кейса дойдём минимум 4 раза.
+        // Этого достаточно, что бы не возникало пробем для контроля и исполнения
+        // порядка инструкций. Однако если сеть была выкючена, заетм включии оборудование
+        // то при вызове update() будет обнаружено время простоя и обработано в 2 важных сценария:
+        // если > 5 и < 1800 (30мин), то сохраняем инфу;
+        // если > 1800, то выеротно за такое длительное врем простояя молоко или иной продукт
+        // уже испортились и мы не несём ответствености за это, посему завершаем программу
         TimeSpan diff = rt_dt - last_iteration_dt;
+        last_iteration_dt = rt_dt; // сохранили настоящее текущее время относительно DS3231
         int diff_sec = diff.total_seconds_abs();
-        if(diff_sec < 5) {
-            last_iteration_dt = rt_dt;
-            return;
-        } else if(diff_sec >= 5 && diff_sec <= 1800) {
+        if (diff_sec < 5)
+        {
+            // Всё ок, вдруг затуп произошёл и передача больших данных
+            // поставила ПЛК в небольшой простой, забрав немного процессорного
+            // времени на себя
+        }
+        else if (diff_sec >= 5 && diff_sec <= 1800)
+        {
+            // суммируем время киртического простоя и количество таких простоев
             critical_idle_ss += diff_sec;
             ++critical_idle_count;
-        } else if(diff_sec >= 1800) {
+        }
+        else if (diff_sec >= 1800)
+        {
+            // продукт вероятно испорчен, завершаем работу
+            critical_idle_ss += diff_sec;
+            ++critical_idle_count;
+             
             confirm_as_completed_with_error(ErrorLongIdleByUserPause);
-            return;
+            return true;
+        }
+
+        // Проверка аварии мотора
+        if(mixer_motor_crush)
+        {
+            confirm_as_completed_with_error(ErrorMixerCrash);
+            return true;
         }
         
-        // ProgramControl.cpp
-        //if (_was_on_pause && this->state == TaskStateEnum::RUNNED)
-        //{
-        //    last_iteration.set_date(*dt_rt->get_date());
-        //    last_iteration.set_time(*dt_rt->get_time());
-        //}
         // Если включены какие-либо паузы – проверяем время простоя
-        if(is_on_pause()) {
-            if(critical_idle_ss >= max_idle_on_pause_ss) {
+        // и выходим из метода, пока не будут разрешены проблемы.
+        // При превышении дительности простоя относительно max_idle_on_pause_ss
+        // смотрим, на какой именно паузе мы находились и в зависимости от
+        // неё отправляем error методу max_idle_on_pause_ss.
+        if(is_on_pause())
+        {
+            if (!any_pause_timer_is_active)
+            {
+                any_pause_timer_is_active = true;
+                any_pause_timer_start_ms = current_ms;
+            }
+
+            if ((current_ms - any_pause_timer_start_ms) / 1000 >= max_idle_on_pause_ss)
+            {
                 if(is_on_pause_by_user())
                     confirm_as_completed_with_error(ErrorLongIdleByUserPause);
-                else if(is_on_pause_by_no_380v())
+                else
+                if(is_on_pause_by_no_380v())
                     confirm_as_completed_with_error(ErrorLongIdleByNo380v);
-                else if(is_on_pause_by_water_jacket_drain())
+                else
+                if(is_on_pause_by_water_jacket_drain())
                     confirm_as_completed_with_error(ErrorLongIdleByNoWaterInJacket);
-                return;
+
+                return true;
             }
-            // Если в паузе – останавливаем таймеры и физические устройства
-            // (физ. команды ниже – примеры)
-            // PhysicalController::instance()->turn_on_heaters(false);
-            // PhysicalController::instance()->turn_on_water_jacket_valve(false);
-            // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
-            last_iteration_dt = rt_dt;
-            return;
+
+            if (is_on_pause_by_water_jacket_drain() && have_water_in_water_jacket)
+                pause_by_water_jacket_drain(false);
+
+            if (is_on_pause_by_no_380v() && have_380V_power)
+                pause_by_no_380v(false);
+
+            // если ошибки исправлены (два if case-а выше), но всё-равно стоим на паузе
+            // значит, вероятно, мы ещё на последней вероятной паузе - по кнопке пользователя.
+            // тогда продожаем прерывать испонение инструкции
+            if (is_on_pause())
+            {
+                // Если в паузе – останавливаем таймеры и физические устройства
+                // кроме кейса, когда have_water_in_water_jacket == false, ибо в таком случае как раз нужен набор воды.
+                // (физ. команды ниже – примеры)
+                // PhysicalController::instance()->turn_on_heaters(false);
+                // PhysicalController::instance()->turn_on_water_jacket_valve(false);
+                // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
+
+                return true;
+            }
         }
-        
-        // Обработка воды в рубашке: если воды нет, включаем клапан и запускаем 30-секундный таймер
-        if(!have_water_in_water_jacket)
+        // если уже не на паузе, то вот обнаружим, что счётчик ещё включен
+        // и просто обнуяем его
+        if (any_pause_timer_is_active)
         {
-            water_jacket_timer_is_active = true;
+            any_pause_timer_is_active = false;
+            any_pause_timer_start_ms = 0;
+        }
+
+        // Проверка 380V
+        if(!have_380V_power)
+        {
+            pause_by_no_380v(true);
+            return true;
+        }
+
+        //--------------------------------------------------------
+        // Достаём нашу инструкцию по индексу current_instruction_index
+        //--------------------------------------------------------
+        TaskInstruction* _curr_instruction = _instruction();
+        
+        // Подразумевается, что дойдя до текущей точки - мы не находимсяя на паузе и/или программа
+        // не завершена, а значит дальше проверяем в реальном времени и доливаем воду в рубашку,
+        // в ином сучае ставим программу как раз на паузу, в которой тоже будет доливаться вода в рубашку.
+        // Итого: если воды нет И ЭТО НЕ ЭТАП НАБОРА ВОДЫ, то включаем клапан и запускаем 30-секундный таймер
+        if(!have_water_in_water_jacket && !_curr_instruction->get_is_water_intake_step())
+        {
+            if (!water_jacket_timer_is_active)
+            {
+                water_jacket_timer_is_active = true;
+                water_jacket_timer_start_ms = current_ms;
+            }
+
             // Включаем клапан для набора воды
             // PhysicalController::instance()->turn_on_water_jacket_valve(true);
-            if(water_jacket_timer_start == 0)
-                water_jacket_timer_start = currentMillis;
-            if(currentMillis - water_jacket_timer_start >= 30000)
+
+            if(current_ms - water_jacket_timer_start_ms >= 30000)
             {
                 // Если воды так и не появилось – переводим в паузу по сливу рубашки
                 pause_by_water_jacket_drain(true);
+                return true;
             }
         }
-        else if (water_jacket_timer_is_active)
+
+        // Если дошли до сюда, значит вода в рубашке есть, но мы смотрим, был ли запущен таймер,
+        // который информирует, что предыдущая итерцаия update использовала "долив" воды.
+        // Если да, то просто обнуляем.
+        if (have_water_in_water_jacket && water_jacket_timer_is_active)
         {
             water_jacket_timer_is_active = false;
+            water_jacket_timer_start_ms = 0;
 
-            // Если вода появилась – отключаем клапан и сбрасываем таймер
-            // PhysicalController::instance()->turn_on_water_jacket_valve(false);
-            water_jacket_timer_start = 0;
-            if(is_on_pause_by_water_jacket_drain())
-                pause_by_water_jacket_drain(false);
+            if (_curr_instruction->get_is_active_cooling())
+            {
+                // Текущая инструкция с флагом "активное охлаждение", посему это может
+                // быть непосредственно этап самого охлаждения. На всякий сулчай
+                // не трогаем физический клапан набора воды, т.к. вероятно
+                // это будет контроллироваться дальше в коде
+
+                // ничего не делаем!
+            }
+            else
+            {   
+                // Если вода появилась – отключаем клапан и сбрасываем таймер
+                // PhysicalController::instance()->turn_on_water_jacket_valve(false);
+            }
         }
         
-        // Проверка 380V
-        if(!have_380V_power)
-            pause_by_no_380v(true);
-        else if(is_on_pause_by_no_380v())
-            pause_by_no_380v(false);
-        
-        // Проверка аварии мотора
-        if(mixer_motor_crush) {
-            confirm_as_completed_with_error(ErrorMixerCrash);
-            return;
-        }
-        
-        // Обработка текущей инструкции
-        TaskInstruction& currentInst = instructions[current_instruction_index];
+        //--------------------------------------------------------------------
+        // Закончили с проверками.
+        // Приступаем непосредственно к работе с инструкциями
+        //--------------------------------------------------------------------
         
         // Если инструкция находится в очереди, переводим её в режим исполнения
-        if (currentInst.get_is_in_queue()) {
-            currentInst.set_is_in_queue(false);
-            currentInst.set_is_in_process(true);
+        if (_curr_instruction->get_is_in_queue())
+        {
+            last_1000ms_aim_left_ms = -1;
+            last_1000ms_in_proc_ms = current_ms;
+            _curr_instruction->set_is_in_queue(false);
+            _curr_instruction->set_is_in_process(true);
+            _instruction_save();
+        }
+
+        // Обновляем таймеры и сохраняем состояние раз в 1000 мс
+        if (current_ms - last_1000ms_in_proc_ms >= 1000)
+        {
+            last_1000ms_in_proc_ms = current_ms;
+            instruction_in_process_ss_inc();
+            _executor_save();
         }
         
         // Логика для этапа набора воды
-        if (currentInst.get_is_water_intake_step()) {
-            if (have_water_in_water_jacket) {
-                currentInst.set_is_completed(true);
-                currentInst.set_is_in_process(false);
-                accept_instruction_as_completed_by_user(instructions);
-                // После перехода на следующую инструкцию – выходим из update()
-                last_iteration_dt = rt_dt;
-                return;
+        if (_curr_instruction->get_is_water_intake_step())
+        {
+            if (have_water_in_water_jacket)
+            {
+                // Если вода есть - закрываем клапан набора воды в рубашку
+                // PhysicalController::instance()->turn_on_water_jacket_valve(false);
+                
+                accept_instruction_as_completed_by_user();
+                return true;
             }
-            // Если воды нет – клапан уже включён, ждём появления воды
+            else
+            {
+                // Если воды нет – открываем клапан набора воды в рубашку
+                // PhysicalController::instance()->turn_on_water_jacket_valve(true);
+
+                return true;
+            }
         }
         
+        //--------------------------------------------------------------------
+        // Ключевой блок - контроль температуры, охаждения, оборотов,
+        // а так же ожиданияя подтверждения пользователя по необходимости
+        //--------------------------------------------------------------------
+
         // Обработка температуры и таймеров для инструкции
         // Если установлен ONLY_UNTIL_CONDITION_MET – переход по достижении температуры (с допуском)
-        if (currentInst.get_is_only_until_condition_met()) {
-            short target_temp = currentInst.temperature_C;
-            if ( abs(temperature_C_product - target_temp) <= temperature_condition_offset_C ) {
-                // Если температура достигнута – завершаем инструкцию
-                currentInst.set_is_completed(true);
-                currentInst.set_is_in_process(false);
-                accept_instruction_as_completed_by_user(instructions);
-                last_iteration_dt = rt_dt;
-                return;
-            } else {
-                // Управление: если температура ниже – нагреваем, если выше – охлаждаем (при активном охлаждении)
-                if (temperature_C_product < target_temp) {
-                    // Включаем нагрев
-                    // PhysicalController::instance()->turn_on_heaters(true);
-                    if (currentInst.get_is_dont_rotate_on_pause() &&
-                        currentInst.get_is_await_user_accept_when_completed())
-                    {
-                        // Если не вращать – устанавливаем 0 оборотов
-                        // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
-                    } else {
-                        // Иначе устанавливаем скорость, заданную в инструкции
-                        // PhysicalController::instance()->set_motor_rotation_speed_per_min(currentInst.rot_per_min, is_fast_mixer_motor);
-                    }
-                } else if (temperature_C_product > target_temp) {
-                    if (currentInst.get_is_active_cooling()) {
-                        // При охлаждении – отключаем нагрев
-                        // PhysicalController::instance()->turn_on_heaters(false);
-                        if (currentInst.get_is_dont_rotate_on_pause() &&
-                            currentInst.get_is_await_user_accept_when_completed())
-                        {
-                            // Остановить мотор
-                            // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
-                        } else {
-                            // Иначе скорость согласно инструкции
-                            // PhysicalController::instance()->set_motor_rotation_speed_per_min(currentInst.rot_per_min, is_fast_mixer_motor);
-                        }
-                    }
+        bool untill_condition_met = _curr_instruction->get_is_only_until_condition_met();
+        short target_temp = _curr_instruction->temperature_C;
+
+        if (!untill_condition_met &&
+            abs(temperature_C_product - target_temp) <= temperature_condition_offset_C)
+        {
+            // Обновляем таймеры для самих instruction, если не untill_condition_met
+            if (current_ms - last_1000ms_aim_left_ms >= 1000)
+            {
+                if (last_1000ms_aim_left_ms != -1)
+                    instruction_duration_aim_left_ss_dec();
+            
+                last_1000ms_aim_left_ms = current_ms;
+            }
+        }
+
+        // Если untill_condition_met и температура достигнута – завершаем инструкцию
+        // Есил !untill_condition_met и таймер duration_aim_left_ss <= 0 – завершаем инструкцию
+        if ((untill_condition_met && abs(temperature_C_product - target_temp) <= temperature_condition_offset_C) ||
+            (!untill_condition_met && _curr_instruction->duration_aim_left_ss <= 0))
+        {
+            // Поставим флаг как get_is_completed == 1 через set_is_completed(true)
+            // оставив флаг get_is_in_process тоже как == 1.
+            // get_is_in_process будет сброшен по факту окончателнього завершения
+            // инструкции после вызова accept_instruction_as_completed_by_user(), в котором:
+            // 1) get_is_in_process = 0
+            // 2) ++current_instruction_index
+            _curr_instruction->set_is_completed(true);
+            
+            // Если по окончанию выполнения инструкции флаг get_is_await_user_accept_when_completed
+            // указывает, что нам необходимо ждать кнопку подтверждения пользоватея - ожидаем
+            if (_curr_instruction->get_is_await_user_accept_when_completed())
+            {
+                // Тут логика удержания температуры и управление оборотами + есть флаги
+                // PhysicalController:: ...
+                // PhysicalController:: ...
+                // PhysicalController:: ...
+
+                if (_curr_instruction->get_is_dont_rotate_on_user_await())
+                {   
+                    // Останавливаем мотор
+                    // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
+                    // PhysicalController:: ...
+                    // PhysicalController:: ...
                 }
-                // Обновляем таймеры и сохраняем состояние раз в 1000 мс
-                if (currentMillis - last_1000ms_ms >= 1000) {
-                    last_1000ms_ms = currentMillis;
-                    instruction_duration_aim_left_ss_dec(instructions);
-                    instruction_in_process_ss_inc(instructions);
-                    _executor_save();
-                }
-                // Если таймер истёк и флаг AWAIT_USER_ACCEPT не установлен – завершаем инструкцию
-                if (currentInst.duration_aim_left_ss <= 0 &&
-                    !currentInst.get_is_await_user_accept_when_completed())
+                
+                // Ждём подтверждения от пользователя (метод accept_instruction_as_completed_by_user() вызывается извне)
+            }
+            else // в ином случае просто завершаем этап
+            {
+                accept_instruction_as_completed_by_user();
+            }
+            return true;
+        }
+        else // Если не выполнены усовия, что бы считать, что даный этап закончен, то 
+        {
+            // Устанавливаем скорость, заданную в инструкции
+            // PhysicalController::instance()->set_motor_rotation_speed_per_min(
+            //     _curr_instruction->rot_per_min,
+            //     is_fast_mixer_motor
+            // );
+            
+            // Управление: если температура ниже – нагреваем
+            if (temperature_C_product < target_temp) 
+            {
+                // Включаем нагрев
+                // PhysicalController::instance()->turn_on_heaters(true);
+                //// PhysicalController::instance()->turn_on_water_jacket_valve(false); // Точно нужно явны выключать?
+            }
+            else // Управление: если температура выше – охлаждаем (при флаге активного охлаждения)
+            if (temperature_C_product > target_temp) 
+            {
+                // При охлаждении – отключаем нагрев
+                // PhysicalController::instance()->turn_on_heaters(false);
+                // При активнорм охлаждении - включаем клапан набора воды
+                if (_curr_instruction->get_is_active_cooling())
                 {
-                    currentInst.set_is_completed(true);
-                    currentInst.set_is_in_process(false);
-                    accept_instruction_as_completed_by_user(instructions);
-                    last_iteration_dt = rt_dt;
-                    return;
+                    // PhysicalController::instance()->turn_on_water_jacket_valve(true);
                 }
             }
+            else // температура точно равна требуемой в инструкции - выкючаем всё
+            {
+                // PhysicalController::instance()->turn_on_heaters(false);
+                // PhysicalController::instance()->turn_on_water_jacket_valve(false);
+            }
+            return true;
         }
-        else { // Если ONLY_UNTIL_CONDITION_MET не установлен – полагаемся на таймер
-            if (currentMillis - last_1000ms_ms >= 1000) {
-                last_1000ms_ms = currentMillis;
-                instruction_duration_aim_left_ss_dec(instructions);
-                instruction_in_process_ss_inc(instructions);
-                _executor_save();
-            }
-            if (currentInst.duration_aim_left_ss <= 0) {
-                if (currentInst.get_is_await_user_accept_when_completed()) {
-                    if (currentInst.get_is_dont_rotate_on_pause()) {
-                        // Останавливаем мотор
-                        // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
-                    }
-                    // Ждём подтверждения от пользователя (метод accept_instruction_as_completed_by_user() вызывается извне)
-                } else {
-                    currentInst.set_is_completed(true);
-                    currentInst.set_is_in_process(false);
-                    accept_instruction_as_completed_by_user(instructions);
-                    last_iteration_dt = rt_dt;
-                    return;
-                }
-            }
-            else {
-                // Пока таймер не истёк – управление нагревом/охлаждением аналогично:
-                short target_temp = currentInst.temperature_C;
-                if (temperature_C_product < target_temp) {
-                    // Нагрев
-                    // PhysicalController::instance()->turn_on_heaters(true);
-                    if (currentInst.get_is_dont_rotate_on_pause() &&
-                        currentInst.get_is_await_user_accept_when_completed())
-                    {
-                        // Остановка мотора
-                        // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
-                    } else {
-                        // Установка скорости
-                        // PhysicalController::instance()->set_motor_rotation_speed_per_min(currentInst.rot_per_min, is_fast_mixer_motor);
-                    }
-                } else if (temperature_C_product > target_temp) {
-                    if (currentInst.get_is_active_cooling()) {
-                        // Отключаем нагрев
-                        // PhysicalController::instance()->turn_on_heaters(false);
-                        if (currentInst.get_is_dont_rotate_on_pause() &&
-                            currentInst.get_is_await_user_accept_when_completed())
-                        {
-                            // Остановка мотора
-                            // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
-                        } else {
-                            // Установка скорости
-                            // PhysicalController::instance()->set_motor_rotation_speed_per_min(currentInst.rot_per_min, is_fast_mixer_motor);
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Обновляем время последней итерации
-        last_iteration_dt = rt_dt;
     }
 };
 #pragma pack(pop)
