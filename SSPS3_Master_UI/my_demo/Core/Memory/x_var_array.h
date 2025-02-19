@@ -24,6 +24,13 @@ private:
         return XVarAllocator::instance()->allocate<U>(default_value, ext_mem_var_addr, is_system_val, is_admin_val);
     }
 
+    template<std::size_t... I>
+    std::array<std::reference_wrapper<XVar<T>>, N>
+    create_data(const T& def, std::index_sequence<I...>)
+    {
+        return std::array<std::reference_wrapper<XVar<T>>, N>{ { ((void)I, std::ref(_init<T>(def)))... } };
+    }
+
     std::array<std::reference_wrapper<XVar<T>>, N> data;
     XVar<T>* _selected = nullptr;
     int _selected_index = 0;
@@ -37,18 +44,22 @@ public:
     XVarArray(Args&&... args)
         : data{ std::ref(_init<T>(std::forward<Args>(args)))... },
           _selected(nullptr),
+          _selected_index(0),
           _infinity_selector(false),
           _callback(nullptr)
     {
         this->select(_selected_index);
     }
 
-    XVar<T>& operator[](std::size_t idx) {
-        return data[idx].get();
-    }
-    
-    const XVar<T>& operator[](std::size_t idx) const {
-        return data[idx].get();
+    // Конструктор по умолчанию, который инициализирует все элементы значением по умолчанию
+    XVarArray(T _def)
+        : data(create_data(_def, std::make_index_sequence<N>{})),
+          _selected(nullptr),
+          _selected_index(0),
+          _infinity_selector(false),
+          _callback(nullptr)
+    {
+        this->select(_selected_index);
     }
     
     void set_infinity_selector(bool flag) {
@@ -86,6 +97,14 @@ public:
 
     XVar<T>& get_selected() {
         return *_selected;
+    }
+
+    XVar<T>& operator[](std::size_t idx) {
+        return data[idx].get();
+    }
+    
+    const XVar<T>& operator[](std::size_t idx) const {
+        return data[idx].get();
     }
 };
 

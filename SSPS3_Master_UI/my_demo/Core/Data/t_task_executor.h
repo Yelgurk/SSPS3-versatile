@@ -36,8 +36,8 @@ public:
     unsigned short max_idle_on_pause_ss;        // максимальное время простоя в паузе (сек)
     unsigned long critical_idle_ss;             // накопленное время простоя (сек)
     unsigned int critical_idle_count;           // счётчик срабатываний простоя
-    DateTime when_started_dt;                   // время старта работы
-    DateTime last_iteration_dt;                 // время последней итерации update()
+    XDateTime when_started_dt;                   // время старта работы
+    XDateTime last_iteration_dt;                 // время последней итерации update()
     short temperature_condition_offset_C;       // допуск по температуре (например, ±5°C)
 
     enum TaskExecutorError
@@ -76,7 +76,7 @@ public:
     void init(const char* _name,
               unsigned char _total_instructions_count,
               unsigned short _max_idle_on_pause_ss,
-              const DateTime& _when_started_dt,
+              const XDateTime& _when_started_dt,
               short _temperature_condition_offset_C)
     {
         if (!(states & IS_COMPLETED || states & IS_COMPLETED_WITH_ERROR))
@@ -305,7 +305,7 @@ public:
     // if (!execute_immediately && (current_ms - last_250ms_ms < 250)) {
     // return false;
     // }
-    bool update(DateTime rt_dt,
+    bool update(XDateTime rt_dt,
                 bool have_water_in_water_jacket,
                 bool have_380V_power,
                 bool mixer_motor_crush,
@@ -384,7 +384,7 @@ public:
         // если > 5 и < 1800 (30мин), то сохраняем инфу;
         // если > 1800, то выеротно за такое длительное врем простояя молоко или иной продукт
         // уже испортились и мы не несём ответствености за это, посему завершаем программу
-        TimeSpan diff = rt_dt - last_iteration_dt;
+        XTimeSpan diff = rt_dt - last_iteration_dt;
         last_iteration_dt = rt_dt; // сохранили настоящее текущее время относительно DS3231
         int diff_sec = diff.total_seconds_abs();
         if (diff_sec < 5)
@@ -669,6 +669,8 @@ public:
             return true;
         }
     }
+
+    bool operator==(const TaskExecutor& other) { return false; }
 };
 #pragma pack(pop)
 

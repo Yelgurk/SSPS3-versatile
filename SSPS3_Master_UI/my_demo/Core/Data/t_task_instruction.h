@@ -188,6 +188,8 @@ struct TaskInstruction {
         else
             duration_aim_left_ss = 0;
     }
+
+    bool operator==(const TaskInstruction& other) { return false; }
 };
 #pragma pack(pop)
 

@@ -16,8 +16,8 @@
     #include "t_timespan.h"
 #endif
 
-#pragma pack(1)
-struct DateTime : public IStructToString
+#pragma pack(push, 1)
+struct XDateTime : public IStructToString
 {
 private:
     short year_;
@@ -142,7 +142,7 @@ private:
         }
     }
 
-    void adjust_from_timespan(const TimeSpan& span) { return adjust_from_timespan(span.total_seconds()); }
+    void adjust_from_timespan(const XTimeSpan& span) { return adjust_from_timespan(span.total_seconds()); }
     void adjust_from_timespan(int total_seconds)
     {
         int total_minutes = total_seconds / SECONDS_IN_MINUTE;
@@ -182,14 +182,14 @@ private:
     }
 
 public:
-    DateTime(short year = 2000, char month = 9, char day = 12, char hour = 12, char minute = 0, char second = 0)
+    XDateTime (short year = 2000, char month = 9, char day = 12, char hour = 12, char minute = 0, char second = 0)
         : year_(year), month_(month), day_(day), hour_(hour), minute_(minute), second_(second)
     {
         normalize();
     }
 
-    DateTime& set_datetime(const DateTime& other) { return set_datetime(other.year_, other.month_, other.day_, other.hour_, other.minute_, other.second_); }
-    DateTime& set_datetime(short year, char month, char day, char hour = 0, char minute = 0, char second = 0)
+    XDateTime & set_datetime(const XDateTime & other) { return set_datetime(other.year_, other.month_, other.day_, other.hour_, other.minute_, other.second_); }
+    XDateTime & set_datetime(short year, char month, char day, char hour = 0, char minute = 0, char second = 0)
     {
         year_ = year;
         month_ = month;
@@ -210,8 +210,8 @@ public:
     char minute() const { return minute_; }
     char second() const { return second_; }
 
-    void add_timespan(const TimeSpan& span)         { adjust_from_timespan(span.total_seconds()); }
-    void subtract_timespan(const TimeSpan& span)    { adjust_from_timespan(-span.total_seconds()); }
+    void add_timespan(const XTimeSpan& span)         { adjust_from_timespan(span.total_seconds()); }
+    void subtract_timespan(const XTimeSpan& span)    { adjust_from_timespan(-span.total_seconds()); }
 
     virtual std::string to_string() override
     {
@@ -227,36 +227,36 @@ public:
         return std::string(buffer);
     }
 
-    TimeSpan operator-(const DateTime& other) const
+    XTimeSpan operator-(const XDateTime & other) const
     {
         long long diff = this->to_epoch_seconds() - other.to_epoch_seconds();
-        return TimeSpan(static_cast<int>(diff));
+        return XTimeSpan(static_cast<int>(diff));
     }
 
-    DateTime& operator++()                          { adjust_from_timespan(1);          return *this; }
-    DateTime& operator--()                          { adjust_from_timespan(-1);         return *this; }
-    DateTime operator++(int)                        { DateTime temp = *this; ++(*this); return temp; }
-    DateTime operator--(int)                        { DateTime temp = *this; --(*this); return temp; }
+    XDateTime & operator++()                          { adjust_from_timespan(1);          return *this; }
+    XDateTime & operator--()                          { adjust_from_timespan(-1);         return *this; }
+    XDateTime  operator++(int)                        { XDateTime  temp = *this; ++(*this); return temp; }
+    XDateTime  operator--(int)                        { XDateTime  temp = *this; --(*this); return temp; }
 
-    DateTime operator+(const TimeSpan& span) const  { DateTime temp = *this; temp.add_timespan(span);       return temp; }
-    DateTime operator-(const TimeSpan& span) const  { DateTime temp = *this; temp.subtract_timespan(span);  return temp; }
-    DateTime& operator+=(const TimeSpan& span)      { add_timespan(span);                                   return *this; }
-    DateTime& operator-=(const TimeSpan& span)      { subtract_timespan(span);                              return *this; }
+    XDateTime  operator+(const XTimeSpan& span) const  { XDateTime  temp = *this; temp.add_timespan(span);       return temp; }
+    XDateTime  operator-(const XTimeSpan& span) const  { XDateTime  temp = *this; temp.subtract_timespan(span);  return temp; }
+    XDateTime & operator+=(const XTimeSpan& span)      { add_timespan(span);                                   return *this; }
+    XDateTime & operator-=(const XTimeSpan& span)      { subtract_timespan(span);                              return *this; }
 
-    DateTime operator+(int seconds) const           { return *this + TimeSpan(seconds); }
-    DateTime operator-(int seconds) const           { return *this - TimeSpan(seconds); }
-    DateTime& operator+=(int seconds)               { return *this += TimeSpan(seconds); }
-    DateTime& operator-=(int seconds)               { return *this -= TimeSpan(seconds); }
+    XDateTime  operator+(int seconds) const           { return *this + XTimeSpan(seconds); }
+    XDateTime  operator-(int seconds) const           { return *this - XTimeSpan(seconds); }
+    XDateTime & operator+=(int seconds)               { return *this += XTimeSpan(seconds); }
+    XDateTime & operator-=(int seconds)               { return *this -= XTimeSpan(seconds); }
 
-    DateTime& operator=(const DateTime& other)      { return set_datetime(other); }
+    XDateTime & operator=(const XDateTime & other)      { return set_datetime(other); }
 
-    bool operator<(const DateTime& other) const
+    bool operator<(const XDateTime & other) const
     {
         return
             std::tie(year_, month_, day_, hour_, minute_, second_) <
             std::tie(other.year_, other.month_, other.day_, other.hour_, other.minute_, other.second_);
     }
-    bool operator==(const DateTime& other) const
+    bool operator==(const XDateTime & other) const
     {
         return
             year_ == other.year_ &&
@@ -266,10 +266,10 @@ public:
             minute_ == other.minute_ &&
             second_ == other.second_;
     }
-    bool operator!=(const DateTime& other) const    { return !(*this == other); }
-    bool operator<=(const DateTime& other) const    { return *this < other || *this == other; }
-    bool operator>(const DateTime& other) const     { return !(*this <= other); }
-    bool operator>=(const DateTime& other) const    { return !(*this < other); }
+    bool operator!=(const XDateTime & other) const    { return !(*this == other); }
+    bool operator<=(const XDateTime & other) const    { return *this < other || *this == other; }
+    bool operator>(const XDateTime & other) const     { return !(*this <= other); }
+    bool operator>=(const XDateTime & other) const    { return !(*this < other); }
 };
 #pragma pack(pop)
 

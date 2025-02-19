@@ -19,9 +19,9 @@ class ExtMemTaskGroup
 public:
     ExtMemTaskGroup(
         XVar<std::string>& name,
-        XVar<unsigned char>& rpm,
-        XVar<unsigned char>& temperature,
-        XVar<unsigned short>& duration_ss,
+        XVar<short>& rpm,
+        XVar<short>& temperature,
+        XVar<short>& duration_ss,
         XVar<bool>& is_active_cooling,
         XVar<bool>& is_await_user_ok,
         XVar<bool>& is_stage_turned_on) :
@@ -35,9 +35,9 @@ public:
     {}
 
     XVar<std::string>& name;
-    XVar<unsigned char>& rpm;
-    XVar<unsigned char>& temperature;
-    XVar<unsigned short>& duration_ss;
+    XVar<short>& rpm;
+    XVar<short>& temperature;
+    XVar<short>& duration_ss;
     XVar<bool>& is_active_cooling;
     XVar<bool>& is_await_user_ok;
     XVar<bool>& is_stage_turned_on;
