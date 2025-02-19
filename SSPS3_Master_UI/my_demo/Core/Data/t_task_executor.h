@@ -330,7 +330,7 @@ public:
 
         if (new_task_started)
         {
-            last_1000ms_aim_left_ms = -1;
+            last_1000ms_aim_left_ms = 0;
             
             last_250ms_ms
                 = last_1000ms_in_proc_ms
@@ -539,7 +539,7 @@ public:
         // Если инструкция находится в очереди, переводим её в режим исполнения
         if (_curr_instruction->get_is_in_queue())
         {
-            last_1000ms_aim_left_ms = -1;
+            last_1000ms_aim_left_ms = 0;
             last_1000ms_in_proc_ms = current_ms;
             _curr_instruction->set_is_in_queue(false);
             _curr_instruction->set_is_in_process(true);
@@ -581,26 +581,26 @@ public:
 
         // Обработка температуры и таймеров для инструкции
         // Если установлен ONLY_UNTIL_CONDITION_MET – переход по достижении температуры (с допуском)
-        bool untill_condition_met = _curr_instruction->get_is_only_until_condition_met();
+        bool until_condition_met  = _curr_instruction->get_is_only_until_condition_met();
         short target_temp = _curr_instruction->temperature_C;
 
-        if (!untill_condition_met &&
+        if (!until_condition_met  &&
             abs(temperature_C_product - target_temp) <= temperature_condition_offset_C)
         {
-            // Обновляем таймеры для самих instruction, если не untill_condition_met
+            // Обновляем таймеры для самих instruction, если не until_condition_met 
             if (current_ms - last_1000ms_aim_left_ms >= 1000)
             {
-                if (last_1000ms_aim_left_ms != -1)
+                if (last_1000ms_aim_left_ms != 0)
                     instruction_duration_aim_left_ss_dec();
             
                 last_1000ms_aim_left_ms = current_ms;
             }
         }
 
-        // Если untill_condition_met и температура достигнута – завершаем инструкцию
-        // Есил !untill_condition_met и таймер duration_aim_left_ss <= 0 – завершаем инструкцию
-        if ((untill_condition_met && abs(temperature_C_product - target_temp) <= temperature_condition_offset_C) ||
-            (!untill_condition_met && _curr_instruction->duration_aim_left_ss <= 0))
+        // Если until_condition_met  и температура достигнута – завершаем инструкцию
+        // Есил !until_condition_met  и таймер duration_aim_left_ss <= 0 – завершаем инструкцию
+        if ((until_condition_met  && abs(temperature_C_product - target_temp) <= temperature_condition_offset_C) ||
+            (!until_condition_met  && _curr_instruction->duration_aim_left_ss <= 0))
         {
             // Поставим флаг как get_is_completed == 1 через set_is_completed(true)
             // оставив флаг get_is_in_process тоже как == 1.
