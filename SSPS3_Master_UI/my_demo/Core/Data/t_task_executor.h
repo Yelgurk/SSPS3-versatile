@@ -37,7 +37,7 @@ public:
     unsigned long critical_idle_ss;             // накопленное время простоя (сек)
     unsigned int critical_idle_count;           // счётчик срабатываний простоя
     XDateTime when_started_dt;                   // время старта работы
-    XDateTime last_iteration_dt;                 // время последней итерации update()
+    XDateTime last_iteration_dt;                 // время последней итерации controller()
     short temperature_condition_offset_C;       // допуск по температуре (например, ±5°C)
 
     enum TaskExecutorError
@@ -97,8 +97,8 @@ public:
         // Запускаем исполнение
         states = IS_RUNNING;
 
-        // Выполняем подготовку update(...) метода через сброс его статических таймеров и флагов
-        update(
+        // Выполняем подготовку controller(...) метода через сброс его статических таймеров и флагов
+        controller(
             _when_started_dt,
             true,
             true,
@@ -298,14 +298,26 @@ public:
         _executor_save();
     }
 
-    // Полностью реализованный update(), вызываемый каждые 250 мс (или немедленно, если execute_immediately==true)
+    bool update(XDateTime rt_dt,
+                bool have_water_in_water_jacket,
+                bool have_380V_power,
+                bool mixer_motor_crush,
+                bool is_fast_mixer_motor,
+                short temperature_C_product,
+                short temperature_C_water_jacket = -255,
+                bool execute_immediately = false)
+    {
+        //if (controller()) /***************************************************************************************/
+    }
+
+    // Полностью реализованный controller(), вызываемый каждые 250 мс (или немедленно, если execute_immediately==true)
     // Обратите внимание: массив инструкций передаётся извне
     // Возвращаемый bool - был ли исполнен обработчик по execute_immediately или через 250мс.
     // По факту возвращаемый bool будет == false, только во время простоя из-за таймера в методе
     // if (!execute_immediately && (current_ms - last_250ms_ms < 250)) {
     // return false;
     // }
-    bool update(XDateTime rt_dt,
+    bool controller(XDateTime rt_dt,
                 bool have_water_in_water_jacket,
                 bool have_380V_power,
                 bool mixer_motor_crush,
@@ -319,7 +331,7 @@ public:
         static unsigned long last_disable_ms = 0;
         unsigned long current_ms = millis();
 
-        // Используем static переменные для таймеров внутри update()
+        // Используем static переменные для таймеров внутри controller()
         static unsigned long last_250ms_ms                  = 0;
         static unsigned long last_1000ms_in_proc_ms         = 0;
         static unsigned long last_1000ms_aim_left_ms        = 0;
@@ -380,7 +392,7 @@ public:
         // однако из-за блока last_250ms_ms до данного кейса дойдём минимум 4 раза.
         // Этого достаточно, что бы не возникало пробем для контроля и исполнения
         // порядка инструкций. Однако если сеть была выкючена, заетм включии оборудование
-        // то при вызове update() будет обнаружено время простоя и обработано в 2 важных сценария:
+        // то при вызове controller() будет обнаружено время простоя и обработано в 2 важных сценария:
         // если > 5 и < 1800 (30мин), то сохраняем инфу;
         // если > 1800, то выеротно за такое длительное врем простояя молоко или иной продукт
         // уже испортились и мы не несём ответствености за это, посему завершаем программу
