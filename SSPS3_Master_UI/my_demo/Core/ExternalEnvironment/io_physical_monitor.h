@@ -143,6 +143,10 @@ public:
             case DigitalOutputRole::WATER_PUMP_RELAY:
                 this->change_digital_output_state(state, pin);
                 break;
+
+            case DigitalOutputRole::MIXER_FAST_MODE_RELAY:
+                this->change_digital_output_state(state, pin);
+                break;
             
             default:
                 set_output_states_all(false);

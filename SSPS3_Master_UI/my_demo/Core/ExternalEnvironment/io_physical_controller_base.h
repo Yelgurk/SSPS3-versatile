@@ -43,7 +43,7 @@ public:
         ANALOG_INPUT_END    = 0b00001111
     };
 
-    unsigned char const available_digital_out_pins = 4;
+    unsigned char const available_digital_out_pins = 5;
     enum DigitalOutputRole : unsigned char
     {
         HEATERS_RELAY           = 0,

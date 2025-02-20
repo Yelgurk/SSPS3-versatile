@@ -99,17 +99,7 @@ public:
         states = IS_RUNNING;
 
         // Выполняем подготовку controller(...) метода через сброс его статических таймеров и флагов
-        controller(
-            _when_started_dt,
-            true,
-            true,
-            false,
-            false,
-            0,
-            0,
-            false,
-            true // <--- и есть флаг сброса
-        );
+        controller(_when_started_dt, true, true); // последний true и есть флаг сброса
     }
 
     // Геттеры и сеттеры для флагов состояния
@@ -246,12 +236,21 @@ public:
 
         set_is_running(false);
         set_is_completed(true);
+        set_is_completed_with_error(false);
         _executor_save();
 
         // Выключение физических устройств:
         IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false, true);
         IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false, true);
         IOMonitor->set_motor_speed(0, false);
+
+        // Обрабатываем успешное завершение, например выводим на экран и сохраняем в логи (во внешнюю FRAM).
+        // Можно добавить синглтон или модифицировать текущий синглтон провайдер,
+        // куда можно добавить метод-обработчик передаваемых в него enum::TaskExecutorError ошибок
+        //------------------------------
+        // Добавить обработку завершения
+        //------------------------------
+        /*********************************************************************************************************************/
     }
 
     // Завершение с ошибкой
@@ -262,6 +261,7 @@ public:
         _instruction_save();
         
         set_is_running(false);
+        set_is_completed(true);
         set_is_completed_with_error(true);
         _executor_save();
         
@@ -269,6 +269,14 @@ public:
         IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false, true);
         IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false, true);
         IOMonitor->set_motor_speed(0, false);
+
+        // Обрабатываем ошибку, например выводим на экран и сохраняем в логи (во внешнюю FRAM).
+        // Можно добавить синглтон или модифицировать текущий синглтон провайдер,
+        // куда можно добавить метод-обработчик передаваемых в него enum::TaskExecutorError ошибок
+        //--------------------------
+        // Добавить обработку ошибок
+        //--------------------------
+        /*********************************************************************************************************************/
     }
     
     // Метод перехода к следующей инструкции (при подтверждении пользователем)
@@ -299,19 +307,20 @@ public:
         _executor_save();
     }
 
-    bool update(XDateTime rt_dt,
-                bool have_water_in_water_jacket,
-                bool have_380V_power,
-                bool mixer_motor_crush,
-                bool is_fast_mixer_motor,
-                short temperature_C_current,
-                short temperature_C_water_jacket = -255,
-                bool execute_immediately = false)
+    // Вызываемый извне, например где-нибудь в loop(){...}, обработчик,
+    // который можно нагрузить доп логикой, когда исполняется основная логика
+    // метода controller(...), что можно выявить относительно возвращаемого им true/false
+    bool update(XDateTime rt_dt, bool execute_immediately = false)
     {
-        //if (controller()) /***************************************************************************************/
+        //if (controller(rt_dt, execute_immediately, false))
+        //{
+        //    // to do ...
+        //}
+
+        return controller(rt_dt, execute_immediately, false);
     }
 
-    // Полностью реализованный controller(), вызываемый каждые 250 мс (или немедленно, если execute_immediately==true)
+    // Полностью реализованный controller(), исполняющий свою логику каждые 250 мс (или немедленно, если execute_immediately==true)
     // Возвращаемый bool - был ли исполнен обработчик по execute_immediately или через 250мс.
     // По факту возвращаемый bool будет == false, только во время простоя из-за таймера в методе
     // if (!execute_immediately && (current_ms - last_250ms_ms < 250)) {
@@ -347,6 +356,8 @@ public:
             any_pause_timer_is_active
                 = water_jacket_timer_is_active
                 = false;
+
+            IOMonitor->set_output_states_all(false);
 
             return false;
         }
@@ -448,11 +459,8 @@ public:
                 return true;
             }
 
-            if (is_on_pause_by_water_jacket_drain() && IOMonitor->get_input_state(DIN::WATER_JACKET_SIGNAL))
-                pause_by_water_jacket_drain(false);
-
-            if (is_on_pause_by_no_380v() && IOMonitor->get_input_state(DIN::V380_SIGNAL))
-                pause_by_no_380v(false);
+            pause_by_water_jacket_drain(!IOMonitor->get_input_state(DIN::WATER_JACKET_SIGNAL));
+            pause_by_no_380v(!IOMonitor->get_input_state(DIN::V380_SIGNAL));
 
             // если ошибки исправлены (два if case-а выше), но всё-равно стоим на паузе
             // значит, вероятно, мы ещё на последней вероятной паузе - по кнопке пользователя.
@@ -463,20 +471,14 @@ public:
                 // кроме кейса, когда have_water_in_water_jacket == false, ибо в таком случае как раз нужен набор воды.
                 // (физ. команды ниже – примеры)
 
-                /*************************************************************************************************/
-                // НЕ ЗАВЕРШЕНО ДЛЯ is_on_pause_by_water_jacket_drain
-                /*************************************************************************************************/
-                PhysicalController::instance()->turn_on_heaters(false);
-                PhysicalController::instance()->turn_on_water_jacket_valve(false);
-                PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
+                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false);
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, is_on_pause_by_water_jacket_drain());
+                IOMonitor->set_motor_speed(0, false);
 
                 return true;
             }
         }
-
-        // если уже не на паузе, то вот обнаружим, что счётчик ещё включен
-        // и просто обнуяем его
-        if (any_pause_timer_is_active)
+        else if (any_pause_timer_is_active)
         {
             any_pause_timer_is_active = false;
             any_pause_timer_start_ms = 0;
@@ -498,46 +500,32 @@ public:
         // не завершена, а значит дальше проверяем в реальном времени и доливаем воду в рубашку,
         // в ином сучае ставим программу как раз на паузу, в которой тоже будет доливаться вода в рубашку.
         // Итого: если воды нет И ЭТО НЕ ЭТАП НАБОРА ВОДЫ, то включаем клапан и запускаем 30-секундный таймер
-        if(!_curr_instruction->get_is_water_intake_step() && !have_water_in_water_jacket)
+        if(!_curr_instruction->get_is_water_intake_step())
         {
-            if (!water_jacket_timer_is_active)
+            if (!IOMonitor->get_input_state(DIN::WATER_JACKET_SIGNAL))
             {
-                water_jacket_timer_is_active = true;
-                water_jacket_timer_start_ms = current_ms;
+                if (!water_jacket_timer_is_active)
+                {
+                    water_jacket_timer_is_active = true;
+                    water_jacket_timer_start_ms = current_ms;
+                }
+
+                // Включаем клапан для набора воды
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, true);
+
+                if(current_ms - water_jacket_timer_start_ms >= 30000)
+                {
+                    // Если воды так и не появилось – переводим в паузу по сливу рубашки
+                    pause_by_water_jacket_drain(true);
+                    return true;
+                }
             }
-
-            // Включаем клапан для набора воды
-            PhysicalController::instance()->turn_on_water_jacket_valve(true);
-
-            if(current_ms - water_jacket_timer_start_ms >= 30000)
+            else if (water_jacket_timer_is_active)
             {
-                // Если воды так и не появилось – переводим в паузу по сливу рубашки
-                pause_by_water_jacket_drain(true);
-                return true;
-            }
-        }
+                water_jacket_timer_is_active = false;
+                water_jacket_timer_start_ms = 0;
 
-        // Если дошли до сюда, значит вода в рубашке есть, но мы смотрим, был ли запущен таймер,
-        // который информирует, что предыдущая итерцаия update использовала "долив" воды.
-        // Если да, то просто обнуляем.
-        if (have_water_in_water_jacket && water_jacket_timer_is_active)
-        {
-            water_jacket_timer_is_active = false;
-            water_jacket_timer_start_ms = 0;
-
-            if (_curr_instruction->get_is_active_cooling())
-            {
-                // Текущая инструкция с флагом "активное охлаждение", посему это может
-                // быть непосредственно этап самого охлаждения. На всякий сулчай
-                // не трогаем физический клапан набора воды, т.к. вероятно
-                // это будет контроллироваться дальше в коде
-
-                // ничего не делаем!
-            }
-            else
-            {   
-                // Если вода появилась – отключаем клапан и сбрасываем таймер
-                PhysicalController::instance()->turn_on_water_jacket_valve(false);
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
             }
         }
         
@@ -550,7 +538,6 @@ public:
         if (_curr_instruction->get_is_in_queue())
         {
             last_1000ms_aim_left_ms = 0;
-            last_1000ms_in_proc_ms = current_ms;
             _curr_instruction->set_is_in_queue(false);
             _curr_instruction->set_is_in_process(true);
             _instruction_save();
@@ -560,17 +547,24 @@ public:
         if (current_ms - last_1000ms_in_proc_ms >= 1000)
         {
             last_1000ms_in_proc_ms = current_ms;
-            instruction_in_process_ss_inc();
             _executor_save();
+            instruction_in_process_ss_inc();
         }
         
         // Логика для этапа набора воды
         if (_curr_instruction->get_is_water_intake_step())
         {
-            if (have_water_in_water_jacket)
+            IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false);
+            IOMonitor->set_motor_speed(
+                _curr_instruction->rot_per_min,
+                _curr_instruction->get_is_fast_mixer_mode_step()
+            );
+
+            // Если вода есть - закрываем клапан набора воды в рубашку
+            // и переходим ко следующей инструкции, либо заливаем дальше
+            if (IOMonitor->get_input_state(DIN::WATER_JACKET_SIGNAL))
             {
-                // Если вода есть - закрываем клапан набора воды в рубашку
-                PhysicalController::instance()->turn_on_water_jacket_valve(false);
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
                 
                 accept_instruction_as_completed_by_user();
                 return true;
@@ -578,24 +572,23 @@ public:
             else
             {
                 // Если воды нет – открываем клапан набора воды в рубашку
-                PhysicalController::instance()->turn_on_water_jacket_valve(true);
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, true);
 
                 return true;
             }
         }
         
         //--------------------------------------------------------------------
-        // Ключевой блок - контроль температуры, охаждения, оборотов,
-        // а так же ожиданияя подтверждения пользователя по необходимости
+        // Ключевой блок - контроль температуры, охлаждения, оборотов,
+        // а так же ожидания подтверждения пользователя по необходимости
         //--------------------------------------------------------------------
 
         // Обработка температуры и таймеров для инструкции
         // Если установлен ONLY_UNTIL_CONDITION_MET – переход по достижении температуры (с допуском)
         bool until_condition_met  = _curr_instruction->get_is_only_until_condition_met();
-        short target_temp = _curr_instruction->temperature_C;
+        short target_temp_С = _curr_instruction->temperature_C;
 
-        if (!until_condition_met  &&
-            abs(temperature_C_current - target_temp) <= temperature_condition_offset_C)
+        if (!until_condition_met && abs(temperature_C_current - target_temp_С) <= temperature_condition_offset_C)
         {
             // Обновляем таймеры для самих instruction, если не until_condition_met 
             if (current_ms - last_1000ms_aim_left_ms >= 1000)
@@ -607,10 +600,10 @@ public:
             }
         }
 
-        // Если until_condition_met  и температура достигнута – завершаем инструкцию
-        // Есил !until_condition_met  и таймер duration_aim_left_ss <= 0 – завершаем инструкцию
-        if ((until_condition_met  && abs(temperature_C_current - target_temp) <= temperature_condition_offset_C) ||
-            (!until_condition_met  && _curr_instruction->duration_aim_left_ss <= 0))
+        // Если until_condition_met  и температура достигнута           – завершаем инструкцию
+        // Есил !until_condition_met и таймер duration_aim_left_ss <= 0 – завершаем инструкцию
+        if ((until_condition_met  && abs(temperature_C_current - target_temp_С) <= temperature_condition_offset_C) ||
+            (!until_condition_met && _curr_instruction->duration_aim_left_ss    <= 0))
         {
             // Поставим флаг как get_is_completed == 1 через set_is_completed(true)
             // оставив флаг get_is_in_process тоже как == 1.
@@ -624,59 +617,68 @@ public:
             // указывает, что нам необходимо ждать кнопку подтверждения пользоватея - ожидаем
             if (_curr_instruction->get_is_await_user_accept_when_completed())
             {
-                // Тут логика удержания температуры и управление оборотами + есть флаги
-                PhysicalController:: ...
-                PhysicalController:: ...
-                PhysicalController:: ...
-
-                if (_curr_instruction->get_is_dont_rotate_on_user_await())
-                {   
-                    // Останавливаем мотор
-                    PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
-                    PhysicalController:: ...
-                    PhysicalController:: ...
-                }
+                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, temperature_C_current < target_temp_С);
+                IOMonitor->set_output_state(
+                    DOUT::WJACKET_RELAY,
+                    temperature_C_current > target_temp_С &&
+                    (_curr_instruction->get_is_active_cooling() ||
+                    _curr_instruction->get_is_last_step())
+                );
                 
+                if (_curr_instruction->get_is_dont_rotate_on_user_await())
+                    IOMonitor->set_motor_speed(0, false);
+                else
+                    IOMonitor->set_motor_speed(
+                        _curr_instruction->rot_per_min,
+                        _curr_instruction->get_is_fast_mixer_mode_step()
+                    );
+
                 // Ждём подтверждения от пользователя (метод accept_instruction_as_completed_by_user() вызывается извне)
+                //--------------------------------
+                // Добавить логику ожидания user-а
+                //--------------------------------
+                /*********************************************************************************************************************/
             }
             else // в ином случае просто завершаем этап
             {
                 accept_instruction_as_completed_by_user();
             }
+
             return true;
         }
-        else // Если не выполнены усовия, что бы считать, что даный этап закончен, то 
+        else // Если не выполнены усовия, что бы считать данный этап завершенным, то выполняем следующий кейс 
         {
             // Устанавливаем скорость, заданную в инструкции
-            PhysicalController::instance()->set_motor_rotation_speed_per_min(
-            //     _curr_instruction->rot_per_min,
-            //     is_fast_mixer_motor
-            // );
+            IOMonitor->set_motor_speed(
+                _curr_instruction->rot_per_min,
+                _curr_instruction->get_is_fast_mixer_mode_step()
+            );
             
             // Управление: если температура ниже – нагреваем
-            if (temperature_C_current < target_temp) 
+            if (temperature_C_current < target_temp_С) 
             {
                 // Включаем нагрев
-                PhysicalController::instance()->turn_on_heaters(true);
-                //PhysicalController::instance()->turn_on_water_jacket_valve(false); // Точно нужно явны выключать?
+                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, true);
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
             }
             else // Управление: если температура выше – охлаждаем (при флаге активного охлаждения)
-            if (temperature_C_current > target_temp) 
+            if (temperature_C_current > target_temp_С) 
             {
-                // При охлаждении – отключаем нагрев
-                PhysicalController::instance()->turn_on_heaters(false);
-
-                // При активнорм охлаждении - включаем клапан набора воды
-                if (_curr_instruction->get_is_active_cooling())
-                {
-                    PhysicalController::instance()->turn_on_water_jacket_valve(true);
-                }
+                // При охлаждении           – отключаем нагрев
+                // При активном охлаждении  – включаем клапан набора воды
+                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false);
+                IOMonitor->set_output_state(
+                    DOUT::WJACKET_RELAY,
+                    _curr_instruction->get_is_active_cooling() ||
+                    _curr_instruction->get_is_last_step()
+                );                
             }
             else // температура точно равна требуемой в инструкции - выкючаем всё
             {
-                PhysicalController::instance()->turn_on_heaters(false);
-                PhysicalController::instance()->turn_on_water_jacket_valve(false);
+                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false);
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
             }
+
             return true;
         }
     }

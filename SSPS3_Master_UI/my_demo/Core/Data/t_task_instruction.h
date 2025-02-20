@@ -84,6 +84,7 @@ struct TaskInstruction {
         set_is_in_queue(true);
     }
     
+    // WATER_INTAKE_STEP
     // Методы get/set для конфигурационных флагов
     bool get_is_water_intake_step() const { return configurations & WATER_INTAKE_STEP; }
     void set_is_water_intake_step(bool value) {
@@ -93,6 +94,7 @@ struct TaskInstruction {
             configurations &= ~WATER_INTAKE_STEP;
     }
 
+    // ONLY_UNTIL_CONDITION_MET
     bool get_is_only_until_condition_met() const { return configurations & ONLY_UNTIL_CONDITION_MET; }
     void set_is_only_until_condition_met(bool value) {
         if (value)
@@ -101,6 +103,7 @@ struct TaskInstruction {
             configurations &= ~ONLY_UNTIL_CONDITION_MET;
     }
 
+    // ACTIVE_COOLING
     bool get_is_active_cooling() const { return configurations & ACTIVE_COOLING; }
     void set_is_active_cooling(bool value) {
         if (value)
@@ -109,6 +112,7 @@ struct TaskInstruction {
             configurations &= ~ACTIVE_COOLING;
     }
 
+    // AWAIT_USER_ACCEPT
     bool get_is_await_user_accept_when_completed() const { return configurations & AWAIT_USER_ACCEPT; }
     void set_is_await_user_accept_when_completed(bool value) {
         if (value)
@@ -117,6 +121,7 @@ struct TaskInstruction {
             configurations &= ~AWAIT_USER_ACCEPT;
     }
 
+    // LAST_STEP
     bool get_is_last_step() const { return configurations & LAST_STEP; }
     void set_is_last_step(bool value) {
         if (value)
@@ -125,6 +130,8 @@ struct TaskInstruction {
             configurations &= ~LAST_STEP;
     }
     
+    // DONT_ROTATE_ON_PAUSE - не на паузе по ошибке, а на паузе во время ожидания подтверждения от
+    // пользователя, что этап завершён. Работает в связке с get_is_await_user_accept_when_completed()
     bool get_is_dont_rotate_on_user_await() const { return configurations & DONT_ROTATE_ON_PAUSE; }
     void set_is_dont_rotate_on_user_await(bool value) {
         if (value)
@@ -133,6 +140,7 @@ struct TaskInstruction {
             configurations &= ~DONT_ROTATE_ON_PAUSE;
     }
 
+    // IS_FAST_MIXER_MODE_STEP
     bool get_is_fast_mixer_mode_step() const { return configurations & IS_FAST_MIXER_MODE_STEP; }
     void set_is_fast_mixer_mode_step(bool value) {
         if (value)
