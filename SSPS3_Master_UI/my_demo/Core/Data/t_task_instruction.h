@@ -17,14 +17,15 @@ struct TaskInstruction {
 
     // Битовые маски для configurations
     enum ConfigBits {
-        WATER_INTAKE_STEP         = 1 << 0, // этап набора воды (набор воды, если её нет)
-        ONLY_UNTIL_CONDITION_MET  = 1 << 1, // выполнять только до достижения условия (температура)
-        ACTIVE_COOLING            = 1 << 2, // включать активное охлаждение, если температура выше
-        AWAIT_USER_ACCEPT         = 1 << 3, // требуется подтверждение пользователя для перехода
-        LAST_STEP                 = 1 << 4, // последняя инструкция (логика отличается – только AWAIT_USER_ACCEPT)
-        COOLING_AT_END            = 1 << 5, // (флаг для будущей логики, не участвует)
-        HEATING_AT_END            = 1 << 6, // (флаг для будущей логики, не участвует)
-        DONT_ROTATE_ON_PAUSE      = 1 << 7  // при паузе не вращать мотор, если и AWAIT_USER_ACCEPT установлено
+        WATER_INTAKE_STEP           = 1 << 0,   // этап набора воды (набор воды, если её нет)
+        ONLY_UNTIL_CONDITION_MET    = 1 << 1,   // выполнять только до достижения условия (температура)
+        ACTIVE_COOLING              = 1 << 2,   // включать активное охлаждение, если температура выше
+        AWAIT_USER_ACCEPT           = 1 << 3,   // требуется подтверждение пользователя для перехода
+        LAST_STEP                   = 1 << 4,   // последняя инструкция (логика отличается – только AWAIT_USER_ACCEPT)
+        DONT_ROTATE_ON_PAUSE        = 1 << 5,   // при паузе не вращать мотор, если и AWAIT_USER_ACCEPT установлено
+        IS_FAST_MIXER_MODE_STEP     = 1 << 6    // отправлять сигнал частотнику, что бы менял модель управления мотором на быструю
+        //COOLING_AT_END              = 1 << 6,   // (флаг для будущей логики, не участвует)
+        //HEATING_AT_END              = 1 << 7,   // (флаг для будущей логики, не участвует)
     };
 
     // Битовые маски для states
@@ -52,16 +53,18 @@ struct TaskInstruction {
               bool is_active_cooling = true,
               bool is_await_user_accept_when_completed = false,
               bool is_last_step = false,
-              bool is_cooling_at_the_end = false,
-              bool is_heating_at_the_end = false,
-              bool is_dont_rotate_on_user_await = false)
+              bool is_dont_rotate_on_user_await = false,
+              bool is_fast_mixer_mode_step = false
+              //bool is_cooling_at_the_end = false,
+              //bool is_heating_at_the_end = false,
+            )
     {
         strncpy(name, _name, sizeof(name) - 1);
         name[sizeof(name) - 1] = '\0';
         
         rot_per_min = _rot_per_min;
         temperature_C = _temperature_C;
-        duration_aim_ss = is_only_until_condition_met ? 0 : _duration_aim_ss;
+        duration_aim_ss = (is_only_until_condition_met || is_last_step) ? 0 : _duration_aim_ss;
         duration_aim_left_ss = duration_aim_ss;
         in_process_ss = 0;
         configurations = 0;
@@ -72,9 +75,11 @@ struct TaskInstruction {
         set_is_active_cooling(is_active_cooling);
         set_is_await_user_accept_when_completed(is_await_user_accept_when_completed);
         set_is_last_step(is_last_step);
-        set_is_cooling_at_the_end(is_cooling_at_the_end);
-        set_is_heating_at_the_end(is_heating_at_the_end);
         set_is_dont_rotate_on_user_await(is_dont_rotate_on_user_await);
+        set_is_fast_mixer_mode_step(is_fast_mixer_mode_step);
+
+        //set_is_cooling_at_the_end(is_cooling_at_the_end);
+        //set_is_heating_at_the_end(is_heating_at_the_end);
         
         set_is_in_queue(true);
     }
@@ -119,22 +124,6 @@ struct TaskInstruction {
         else
             configurations &= ~LAST_STEP;
     }
-
-    bool get_is_cooling_at_the_end() const { return configurations & COOLING_AT_END; }
-    void set_is_cooling_at_the_end(bool value) {
-        if (value)
-            configurations |= COOLING_AT_END;
-        else
-            configurations &= ~COOLING_AT_END;
-    }
-
-    bool get_is_heating_at_the_end() const { return configurations & HEATING_AT_END; }
-    void set_is_heating_at_the_end(bool value) {
-        if (value)
-            configurations |= HEATING_AT_END;
-        else
-            configurations &= ~HEATING_AT_END;
-    }
     
     bool get_is_dont_rotate_on_user_await() const { return configurations & DONT_ROTATE_ON_PAUSE; }
     void set_is_dont_rotate_on_user_await(bool value) {
@@ -143,6 +132,31 @@ struct TaskInstruction {
         else
             configurations &= ~DONT_ROTATE_ON_PAUSE;
     }
+
+    bool get_is_fast_mixer_mode_step() const { return configurations & IS_FAST_MIXER_MODE_STEP; }
+    void set_is_fast_mixer_mode_step(bool value) {
+        if (value)
+            configurations |= IS_FAST_MIXER_MODE_STEP;
+        else
+            configurations &= ~IS_FAST_MIXER_MODE_STEP;
+    }
+
+    
+    //bool get_is_cooling_at_the_end() const { return configurations & COOLING_AT_END; }
+    //void set_is_cooling_at_the_end(bool value) {
+    //    if (value)
+    //        configurations |= COOLING_AT_END;
+    //    else
+    //        configurations &= ~COOLING_AT_END;
+    //}
+    //
+    //bool get_is_heating_at_the_end() const { return configurations & HEATING_AT_END; }
+    //void set_is_heating_at_the_end(bool value) {
+    //    if (value)
+    //        configurations |= HEATING_AT_END;
+    //    else
+    //        configurations &= ~HEATING_AT_END;
+    //}
     
     // Методы get/set для состояний
     bool get_is_completed() const { return states & COMPLETED; }
@@ -183,7 +197,7 @@ struct TaskInstruction {
     unsigned long get_duration_aim_left_ss() const { return duration_aim_left_ss; }
     void decrease_duration_aim_left_ss()
     {
-        if (!get_is_only_until_condition_met())
+        if (!get_is_only_until_condition_met() && duration_aim_left_ss > 0)
             --duration_aim_left_ss;
         else
             duration_aim_left_ss = 0;

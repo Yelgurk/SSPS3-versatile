@@ -46,12 +46,12 @@ public:
     unsigned char const available_digital_out_pins = 4;
     enum DigitalOutputRole : unsigned char
     {
-        HEATERS_RELAY       = 0,
-        MIXER_RELAY         = 1,
-        WJACKET_RELAY       = 2,
-        WATER_PUMP_RELAY    = 3,
-        FREE_4              = 4,
-        DIGITAL_OUTPUT_END  = 0b00001111
+        HEATERS_RELAY           = 0,
+        MIXER_RELAY             = 1,
+        WJACKET_RELAY           = 2,
+        WATER_PUMP_RELAY        = 3,
+        MIXER_FAST_MODE_RELAY   = 4,
+        DIGITAL_OUTPUT_END      = 0b00001111
     };
 
     unsigned char const available_analog_out_pins = 1;

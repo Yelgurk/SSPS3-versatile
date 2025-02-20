@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include "./t_datetime.h"
 #include "./Provider/task_model_to_memory_provider.h"
-#include "../ExternalEnvironment/io_physical_controller.h"
+#include "../ExternalEnvironment/io_physical_monitor.h"
 
 #pragma pack(push, 1)
 struct TaskExecutor
@@ -249,9 +249,9 @@ public:
         _executor_save();
 
         // Выключение физических устройств:
-        IOController->set_output_state(DOUT::HEATERS_RELAY, false, true);
-        IOController->set_output_state(DOUT::WJACKET_RELAY, false, true);
-        PhysicalController::instance()->set_motor_rotation_speed_per_min(0, false);
+        IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false, true);
+        IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false, true);
+        IOMonitor->set_motor_speed(0, false);
     }
 
     // Завершение с ошибкой
@@ -266,9 +266,9 @@ public:
         _executor_save();
         
         // Выключение физических устройств:
-        PhysicalController::instance()->turn_on_heaters(false);
-        PhysicalController::instance()->turn_on_water_jacket_valve(false);
-        PhysicalController::instance()->set_motor_rotation_speed_per_min(0, false);
+        IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false, true);
+        IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false, true);
+        IOMonitor->set_motor_speed(0, false);
     }
     
     // Метод перехода к следующей инструкции (при подтверждении пользователем)
@@ -304,7 +304,7 @@ public:
                 bool have_380V_power,
                 bool mixer_motor_crush,
                 bool is_fast_mixer_motor,
-                short temperature_C_product,
+                short temperature_C_current,
                 short temperature_C_water_jacket = -255,
                 bool execute_immediately = false)
     {
@@ -312,21 +312,12 @@ public:
     }
 
     // Полностью реализованный controller(), вызываемый каждые 250 мс (или немедленно, если execute_immediately==true)
-    // Обратите внимание: массив инструкций передаётся извне
     // Возвращаемый bool - был ли исполнен обработчик по execute_immediately или через 250мс.
     // По факту возвращаемый bool будет == false, только во время простоя из-за таймера в методе
     // if (!execute_immediately && (current_ms - last_250ms_ms < 250)) {
     // return false;
     // }
-    bool controller(XDateTime rt_dt,
-                bool have_water_in_water_jacket,
-                bool have_380V_power,
-                bool mixer_motor_crush,
-                bool is_fast_mixer_motor,
-                short temperature_C_product,
-                short temperature_C_water_jacket = -255,
-                bool execute_immediately = false,
-                bool new_task_started = false)
+    bool controller(XDateTime rt_dt, bool execute_immediately = false, bool new_task_started = false)
     {
         // Если исполнитель не запущен – раз в 10 сек отключаем физические устройства
         static unsigned long last_disable_ms = 0;
@@ -365,11 +356,11 @@ public:
             if (current_ms - last_disable_ms >= 10000 || execute_immediately)
             {
                 // Подача команды на отключение каждые 10 сек на всякий случай:
-                PhysicalController::instance()->turn_on_heaters(false);
-                PhysicalController::instance()->turn_on_water_jacket_valve(false);
-                PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
-                last_disable_ms = current_ms;
-                
+                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false);
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
+                IOMonitor->set_motor_speed(0, false);
+
+                last_disable_ms = current_ms;                
                 return true;
             }
             else 
@@ -384,9 +375,10 @@ public:
         // Если один датчик даёт температуру, сохраняем его значение.
         // Если два датчика дают температуру, то ищем среднее арифметическое значение
         // между ((темп. продукта + темп. воды в рубашке) / 2 датчика - 1 градус) для чуть более агресивного нагрева
-        temperature_C_product = temperature_C_water_jacket == -255
-            ? temperature_C_product
-            : ((temperature_C_product + temperature_C_water_jacket) / 2) - 1;
+        short temperature_C_current
+            = IOMonitor->get_temperature_C_wjacket() == -255.f
+            ? IOMonitor->get_temperature_C_product()
+            : ((IOMonitor->get_temperature_C_product() + IOMonitor->get_temperature_C_wjacket()) / 2.f) - 1.f;
         
         // Вычисляем разницу между rt_dt и последней итерацией (в секундах)
         // если оборудование включено, то метод update будет вызван раз 400 в 1000мс
@@ -423,7 +415,7 @@ public:
         }
 
         // Проверка аварии мотора
-        if(mixer_motor_crush)
+        if(IOMonitor->get_input_state(DIN::MIXER_ERROR_SIGNAL))
         {
             confirm_as_completed_with_error(ErrorMixerCrash);
             return true;
@@ -456,10 +448,10 @@ public:
                 return true;
             }
 
-            if (is_on_pause_by_water_jacket_drain() && have_water_in_water_jacket)
+            if (is_on_pause_by_water_jacket_drain() && IOMonitor->get_input_state(DIN::WATER_JACKET_SIGNAL))
                 pause_by_water_jacket_drain(false);
 
-            if (is_on_pause_by_no_380v() && have_380V_power)
+            if (is_on_pause_by_no_380v() && IOMonitor->get_input_state(DIN::V380_SIGNAL))
                 pause_by_no_380v(false);
 
             // если ошибки исправлены (два if case-а выше), но всё-равно стоим на паузе
@@ -470,6 +462,10 @@ public:
                 // Если в паузе – останавливаем таймеры и физические устройства
                 // кроме кейса, когда have_water_in_water_jacket == false, ибо в таком случае как раз нужен набор воды.
                 // (физ. команды ниже – примеры)
+
+                /*************************************************************************************************/
+                // НЕ ЗАВЕРШЕНО ДЛЯ is_on_pause_by_water_jacket_drain
+                /*************************************************************************************************/
                 PhysicalController::instance()->turn_on_heaters(false);
                 PhysicalController::instance()->turn_on_water_jacket_valve(false);
                 PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
@@ -477,6 +473,7 @@ public:
                 return true;
             }
         }
+
         // если уже не на паузе, то вот обнаружим, что счётчик ещё включен
         // и просто обнуяем его
         if (any_pause_timer_is_active)
@@ -486,7 +483,7 @@ public:
         }
 
         // Проверка 380V
-        if(!have_380V_power)
+        if(!IOMonitor->get_input_state(DIN::V380_SIGNAL))
         {
             pause_by_no_380v(true);
             return true;
@@ -501,7 +498,7 @@ public:
         // не завершена, а значит дальше проверяем в реальном времени и доливаем воду в рубашку,
         // в ином сучае ставим программу как раз на паузу, в которой тоже будет доливаться вода в рубашку.
         // Итого: если воды нет И ЭТО НЕ ЭТАП НАБОРА ВОДЫ, то включаем клапан и запускаем 30-секундный таймер
-        if(!have_water_in_water_jacket && !_curr_instruction->get_is_water_intake_step())
+        if(!_curr_instruction->get_is_water_intake_step() && !have_water_in_water_jacket)
         {
             if (!water_jacket_timer_is_active)
             {
@@ -598,7 +595,7 @@ public:
         short target_temp = _curr_instruction->temperature_C;
 
         if (!until_condition_met  &&
-            abs(temperature_C_product - target_temp) <= temperature_condition_offset_C)
+            abs(temperature_C_current - target_temp) <= temperature_condition_offset_C)
         {
             // Обновляем таймеры для самих instruction, если не until_condition_met 
             if (current_ms - last_1000ms_aim_left_ms >= 1000)
@@ -612,7 +609,7 @@ public:
 
         // Если until_condition_met  и температура достигнута – завершаем инструкцию
         // Есил !until_condition_met  и таймер duration_aim_left_ss <= 0 – завершаем инструкцию
-        if ((until_condition_met  && abs(temperature_C_product - target_temp) <= temperature_condition_offset_C) ||
+        if ((until_condition_met  && abs(temperature_C_current - target_temp) <= temperature_condition_offset_C) ||
             (!until_condition_met  && _curr_instruction->duration_aim_left_ss <= 0))
         {
             // Поставим флаг как get_is_completed == 1 через set_is_completed(true)
@@ -657,14 +654,14 @@ public:
             // );
             
             // Управление: если температура ниже – нагреваем
-            if (temperature_C_product < target_temp) 
+            if (temperature_C_current < target_temp) 
             {
                 // Включаем нагрев
                 PhysicalController::instance()->turn_on_heaters(true);
                 //PhysicalController::instance()->turn_on_water_jacket_valve(false); // Точно нужно явны выключать?
             }
             else // Управление: если температура выше – охлаждаем (при флаге активного охлаждения)
-            if (temperature_C_product > target_temp) 
+            if (temperature_C_current > target_temp) 
             {
                 // При охлаждении – отключаем нагрев
                 PhysicalController::instance()->turn_on_heaters(false);
