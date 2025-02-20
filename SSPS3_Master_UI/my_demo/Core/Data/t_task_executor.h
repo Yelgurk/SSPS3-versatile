@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include "./t_datetime.h"
 #include "./Provider/task_model_to_memory_provider.h"
+#include "../ExternalEnvironment/io_physical_controller.h"
 
 #pragma pack(push, 1)
 struct TaskExecutor
@@ -248,9 +249,9 @@ public:
         _executor_save();
 
         // Выключение физических устройств:
-        // PhysicalController::instance()->turn_on_heaters(false);
-        // PhysicalController::instance()->turn_on_water_jacket_valve(false);
-        // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, false);
+        IOController->set_output_state(DOUT::HEATERS_RELAY, false, true);
+        IOController->set_output_state(DOUT::WJACKET_RELAY, false, true);
+        PhysicalController::instance()->set_motor_rotation_speed_per_min(0, false);
     }
 
     // Завершение с ошибкой
@@ -265,9 +266,9 @@ public:
         _executor_save();
         
         // Выключение физических устройств:
-        // PhysicalController::instance()->turn_on_heaters(false);
-        // PhysicalController::instance()->turn_on_water_jacket_valve(false);
-        // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, false);
+        PhysicalController::instance()->turn_on_heaters(false);
+        PhysicalController::instance()->turn_on_water_jacket_valve(false);
+        PhysicalController::instance()->set_motor_rotation_speed_per_min(0, false);
     }
     
     // Метод перехода к следующей инструкции (при подтверждении пользователем)
@@ -363,10 +364,10 @@ public:
         {
             if (current_ms - last_disable_ms >= 10000 || execute_immediately)
             {
-                // Пример вызова физических команд:
-                // PhysicalController::instance()->turn_on_heaters(false);
-                // PhysicalController::instance()->turn_on_water_jacket_valve(false);
-                // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
+                // Подача команды на отключение каждые 10 сек на всякий случай:
+                PhysicalController::instance()->turn_on_heaters(false);
+                PhysicalController::instance()->turn_on_water_jacket_valve(false);
+                PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
                 last_disable_ms = current_ms;
                 
                 return true;
@@ -469,9 +470,9 @@ public:
                 // Если в паузе – останавливаем таймеры и физические устройства
                 // кроме кейса, когда have_water_in_water_jacket == false, ибо в таком случае как раз нужен набор воды.
                 // (физ. команды ниже – примеры)
-                // PhysicalController::instance()->turn_on_heaters(false);
-                // PhysicalController::instance()->turn_on_water_jacket_valve(false);
-                // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
+                PhysicalController::instance()->turn_on_heaters(false);
+                PhysicalController::instance()->turn_on_water_jacket_valve(false);
+                PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
 
                 return true;
             }
@@ -509,7 +510,7 @@ public:
             }
 
             // Включаем клапан для набора воды
-            // PhysicalController::instance()->turn_on_water_jacket_valve(true);
+            PhysicalController::instance()->turn_on_water_jacket_valve(true);
 
             if(current_ms - water_jacket_timer_start_ms >= 30000)
             {
@@ -539,7 +540,7 @@ public:
             else
             {   
                 // Если вода появилась – отключаем клапан и сбрасываем таймер
-                // PhysicalController::instance()->turn_on_water_jacket_valve(false);
+                PhysicalController::instance()->turn_on_water_jacket_valve(false);
             }
         }
         
@@ -572,7 +573,7 @@ public:
             if (have_water_in_water_jacket)
             {
                 // Если вода есть - закрываем клапан набора воды в рубашку
-                // PhysicalController::instance()->turn_on_water_jacket_valve(false);
+                PhysicalController::instance()->turn_on_water_jacket_valve(false);
                 
                 accept_instruction_as_completed_by_user();
                 return true;
@@ -580,7 +581,7 @@ public:
             else
             {
                 // Если воды нет – открываем клапан набора воды в рубашку
-                // PhysicalController::instance()->turn_on_water_jacket_valve(true);
+                PhysicalController::instance()->turn_on_water_jacket_valve(true);
 
                 return true;
             }
@@ -627,16 +628,16 @@ public:
             if (_curr_instruction->get_is_await_user_accept_when_completed())
             {
                 // Тут логика удержания температуры и управление оборотами + есть флаги
-                // PhysicalController:: ...
-                // PhysicalController:: ...
-                // PhysicalController:: ...
+                PhysicalController:: ...
+                PhysicalController:: ...
+                PhysicalController:: ...
 
                 if (_curr_instruction->get_is_dont_rotate_on_user_await())
                 {   
                     // Останавливаем мотор
-                    // PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
-                    // PhysicalController:: ...
-                    // PhysicalController:: ...
+                    PhysicalController::instance()->set_motor_rotation_speed_per_min(0, is_fast_mixer_motor);
+                    PhysicalController:: ...
+                    PhysicalController:: ...
                 }
                 
                 // Ждём подтверждения от пользователя (метод accept_instruction_as_completed_by_user() вызывается извне)
@@ -650,7 +651,7 @@ public:
         else // Если не выполнены усовия, что бы считать, что даный этап закончен, то 
         {
             // Устанавливаем скорость, заданную в инструкции
-            // PhysicalController::instance()->set_motor_rotation_speed_per_min(
+            PhysicalController::instance()->set_motor_rotation_speed_per_min(
             //     _curr_instruction->rot_per_min,
             //     is_fast_mixer_motor
             // );
@@ -659,24 +660,25 @@ public:
             if (temperature_C_product < target_temp) 
             {
                 // Включаем нагрев
-                // PhysicalController::instance()->turn_on_heaters(true);
-                //// PhysicalController::instance()->turn_on_water_jacket_valve(false); // Точно нужно явны выключать?
+                PhysicalController::instance()->turn_on_heaters(true);
+                //PhysicalController::instance()->turn_on_water_jacket_valve(false); // Точно нужно явны выключать?
             }
             else // Управление: если температура выше – охлаждаем (при флаге активного охлаждения)
             if (temperature_C_product > target_temp) 
             {
                 // При охлаждении – отключаем нагрев
-                // PhysicalController::instance()->turn_on_heaters(false);
+                PhysicalController::instance()->turn_on_heaters(false);
+
                 // При активнорм охлаждении - включаем клапан набора воды
                 if (_curr_instruction->get_is_active_cooling())
                 {
-                    // PhysicalController::instance()->turn_on_water_jacket_valve(true);
+                    PhysicalController::instance()->turn_on_water_jacket_valve(true);
                 }
             }
             else // температура точно равна требуемой в инструкции - выкючаем всё
             {
-                // PhysicalController::instance()->turn_on_heaters(false);
-                // PhysicalController::instance()->turn_on_water_jacket_valve(false);
+                PhysicalController::instance()->turn_on_heaters(false);
+                PhysicalController::instance()->turn_on_water_jacket_valve(false);
             }
             return true;
         }

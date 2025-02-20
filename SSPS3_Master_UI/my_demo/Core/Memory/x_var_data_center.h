@@ -27,14 +27,6 @@ private:
     {
         TestStore = std::make_unique<ExtMemTaskCluster>();
 
-                //e_settings_task_names_array      
-                //e_settings_task_RPMs_array             
-                //e_settings_task_tempCs_array           
-                //e_settings_task_ss_durations_array     
-                //e_settings_task_is_active_cooling_array 
-                //e_settings_task_is_user_ok_cooling_array
-                //e_ettings_task_is_step_turned_on_array  
-
         uint8_t i = 0;
 
         TestStore.get()->create_page(TV_1_page_name);

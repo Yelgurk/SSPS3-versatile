@@ -88,6 +88,10 @@ protected:
         return (_bit_family & (1 << _index)) != 0;
     }
 
+    bool _digital_input_get_bit(unsigned char _index) {
+        return _digital_io_signal_get_bit(_digital_input, _index);
+    }
+
     void _digital_io_signal_change_bit(unsigned char& _bit_family, unsigned char _index, bool _new_state)
     {
         if (_new_state)
@@ -110,7 +114,7 @@ protected:
     }
 
 public:
-    static IOPhysicalControllerBase* instance()
+    static IOPhysicalControllerBase* instance_base()
     {
         static IOPhysicalControllerBase inst;
         return &inst;
@@ -188,6 +192,12 @@ public:
                     handler_pair.second(new_state);
             }
         }
+    }
+
+    void change_digital_output_states_all(bool new_state)
+    {
+        for (unsigned char index = 0; index < available_digital_out_pins; index++)
+            change_digital_output_state(new_state, index);
     }
 
     void change_analog_output_state(short new_value, unsigned char pin_enum)
