@@ -3,13 +3,62 @@
 #define LIQUID_DISPENSER_H
 
 #include <Arduino.h>
+#include <functional>
 #include "../ExternalEnvironment/io_physical_monitor.h"
+
+typedef std::function<void(float)>          OnTargetValueLitresFuncHandler;
+typedef std::function<void(unsigned long)>  OnTargetValueTimerFuncHandler;
+typedef std::function<void(bool)>           OnDispensingDoneHandler;
 
 class LiquidDispenser
 {
 private:
     LiquidDispenser() 
     {}
+
+    OnTargetValueLitresFuncHandler  OnValueLitresChanged;
+    OnTargetValueLitresFuncHandler  OnValueLitresSelected;
+    OnTargetValueTimerFuncHandler   OnValueTimerChanged;
+    OnTargetValueTimerFuncHandler   OnValueTimerSelected;
+    OnDispensingDoneHandler         OnDispensingDone;
+
+    // Настраиваемые задержки (в мс)
+    unsigned long _start_delay_ms           = 2000; // задержка перед стартом, если инициатор раздачи - кнопка
+    unsigned long _idle_delay_ms            = 0;    // задержка ожидания перед завершением, когда инициатор отпущен
+    bool _start_delay_done                  = false;
+
+    // Состояния процесса
+    bool _is_inited             = false;
+    bool _is_running            = false;
+    
+    // Таймеры (в мс)
+    unsigned long _timer_init_time                  = 0;
+    unsigned long _timer_last_litres_update_time    = 0;
+    unsigned long _timer_last_stopwatch_update_time = 0;
+    unsigned long _timer_idle_on_start_time         = 0;
+
+    // Лимиты для дозации
+    float _target_limit_flow_value_ml   = 30000.f; // По дефолту максы 30 литров (30000 миллилитров) на раздачу
+    float _target_limit_flow_timer_ss   = 60 * 10; // По дефолту максы 10 минут (60 сек * 10 мин)
+
+    // Зарегистрированые переменные (независимо от состояния работы)
+    float _registered_value                 = 0;
+    float _registered_flow_rate_ml_per_ss   = 0;
+    bool _registered_is_timer_mode          = false;
+
+    // Параметры раздачи
+    float _target_value                 = 0;        // заданное количество (в ml или сек)
+    float _target_remaining_value       = 0;        // оставшееся количество для раздачи
+    float _target_flow_rate_ml_per_ms   = 0;
+    bool _target_is_timer_mode          = false;    // true, если режим таймера (value в сек), false – режим по мл
+
+    // Для отслеживания переходов состояния инициатора-кнопки
+    // _initiated_by_both: нужно для случаев, когда курок на пистолете раздатчсике поломался, его заклинило
+    // в таком случае мы берём за модель поведения _initiated_by_button, игнорируя _initiated_by_pistol
+    bool _actual_btn_state      = false;
+    bool _initiated_by_pistol   = false;
+    bool _initiated_by_button   = false;
+    bool _initiated_by_both     = false;
 
     // Включает насос через IOMonitor
     void _start_pump() {
@@ -33,49 +82,9 @@ private:
         _is_inited = false;
         _is_running = false;
 
-        if (successful)
-        {
-            // Делаем что-то, если ок
-        }
-        else
-        {
-            // делаем что-то, если не ок
-        }
+        if (OnDispensingDone)
+            OnDispensingDone(successful);
     }
-
-    // Настраиваемые задержки (в мс)
-    unsigned long _start_delay_ms           = 2000; // задержка перед стартом, если инициатор раздачи - кнопка
-    unsigned long _idle_delay_ms            = 0;    // задержка ожидания перед завершением, когда инициатор отпущен
-    bool _start_delay_done                  = false;
-
-    // Состояния процесса
-    bool _is_inited             = false;
-    bool _is_running            = false;
-    
-    // Таймеры (в мс)
-    unsigned long _timer_init_time                  = 0;
-    unsigned long _timer_last_litres_update_time    = 0;
-    unsigned long _timer_last_stopwatch_update_time = 0;
-    unsigned long _timer_idle_on_start_time         = 0;
-
-    // Зарегистрированые переменные (независимо от состояния работы)
-    float _registered_value                 = 0;
-    float _registered_flow_rate_ml_per_ss   = 0;
-    bool _registered_is_timer_mode          = false;         
-
-    // Параметры раздачи
-    float _target_value                 = 0;        // заданное количество (в ml или сек)
-    float _target_remaining_value       = 0;        // оставшееся количество для раздачи
-    float _target_flow_rate_ml_per_ms   = 0;
-    bool _target_is_timer_mode          = false;    // true, если режим таймера (value в сек), false – режим по мл
-
-    // Для отслеживания переходов состояния инициатора-кнопки
-    // _initiated_by_both: нужно для случаев, когда курок на пистолете раздатчсике поломался, его заклинило
-    // в таком случае мы берём за модель поведения _initiated_by_button, игнорируя _initiated_by_pistol
-    bool _actual_btn_state      = false;
-    bool _initiated_by_pistol   = false;
-    bool _initiated_by_button   = false;
-    bool _initiated_by_both     = false;
 
 public:
     static LiquidDispenser* instance()
@@ -93,12 +102,44 @@ public:
         _actual_btn_state = is_btn_pressed;
     }
 
+    void set_limit_flow_ml(float max_ml) {
+        _target_limit_flow_value_ml = max_ml;
+    }
+
+    void set_limit_flow_ss(float max_ss) {
+        _target_limit_flow_timer_ss = max_ss;
+    }
+
+    void set_handler_on_value_litres_changed(OnTargetValueLitresFuncHandler handler) {
+        OnValueLitresChanged = handler;
+    }
+    
+    void set_handler_on_value_litres_selected(OnTargetValueLitresFuncHandler handler) {
+        OnValueLitresSelected = handler;
+    }
+
+    void set_handler_on_value_timer_changed(OnTargetValueTimerFuncHandler handler) {
+        OnValueTimerChanged = handler;
+    }
+
+    void set_handler_on_value_timer_selected(OnTargetValueTimerFuncHandler handler) {
+        OnValueTimerSelected = handler;
+    }
+
+    void set_handler_on_dispensing_done(OnDispensingDoneHandler handler) {
+        OnDispensingDone = handler;
+    }
+
     // Регистрирует параметры раздачи, если процесс не запущен (и не инициализирован)
-    void register_dispense_choise(unsigned long value, float pump_power_L_per_min, bool is_timer_ss)
+    void register_dispense_choise(float value, float pump_power_L_per_min, bool is_timer_ss)
     {
-        _registered_value               = value;
         _registered_flow_rate_ml_per_ss = (pump_power_L_per_min * 1000.f) / 60000.f;
         _registered_is_timer_mode       = is_timer_ss;
+        
+        if (is_timer_ss)
+            _registered_value = value >= _target_limit_flow_timer_ss ? value : _target_limit_flow_timer_ss;
+        else
+            _registered_value = value >= _target_limit_flow_value_ml ? value : _target_limit_flow_value_ml;
         
         // Если проинициализировано, но не начата работа насоса
         // значит мы запускаемся по кнопке и отрабатывает таймер
@@ -136,6 +177,18 @@ public:
         _timer_idle_on_start_time           = (_initiated_by_pistol && !_initiated_by_both) ? 0 : _start_delay_ms;
     
         _is_inited = true;
+
+        if (_target_is_timer_mode && OnValueTimerSelected && OnValueTimerChanged)
+        {
+            OnValueTimerSelected(static_cast<unsigned long>(_target_value));
+            OnValueTimerChanged(static_cast<unsigned long>(_target_value));
+        }
+        
+        if (!_target_is_timer_mode && OnValueLitresSelected && OnValueLitresChanged)
+        {
+            OnValueLitresSelected(_target_value);
+            OnValueLitresChanged(_target_value);
+        }
     }
 
     // Задержка старта (в мс) для инициализации по кнопке
@@ -228,8 +281,15 @@ public:
                 if (current_time - _timer_last_stopwatch_update_time >= 1000)
                 {
                     _timer_last_stopwatch_update_time = current_time;
-                    _target_remaining_value--;
+
+                    if (_target_remaining_value >= 1.f)
+                        _target_remaining_value--;
+                    else
+                        _target_remaining_value = 0;
                 }
+
+                if (OnValueTimerChanged)
+                    OnValueTimerChanged(static_cast<unsigned long>(_target_remaining_value));
             }
             else
             {
@@ -243,6 +303,9 @@ public:
                     dispensed = _target_remaining_value;
 
                 _target_remaining_value -= dispensed;
+
+                if (OnValueLitresChanged)
+                    OnValueLitresChanged(_target_remaining_value);
             }
 
             if (_target_remaining_value <= 0.f)
