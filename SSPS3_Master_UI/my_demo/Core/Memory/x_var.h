@@ -10,11 +10,11 @@
     #include "mem_i2c_fm24gl64.h"
 #endif
 
-#define XStorage                    XVarDataCenter::get()
-#define XStorageTaskPage(value)     XVarDataCenter::get()->TestStore.get()->select_page(value)
-#define XStorageTaskGroup(value)    XVarDataCenter::get()->TestStore.get()->select_group(value)
-#define XStorageTaskGet             XVarDataCenter::get()->TestStore.get()->get_group()
-#define XStorageDispatcher          ExtMemDevicesDispatcher::instance()
-#define XAllocator                  XVarAllocator::instance()
+#define XStorage                        XVarDataCenter::get()
+#define XStorageTaskPage(value)         XVarDataCenter::get()->c_task_cluster.get()->select_page(value)
+#define XStorageTaskInstruction(value)  XVarDataCenter::get()->c_task_cluster.get()->select_instruction(value)
+#define XStorageTaskInstructionActive   XVarDataCenter::get()->c_task_cluster.get()->get_instruction()
+#define XStorageDispatcher              MemDevicesDispatcher::instance()
+#define XAllocator                      XVarAllocator::instance()
 
 #endif // !X_VAR_H

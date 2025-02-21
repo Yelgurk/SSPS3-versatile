@@ -44,21 +44,6 @@ void setup_watchdogs();
 #include "../my_demo/Core/Memory/x_var.h"
 #include "../my_demo/Core/MCUsCommunication/MQTT/mqtt_i2c.h"
 
-void _display_10_x_10_eeprom()
-{
-    for (unsigned char col = 0; col < 10; col++)
-    {
-        for (unsigned char row = 0; row < 10; row++)
-        {
-            unsigned char _address = col * 10 + row;
-            char x = XStorageDispatcher->get_i_read_write()->byte_read(_address);
-            Serial.printf("%03d ", x);
-        }
-        Serial.println();
-    }
-    Serial.println();
-}
-
 #endif
 /******************************************************************************************/
 void setup()

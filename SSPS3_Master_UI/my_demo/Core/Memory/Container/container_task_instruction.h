@@ -1,6 +1,6 @@
 ﻿#pragma once
-#ifndef EXT_MEM_TASK_GROUP_H
-#define EXT_MEM_TASK_GROUP_H
+#ifndef CONTAINER_TASK_INSTRUCTION_H
+#define CONTAINER_TASK_INSTRUCTION_H
 
 #ifdef DEV_SSPS3_RUN_ON_PLC
     #include <string>
@@ -14,10 +14,10 @@
     #include "x_var_T_arithmetic.h"
 #endif
 
-class ExtMemTaskGroup
+class ContainerTaskInstruction
 {
 public:
-    ExtMemTaskGroup(
+    ContainerTaskInstruction(
         XVar<std::string>& name,
         XVar<short>& rpm,
         XVar<short>& temperature,
@@ -42,7 +42,7 @@ public:
     XVar<bool>& is_await_user_ok;
     XVar<bool>& is_stage_turned_on;
 
-    void refresh_ui()
+    void load_into_ui()
     {
         name                .load_value_into_ui();
         rpm                 .load_value_into_ui();
@@ -54,4 +54,4 @@ public:
     }
 };
 
-#endif // !EXT_MEM_TASK_GROUP_H
+#endif // !CONTAINER_TASK_INSTRUCTION_H

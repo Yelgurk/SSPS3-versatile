@@ -3,10 +3,10 @@
 #define X_VAR_FRAM_H
 
 #ifdef DEV_SSPS3_RUN_ON_PLC
-    #include "./External/ext_mem_defines.h"
+    #include "./Device/mem_defines.h"
     #include "./x_var_extension.h"
 #else
-    #include "ext_mem_defines.h"
+    #include "mem_defines.h"
     #include "x_var_extension.h"
 #endif
 
@@ -24,7 +24,7 @@ private:
 protected:
     unsigned char*  _buffer_ptr()               { return _is_local_val ? NULL : _t_value_with_crc_buffer; }
     unsigned char*  _buffer_crc_ptr()           { return _is_local_val ? NULL : _buffer_ptr() + _t_value_with_crc_size - 1; }
-    unsigned char   _calc_current_value_crc()   { return _is_local_val ? EXT_MEM_BYTE_ERR : CALC_CRC(_buffer_ptr(), get_value_size()); }
+    unsigned char   _calc_current_value_crc()   { return _is_local_val ? MEM_BYTE_ERR : CALC_CRC(_buffer_ptr(), get_value_size()); }
 
     void            _push_crc(unsigned char crc)
     {

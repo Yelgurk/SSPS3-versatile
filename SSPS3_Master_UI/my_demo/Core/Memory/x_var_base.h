@@ -3,13 +3,13 @@
 #define X_VAR_BASE_H
 
 #ifdef DEV_SSPS3_RUN_ON_PLC
-    #include "./External/ext_mem_dispatcher.h"
+    #include "./Device/mem_dispatcher.h"
     #include "./x_var_extension.h"
     #include "./x_var_fram.h"
     #include "./x_var_mvc_string.h"
     #include "./x_var_mvc_obj.h"
 #else
-    #include "ext_mem_dispatcher.h"
+    #include "mem_dispatcher.h"
     #include "x_var_extension.h"
     #include "x_var_fram.h"
     #include "x_var_mvc_string.h"
@@ -69,7 +69,7 @@ protected:
 
             XVarFram::_push_crc(XVarFram::_calc_current_value_crc());
 
-            ExtMemDevicesDispatcher::instance()->write(
+            MemDevicesDispatcher::instance()->write(
                 XVarFram::get_address(),
                 XVarFram::_buffer_ptr(),
                 XVarFram::get_value_with_crc_size()
@@ -98,7 +98,7 @@ public:
     virtual void load_from_ext_mem() override
     {
         if (!XVarFram::get_is_local_val() &&
-            ExtMemDevicesDispatcher::instance()->read(
+            MemDevicesDispatcher::instance()->read(
                 XVarFram::get_address(),
                 XVarFram::_buffer_ptr(),
                 XVarFram::get_value_with_crc_size()
@@ -132,7 +132,7 @@ public:
 
     void clear_ext_mem_area(unsigned char filler = 0x00) override
     {
-        ExtMemDevicesDispatcher::instance()->fill(
+        MemDevicesDispatcher::instance()->fill(
             XVarFram::get_address(),
             filler,
             XVarFram::get_value_with_crc_size()

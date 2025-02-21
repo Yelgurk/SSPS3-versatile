@@ -3,13 +3,13 @@
 #define X_VAR_DATA_CENTER_H
 
 #ifdef DEV_SSPS3_RUN_ON_PLC
-    #include "./External/ext_mem_task_cluster.h"
+    #include "./Container/container_task_cluster.h"
     #include "./x_var_array.h"
-    #include "../Data/t_task_executor.h"
+    #include "../BusinessLogic/task_executor.h"
 #else
-    #include "ext_mem_task_cluster.h"
+    #include "container_task_cluster.h"
     #include "x_var_array.h"
-    #include "t_task_executor.h"
+    #include "task_executor.h"
 #endif
 
 class XVarDataCenter
@@ -25,49 +25,49 @@ private:
 
     XVarDataCenter()
     {
-        TestStore = std::make_unique<ExtMemTaskCluster>();
+        c_task_cluster = std::make_unique<ContainerTaskCluster>();
 
         uint8_t i = 0;
 
-        TestStore.get()->create_page(TV_1_page_name);
+        c_task_cluster.get()->create_page(e_array_settings_task_names[0]);
         for (; i < 3; i++)
         {
-            TestStore.get()->get_page()->push(
-                e_settings_task_names_array[i],
-                e_settings_task_RPMs_array[i],
-                e_settings_task_tempCs_array[i],
-                e_settings_task_ss_durations_array[i],
-                e_settings_task_is_active_cooling_array[i],
-                e_settings_task_is_user_ok_cooling_array[i],
-                e_ettings_task_is_step_turned_on_array[i]
+            c_task_cluster.get()->get_page()->push(
+                e_array_settings_instruction_names[i],
+                e_array_settings_task_RPMs[i],
+                e_array_settings_task_tempCs[i],
+                e_array_settings_task_ss_durations[i],
+                e_array_settings_task_is_active_cooling[i],
+                e_array_settings_task_is_user_ok_cooling[i],
+                e_array_settings_task_is_step_turned_on[i]
             );
         }
 
-        TestStore.get()->create_page(TV_2_page_name);
+        c_task_cluster.get()->create_page(e_array_settings_task_names[1]);
         for (; i < 5; i++)
         {
-            TestStore.get()->get_page()->push(
-                e_settings_task_names_array[i],
-                e_settings_task_RPMs_array[i],
-                e_settings_task_tempCs_array[i],
-                e_settings_task_ss_durations_array[i],
-                e_settings_task_is_active_cooling_array[i],
-                e_settings_task_is_user_ok_cooling_array[i],
-                e_ettings_task_is_step_turned_on_array[i]
+            c_task_cluster.get()->get_page()->push(
+                e_array_settings_instruction_names[i],
+                e_array_settings_task_RPMs[i],
+                e_array_settings_task_tempCs[i],
+                e_array_settings_task_ss_durations[i],
+                e_array_settings_task_is_active_cooling[i],
+                e_array_settings_task_is_user_ok_cooling[i],
+                e_array_settings_task_is_step_turned_on[i]
             );
         }
 
-        TestStore.get()->create_page(TV_3_page_name);
+        c_task_cluster.get()->create_page(e_array_settings_task_names[2]);
         for (; i < 6; i++)
         {
-            TestStore.get()->get_page()->push(
-                e_settings_task_names_array[i],
-                e_settings_task_RPMs_array[i],
-                e_settings_task_tempCs_array[i],
-                e_settings_task_ss_durations_array[i],
-                e_settings_task_is_active_cooling_array[i],
-                e_settings_task_is_user_ok_cooling_array[i],
-                e_ettings_task_is_step_turned_on_array[i]
+            c_task_cluster.get()->get_page()->push(
+                e_array_settings_instruction_names[i],
+                e_array_settings_task_RPMs[i],
+                e_array_settings_task_tempCs[i],
+                e_array_settings_task_ss_durations[i],
+                e_array_settings_task_is_active_cooling[i],
+                e_array_settings_task_is_user_ok_cooling[i],
+                e_array_settings_task_is_step_turned_on[i]
             );
         }
 
@@ -100,41 +100,30 @@ public:
     1 lvl prefix:
         e_... - placed in external memory (like i2c device fm24cl64)
         l_... - not allocated in ext memory. Only in RAM
+        c_... - local container for external far-s
 
     2 lvl prefix:
         ..._s_... - system value, which ones is used for configuration any sensors
         ..._a_... - admin value, whuch ones set plc/product behaviour             
         ...       - without prefix. Just any template/task vars                   
 */
-    //XVar<DataStageTemplate> TestVarTempl1;
-
     XVar<std::string> Startup_checksum = _init<std::string>("Krugley Maxim 12.09");
 
-    XVarArray<short, 3>    TV_short_arr{ 3, 3, 3 };
-
-    XVar<short>& TestVar1 = _init<short>(0);
-    XVar<short>& TestVar2 = _init<short>(0);
-    XVar<short>& TestVar3 = _init<short>(0);
-
-    XVar<std::string>&    TV_1_page_name          = _init<std::string>("page 1");
-    XVar<std::string>&    TV_2_page_name          = _init<std::string>("page 2");
-    XVar<std::string>&    TV_3_page_name          = _init<std::string>("page 3");
-
-    XVarArray<std::string, 6> e_settings_task_names_array       { "templ 1", "templ 2", "templ 3", "templ 4", "templ 5", "templ 6" };
-    XVarArray<short, 6> e_settings_task_RPMs_array              { 2, 4, 6, 80, 100, 200 };
-    XVarArray<short, 6> e_settings_task_tempCs_array            { 20, 30, 40, 50, 60, 70 };
-    XVarArray<short, 6> e_settings_task_ss_durations_array      { 100, 120, 140, 160, 180, 200 };
-    XVarArray<bool, 6> e_settings_task_is_active_cooling_array  { true, true, false, false, true, true };
-    XVarArray<bool, 6> e_settings_task_is_user_ok_cooling_array { true, true, false, false, true, true };
-    XVarArray<bool, 6> e_ettings_task_is_step_turned_on_array   { true, true, true, true, true, true} ;
+    std::unique_ptr<ContainerTaskCluster> c_task_cluster;
+    XVarArray<std::string, 3> e_array_settings_task_names       { "task 1", "task 2", "task 3" };
+    XVarArray<std::string, 6> e_array_settings_instruction_names{ "templ 1", "templ 2", "templ 3", "templ 4", "templ 5", "templ 6" };
+    XVarArray<short, 6> e_array_settings_task_RPMs              { 2, 4, 6, 80, 100, 200 };
+    XVarArray<short, 6> e_array_settings_task_tempCs            { 20, 30, 40, 50, 60, 70 };
+    XVarArray<short, 6> e_array_settings_task_ss_durations      { 100, 120, 140, 160, 180, 200 };
+    XVarArray<bool, 6> e_array_settings_task_is_active_cooling  { true, true, false, false, true, true };
+    XVarArray<bool, 6> e_array_settings_task_is_user_ok_cooling { true, true, false, false, true, true };
+    XVarArray<bool, 6> e_array_settings_task_is_step_turned_on  { true, true, true, true, true, true} ;
 
     TaskInstruction l_dummy_task_instruction;
     XVarArray<TaskInstruction, 30>  e_task_instructions_array = XVarArray<TaskInstruction, 30>(l_dummy_task_instruction);
 
     TaskExecutor l_dummy_task_executor;
-    XVar<TaskExecutor> e_task_executor            = _init<TaskExecutor>(l_dummy_task_executor);
-
-    std::unique_ptr<ExtMemTaskCluster> TestStore;
+    XVar<TaskExecutor> e_task_executor = _init<TaskExecutor>(l_dummy_task_executor);    
 };
 
 #endif // !MEM_VAR_STORAGE_H

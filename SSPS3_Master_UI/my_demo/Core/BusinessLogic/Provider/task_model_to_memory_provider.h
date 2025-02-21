@@ -3,7 +3,7 @@
 #define TASK_MODEL_TO_MEMORY_PROVIDER_H
 
 #include <functional>
-#include "../t_task_instruction.h"
+#include "../task_instruction.h"
 
 typedef std::function<TaskInstruction*(unsigned char)> ExtractInstructionFromXVarArrayHandler;
 typedef std::function<void(unsigned char)> SaveInstructionChangesInXVarArrayHandler;

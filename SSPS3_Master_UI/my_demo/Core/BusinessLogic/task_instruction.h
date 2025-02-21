@@ -1,6 +1,6 @@
 #pragma once
-#ifndef T_TASK_INSTRUCTION_H
-#define T_TASK_INSTRUCTION_H
+#ifndef TASK_INSTRUCTION_H
+#define TASK_INSTRUCTION_H
 
 #include <string.h>
 

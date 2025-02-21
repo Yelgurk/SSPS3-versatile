@@ -1,6 +1,6 @@
 ﻿#pragma once
-#ifndef EXT_MEM_DISPATCHER_H
-#define EXT_MEM_DISPATCHER_H
+#ifndef MEM_DISPATCHER_H
+#define MEM_DISPATCHER_H
 
 #ifdef DEV_SSPS3_RUN_ON_PLC
     #include <vector>
@@ -8,43 +8,43 @@
     #include <string.h>
     #include "../Interface/i_read_write.h"
     #include "../x_var_extension.h"
-    #include "./ext_mem_defines.h"
+    #include "./mem_defines.h"
 #else
     #include <vector>
     #include "i_read_write.h"
     #include "x_var_extension.h"
-    #include "ext_mem_defines.h"
+    #include "mem_defines.h"
 #endif
 
-class ExtMemDevicesDispatcher : public IReadWrite
+class MemDevicesDispatcher : public IReadWrite
 {
 private:
-    ExtMemDevicesDispatcher() {}
-    std::vector<IReadWrite*>    ext_mem_devices;
-    std::vector<unsigned char>  ext_mem_devices_crc;
-    unsigned char*              _disp_buff = new unsigned char[EXT_MEM_READ_BUFF_SIZE]{};
+    MemDevicesDispatcher() {}
+    std::vector<IReadWrite*>    mem_devices;
+    std::vector<unsigned char>  mem_devices_crc;
+    unsigned char*              _disp_buff = new unsigned char[MEM_READ_BUFF_SIZE]{};
 
 public:
-    ~ExtMemDevicesDispatcher()
+    ~MemDevicesDispatcher()
     {
         delete[] _disp_buff;
     }
 
-    static ExtMemDevicesDispatcher* instance()
+    static MemDevicesDispatcher* instance()
     {
-        static ExtMemDevicesDispatcher inst;
+        static MemDevicesDispatcher inst;
         return &inst;
     }
 
     void add_device(IReadWrite* device)
     {
-        ext_mem_devices.push_back(device);
-        ext_mem_devices_crc.push_back(0);
+        mem_devices.push_back(device);
+        mem_devices_crc.push_back(0);
     }
 
     void fill(unsigned int addr, const unsigned char& filler, size_t size) override
     {
-        for (auto ext_mem : ext_mem_devices)
+        for (auto ext_mem : mem_devices)
             ext_mem->fill(addr, filler, size);
     }
 
@@ -52,18 +52,18 @@ public:
     {
         bool _readed_successfully = false;
 
-        for (auto& ext_mem_crc : ext_mem_devices_crc)
+        for (auto& ext_mem_crc : mem_devices_crc)
             ext_mem_crc = 0;
 
-        for (unsigned char i = 0; i < ext_mem_devices.size(); i++)
+        for (unsigned char i = 0; i < mem_devices.size(); i++)
         {
-            ext_mem_devices.at(i)->read(addr, _disp_buff, size);
-            ext_mem_devices_crc.at(i) = CALC_CRC(_disp_buff, size - 1);
+            mem_devices.at(i)->read(addr, _disp_buff, size);
+            mem_devices_crc.at(i) = CALC_CRC(_disp_buff, size - 1);
 
-            if (ext_mem_devices_crc.at(i) == *(_disp_buff + size - 1))
+            if (mem_devices_crc.at(i) == *(_disp_buff + size - 1))
             {
                 for (unsigned char err = 0; err < i; err++)
-                    ext_mem_devices.at(err)->write(addr, _disp_buff, size);
+                    mem_devices.at(err)->write(addr, _disp_buff, size);
 
                 _readed_successfully = true;
                 break;
@@ -78,7 +78,7 @@ public:
 
     void write(unsigned int addr, const unsigned char* data, size_t size) override
     {
-        for (auto ext_mem : ext_mem_devices)
+        for (auto ext_mem : mem_devices)
             ext_mem->write(addr, data, size);
     }
 
@@ -87,12 +87,12 @@ public:
         static unsigned char i = 0, byte = 0x00;
 
         i = 0;
-        byte = ext_mem_devices.at(i++)->byte_read(addr);
+        byte = mem_devices.at(i++)->byte_read(addr);
 
-        while (i < ext_mem_devices.size())
-            if (ext_mem_devices.at(i++)->byte_read(addr) != byte)
+        while (i < mem_devices.size())
+            if (mem_devices.at(i++)->byte_read(addr) != byte)
             {
-                byte = EXT_MEM_BYTE_ERR;
+                byte = MEM_BYTE_ERR;
                 break;
             }
 

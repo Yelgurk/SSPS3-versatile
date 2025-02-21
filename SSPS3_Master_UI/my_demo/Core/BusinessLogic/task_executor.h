@@ -1,11 +1,11 @@
 #pragma once
-#ifndef T_TASK_EXECUTOR_H
-#define T_TASK_EXECUTOR_H
+#ifndef TASK_EXECUTOR_H
+#define TASK_EXECUTOR_H
 
 #include <Arduino.h>
-#include "./t_datetime.h"
-#include "./Provider/task_model_to_memory_provider.h"
+#include "../Data/t_datetime.h"
 #include "../ExternalEnvironment/io_physical_monitor.h"
+#include "./Provider/task_model_to_memory_provider.h"
 
 #pragma pack(push, 1)
 struct TaskExecutor
@@ -586,9 +586,9 @@ public:
         // Обработка температуры и таймеров для инструкции
         // Если установлен ONLY_UNTIL_CONDITION_MET – переход по достижении температуры (с допуском)
         bool until_condition_met  = _curr_instruction->get_is_only_until_condition_met();
-        short target_temp_С = _curr_instruction->temperature_C;
+        short target_temp_C = _curr_instruction->temperature_C;
 
-        if (!until_condition_met && abs(temperature_C_current - target_temp_С) <= temperature_condition_offset_C)
+        if (!until_condition_met && abs(temperature_C_current - target_temp_C) <= temperature_condition_offset_C)
         {
             // Обновляем таймеры для самих instruction, если не until_condition_met 
             if (current_ms - last_1000ms_aim_left_ms >= 1000)
@@ -602,7 +602,7 @@ public:
 
         // Если until_condition_met  и температура достигнута           – завершаем инструкцию
         // Есил !until_condition_met и таймер duration_aim_left_ss <= 0 – завершаем инструкцию
-        if ((until_condition_met  && abs(temperature_C_current - target_temp_С) <= temperature_condition_offset_C) ||
+        if ((until_condition_met  && abs(temperature_C_current - target_temp_C) <= temperature_condition_offset_C) ||
             (!until_condition_met && _curr_instruction->duration_aim_left_ss    <= 0))
         {
             // Поставим флаг как get_is_completed == 1 через set_is_completed(true)
@@ -617,10 +617,10 @@ public:
             // указывает, что нам необходимо ждать кнопку подтверждения пользоватея - ожидаем
             if (_curr_instruction->get_is_await_user_accept_when_completed())
             {
-                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, temperature_C_current < target_temp_С);
+                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, temperature_C_current < target_temp_C);
                 IOMonitor->set_output_state(
                     DOUT::WJACKET_RELAY,
-                    temperature_C_current > target_temp_С &&
+                    temperature_C_current > target_temp_C &&
                     (_curr_instruction->get_is_active_cooling() ||
                     _curr_instruction->get_is_last_step())
                 );
@@ -655,14 +655,14 @@ public:
             );
             
             // Управление: если температура ниже – нагреваем
-            if (temperature_C_current < target_temp_С) 
+            if (temperature_C_current < target_temp_C) 
             {
                 // Включаем нагрев
                 IOMonitor->set_output_state(DOUT::HEATERS_RELAY, true);
                 IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
             }
             else // Управление: если температура выше – охлаждаем (при флаге активного охлаждения)
-            if (temperature_C_current > target_temp_С) 
+            if (temperature_C_current > target_temp_C) 
             {
                 // При охлаждении           – отключаем нагрев
                 // При активном охлаждении  – включаем клапан набора воды
@@ -687,4 +687,4 @@ public:
 };
 #pragma pack(pop)
 
-#endif // !T_TASK_EXECUTOR_H
+#endif // !TASK_EXECUTOR_H
