@@ -492,7 +492,7 @@ public:
         }
 
         //--------------------------------------------------------
-        // Достаём нашу инструкцию по индексу current_instruction_index
+        // Достаём нашу инструкцию по индексу current_instruction_index из _instruction() и сохраняем в _curr_instruction
         //--------------------------------------------------------
         TaskInstruction* _curr_instruction = _instruction();
         
