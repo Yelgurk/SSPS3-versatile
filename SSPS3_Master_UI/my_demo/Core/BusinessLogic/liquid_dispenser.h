@@ -9,23 +9,6 @@ class LiquidDispenser
 {
 private:
     LiquidDispenser() 
-    :   _is_running(false),
-        _is_inited(false),
-        _initiated_by_pistol(false),
-        _initiated_by_button(false),
-        _start_delay_done(false),
-        _init_time(0),
-        _last_update_time(0),
-        _idle_start_time(0),
-        _start_delay_ms(0),
-        _idle_delay_ms(0),
-        _target_value(0),
-        _remaining_value(0),
-        _pump_power_L_per_min(0),
-        _flow_rate_ml_per_ms(0.0),
-        _is_timer_mode(false),
-        _last_btn_state(false),
-        _last_pistol_state(false)
     {}
 
     // Включает насос через IOMonitor
@@ -44,7 +27,7 @@ private:
     // Завершает процесс раздачи.
     // Если successful==true, значит задача завершена успешно, и при этом мы проверяем, отпущен ли инициатор.
     // Если инициатор всё ещё удерживается, флаги не сбрасываются, чтобы не допустить повторного запуска.
-    void finishDispensing(bool successful)
+    void _finish_dispensing(bool successful)
     {
         _stop_pump();
 
@@ -72,87 +55,91 @@ private:
         if (initiator_released)
         {
             _is_running = false;
-            _is_inited = false;
             _initiated_by_pistol = false;
             _initiated_by_button = false;
-            _start_delay_done = false;
-            _idle_start_time = 0;
         }
         // Если инициатор не отпущен – оставляем флаги, чтобы не допустить новый запуск,
         // пока пользователь не отпустит курок/кнопку.
     }
 
+    // Настраиваемые задержки (в мс)
+    unsigned short _start_delay_ms          = 2000; // задержка перед стартом, если инициатор раздачи - кнопка
+    unsigned short _idle_delay_ms           = 0;    // задержка ожидания перед завершением, когда инициатор отпущен
+
     // Состояния процесса
-    bool _is_running;
-    bool _is_inited;
-    bool _initiated_by_pistol;
-    bool _initiated_by_button;
-    bool _start_delay_done;  // для кнопки: задержка истекла или нет
+    bool _is_running            = false;
+    bool _initiated_by_pistol   = false;
+    bool _initiated_by_button   = false;
+    bool _initiated_by_both     = false;
+    // _initiated_by_both: нужно для случаев, когда курок на пистолете раздатчсике поломался, его заклинило
+    // в таком случае мы берём за модель поведения _initiated_by_button, игнорируя _initiated_by_pistol
 
     // Таймеры (в мс)
-    unsigned long _init_time;
-    unsigned long _last_update_time;
-    unsigned long _idle_start_time;
+    unsigned long _timer_init_time          = 0;
+    unsigned long _timer_last_update_time   = 0;
+    unsigned long _timer_idle_on_start_time = 0;
 
-    // Настраиваемые задержки (в мс)
-    unsigned short _start_delay_ms;  // задержка старта для кнопки
-    unsigned short _idle_delay_ms;   // задержка ожидания перед завершением, когда инициатор отпущен
+    // Зарегистрированые переменные (независимо от состояния работы)
+    float _registered_value                 = 0;
+    float _registered_flow_rate_ml_per_ss   = 0;
+    bool _registered_is_timer_mode          = false;         
 
     // Параметры раздачи
-    unsigned long _target_value;   // заданное количество (в ml или сек)
-    unsigned long _remaining_value; // оставшееся количество для раздачи
-    unsigned long _pump_power_L_per_min;
-    bool _is_timer_mode;           // true, если режим таймера (value в сек), false – режим по мл
-
-    // Скорость потока (рассчитанная из мощности насоса) – мл/мс
-    double _flow_rate_ml_per_ms;
+    float _target_value                 = 0;        // заданное количество (в ml или сек)
+    float _target_remaining_value       = 0;        // оставшееся количество для раздачи
+    float _target_flow_rate_ml_per_ms   = 0;
+    bool _target_is_timer_mode          = false;    // true, если режим таймера (value в сек), false – режим по мл
 
     // Для отслеживания переходов состояния инициатора (для контроля, что после завершения пользователь отпустил курок/кнопку)
-    bool _last_btn_state;
-    bool _last_pistol_state;
-
+    bool _on_start_btn_state    = false;
+    bool _on_start_pistol_state = false;
+    bool _actual_btn_state      = false;
 public:
     // Геттеры состояний
     bool get_is_running() const {
         return _is_running;
     }
 
-    bool get_is_inited() const {
-        return _is_inited;
+    void set_plc_btn_state(bool is_btn_pressed) {
+        _actual_btn_state = is_btn_pressed;
     }
 
     // Регистрирует параметры раздачи, если процесс не запущен (и не инициализирован)
-    void registerDispense(unsigned long value, unsigned long pump_power_L_per_min, bool is_timer_ss)
+    void register_dispense_choise(unsigned long value, float pump_power_L_per_min, bool is_timer_ss)
     {
-        if (!_is_inited && !_is_running)
-        {
-            _target_value = value;
-            _remaining_value = value;
-            _pump_power_L_per_min = pump_power_L_per_min;
-            _is_timer_mode = is_timer_ss;
-
-            // Перевод мощности (л/мин) в мл/мс: (pump_power * 1000 мл) / 60000 мс (60 сек)
-            _flow_rate_ml_per_ms = ((float)pump_power_L_per_min * 1000.f) / 60000.f;
-        }
+        _registered_value               = value;
+        _registered_flow_rate_ml_per_ss = (pump_power_L_per_min * 1000.f) / 60000.f;
+        _registered_is_timer_mode       = is_timer_ss;
     }
 
     // Инициализирует процесс раздачи.
     // Если вызов происходит по пистолету (call_by_dispensing_gun==true), задержка старта пропускается.
     // Если по кнопке (call_by_plc_button==true), то будет ожидание задержки (заданной через set_start_delay_after_start_init_by_plc_button)
-    void init_disposing(bool call_by_dispensing_gun)
+    void init_disposing()
     {
-        if (_is_running) return;  // Если процесс уже идёт, не начинаем новый
-        _is_inited = true;
-        _initiated_by_pistol = call_by_dispensing_gun;
-        _initiated_by_button = !call_by_dispensing_gun;
-        _start_delay_done = call_by_dispensing_gun;  // для пистолета старт идёт сразу
-        _init_time = millis();
-        _last_update_time = _init_time;
-        _idle_start_time = 0;
+        if (_is_running)
+            return;  // Если процесс уже идёт, не начинаем новый
+
+        _target_value               = _registered_value;           
+        _target_remaining_value     = _registered_value;
+        _target_flow_rate_ml_per_ms = _registered_flow_rate_ml_per_ss;
+        _target_is_timer_mode       = _registered_is_timer_mode;
+
+        _initiated_by_pistol        = _get_dispenser_trigger_state();
+        _initiated_by_button        = _actual_btn_state;
+        _initiated_by_both          = _initiated_by_pistol && _initiated_by_button;
+        
+        // без _is_init тут будет постоянно переназначаться таймер старта, тем самым старт по кнопке
+        // от ПЛК вечно будет "гнаться" в controller() и раздача не начнётся. Решить эту пробелму добавением _is_init
+        // и как-то обыграть его в controller() на этапе _timer_idle_on_start_time проверки пока не отпущена кнопка (в таком сучае 
+        // все три переменные не должны менять своё состояние)
+        _timer_init_time            = millis();
+        _timer_last_update_time     = _timer_init_time;
+        _timer_idle_on_start_time   = (_initiated_by_pistol && !_initiated_by_both) ? 0 : _start_delay_ms;
     }
 
     // Задержка старта (в мс) для инициализации по кнопке
-    void set_start_delay_after_start_init_by_plc_button(unsigned short delay_ms) {
+    void set_delay_before_start_on_btn_init(unsigned short delay_ms) {
         _start_delay_ms = delay_ms;
     }
 
@@ -161,10 +148,19 @@ public:
         _idle_delay_ms = delay_ms;
     }
 
+    void update()
+    {
+        init_disposing();
+
+        // тут логика по проверке, отпущены ли были кнопки через _on_start_btn_state и _on_start_pistol_state
+
+    }
+
     // Основной метод controller(), выполняющий расчёты раздачи на основе разницы времени между вызовами (dt)
     // Параметр is_btn_pressed актуален для кнопочного режима. Если инициатор отпущен – запускается idle-тimer.
-    void controller(bool is_btn_pressed = false)
+    void controller()
     {
+        init_disposing();
         if (!_is_inited) return;
 
         unsigned long current_time = millis();
@@ -172,7 +168,7 @@ public:
         _last_update_time = current_time;
 
         // Если инициатор раздачи по кнопке и задержка старта не истекла, проверяем её:
-        if (_initiated_by_button && !_start_delay_done) {
+        if (_initiated_by_button) {
             if (is_btn_pressed && (current_time - _init_time >= _start_delay_ms))
                 _start_delay_done = true;
             else
@@ -189,7 +185,7 @@ public:
 
         if (initiator_active) {
             // Если инициатор активно удерживается, сбрасываем idle-таймер
-            _idle_start_time = 0;
+            _idle_before_start_time = 0;
             if (!_is_running) {
                 _is_running = true;
                 _start_pump();
@@ -209,63 +205,20 @@ public:
             // Если требуемое количество выдано – завершаем процесс.
             // Важно: если инициатор всё ещё удерживается, не сбрасываем флаги, чтобы не допустить нового запуска.
             if (_remaining_value == 0) {
-                finishDispensing(true); // true означает успешное завершение
+                _finish_dispensing(true); // true означает успешное завершение
             }
         } else {  // Инициатор отпущен
             if (_is_running) {
                 // Если инициатор отпущен, запускаем idle-таймер
-                if (_idle_start_time == 0) {
-                    _idle_start_time = current_time;
+                if (_idle_before_start_time == 0) {
+                    _idle_before_start_time = current_time;
                     _stop_pump();
                 }
-                if (current_time - _idle_start_time >= _idle_delay_ms) {
-                    finishDispensing(false);
+                if (current_time - _idle_before_start_time >= _idle_delay_ms) {
+                    _finish_dispensing(false);
                 }
             }
         }
-    }
-
-    // Перегруженный метод update для работы с кнопкой.
-    // Здесь реализована проверка: если в предыдущем цикле кнопка не была отпущена после завершения,
-    // новый процесс не запускается.
-    void update(bool is_btn_pressed) {
-        // Если нет активного процесса, то начинаем новый только при переходе с "не нажата" в "нажата"
-        if (!_is_inited && !_is_running) {
-            if (is_btn_pressed && !_last_btn_state) {  // rising edge
-                init_disposing(false, true);
-            }
-        }
-        // Если процесс завершён успешно, требуем отпускания инициатора для нового запуска
-        if (!_is_inited && !_is_running) {
-            if (is_btn_pressed) {
-                // Инициатор всё ещё удерживается – не начинаем новый процесс
-                _last_btn_state = is_btn_pressed;
-                return;
-            }
-        }
-        controller(is_btn_pressed);
-        _last_btn_state = is_btn_pressed;
-    }
-
-    // Перегруженный метод update для работы с пистолетным триггером.
-    // Аналогично, новый процесс начинается только при обнаружении перехода из отпущенного состояния.
-    void update()
-    {
-        bool current_pistol = IOMonitor::instance().isPistolTriggerActive();
-        if (!_is_inited && !_is_running) {
-            if (current_pistol && !_last_pistol_state) { // rising edge
-                init_disposing(true, false);
-            }
-        }
-        if (!_is_inited && !_is_running) {
-            if (current_pistol) {  // если курок всё ещё не отпущен, не начинаем новый процесс
-                _last_pistol_state = current_pistol;
-                return;
-            }
-        }
-        
-        controller();
-        _last_pistol_state = current_pistol;
     }
 };
 
