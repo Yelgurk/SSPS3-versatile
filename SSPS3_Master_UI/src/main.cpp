@@ -41,8 +41,7 @@ void setup_watchdogs();
 #define DEV_DEMO
 #ifdef DEV_DEMO
 
-#include "../my_demo/Core/Memory/x_var.h"
-#include "../my_demo/Core/MCUsCommunication/MQTT/mqtt_i2c.h"
+#include "../my_demo/Core/ssp_master.h"
 
 #endif
 /******************************************************************************************/

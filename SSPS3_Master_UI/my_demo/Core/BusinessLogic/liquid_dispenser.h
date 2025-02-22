@@ -130,6 +130,16 @@ public:
         OnDispensingDone = handler;
     }
 
+    // Задержка старта (в мс) для инициализации по кнопке
+    void set_delay_before_start_on_btn_init(unsigned short delay_ms) {
+        _start_delay_ms = delay_ms;
+    }
+
+    // Задержка ожидания (в мс) при отпускании инициатора (курка/кнопки, которая запустила процесс раздачи)
+    void set_idle_before_reset_when_is_running(unsigned short delay_ms) {
+        _idle_delay_ms = delay_ms;
+    }
+
     // Регистрирует параметры раздачи, если процесс не запущен (и не инициализирован)
     void register_dispense_choise(float value, float pump_power_L_per_min, bool is_timer_ss)
     {
@@ -151,8 +161,8 @@ public:
     }
 
     // Инициализирует процесс раздачи.
-    // Если вызов происходит по пистолету (call_by_dispensing_gun==true), задержка старта пропускается.
-    // Если по кнопке (call_by_plc_button==true), то будет ожидание задержки (заданной через set_start_delay_after_start_init_by_plc_button)
+    // Если вызов происходит по пистолету (_get_dispenser_trigger_state==true), задержка старта пропускается.
+    // Если по кнопке (_actual_btn_state==true), то будет ожидание задержки (заданной через set_start_delay_after_start_init_by_plc_button)
     void init_disposing(bool reinit = false)
     {
         if (!reinit && (_is_running || _is_inited))
@@ -189,16 +199,6 @@ public:
             OnValueLitresSelected(_target_value);
             OnValueLitresChanged(_target_value);
         }
-    }
-
-    // Задержка старта (в мс) для инициализации по кнопке
-    void set_delay_before_start_on_btn_init(unsigned short delay_ms) {
-        _start_delay_ms = delay_ms;
-    }
-
-    // Задержка ожидания (в мс) при отпускании инициатора (курка/кнопки, которая запустила процесс раздачи)
-    void set_idle_before_reset_when_is_running(unsigned short delay_ms) {
-        _idle_delay_ms = delay_ms;
     }
 
     // Основной метод controller(), выполняющий расчёты раздачи на основе разницы времени между вызовами (dt)

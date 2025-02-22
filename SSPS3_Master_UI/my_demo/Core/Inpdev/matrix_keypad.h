@@ -5,34 +5,17 @@
 #ifdef DEV_SSPS3_RUN_ON_PLC
     #include <Arduino.h>
     #include <functional>
+    #include "./matrix_keypad_enum.h"
 #else
     #include <Arduino.h>
     #include <functional>
+    #include "matrix_keypad_enum.h"
 #endif
 
 class MatrixKeypad
 {
 public:
-    enum KeyState : uint8_t
-    {
-        BTN_CLICK_0, BTN_CLICK_1, BTN_CLICK_2, BTN_CLICK_3,
-        BTN_CLICK_4, BTN_CLICK_5, BTN_CLICK_6, BTN_CLICK_7,
-        BTN_CLICK_8, BTN_CLICK_9, BTN_CLICK_10, BTN_CLICK_11,
-        BTN_CLICK_12, BTN_CLICK_13, BTN_CLICK_14, BTN_CLICK_15,
-
-        BTN_PRESS_0, BTN_PRESS_1, BTN_PRESS_2, BTN_PRESS_3,
-        BTN_PRESS_4, BTN_PRESS_5, BTN_PRESS_6, BTN_PRESS_7,
-        BTN_PRESS_8, BTN_PRESS_9, BTN_PRESS_10, BTN_PRESS_11,
-        BTN_PRESS_12, BTN_PRESS_13, BTN_PRESS_14, BTN_PRESS_15,
-
-        BTN_RELEASE_0, BTN_RELEASE_1, BTN_RELEASE_2, BTN_RELEASE_3,
-        BTN_RELEASE_4, BTN_RELEASE_5, BTN_RELEASE_6, BTN_RELEASE_7,
-        BTN_RELEASE_8, BTN_RELEASE_9, BTN_RELEASE_10, BTN_RELEASE_11,
-        BTN_RELEASE_12, BTN_RELEASE_13, BTN_RELEASE_14, BTN_RELEASE_15,
-        
-        BTN_DELAY,
-        NO_BTN
-    };
+    
 
 private:
     MatrixKeypad() {}

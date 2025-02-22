@@ -3,12 +3,12 @@
 #define X_VAR_DATA_CENTER_H
 
 #ifdef DEV_SSPS3_RUN_ON_PLC
-    #include "./Container/container_task_cluster.h"
     #include "./x_var_array.h"
+    #include "./Container/container_task_cluster.h"
     #include "../BusinessLogic/task_executor.h"
 #else
-    #include "container_task_cluster.h"
     #include "x_var_array.h"
+    #include "container_task_cluster.h"
     #include "task_executor.h"
 #endif
 

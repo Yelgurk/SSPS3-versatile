@@ -4,10 +4,8 @@
 
 #ifdef DEV_SSPS3_RUN_ON_PLC
     #include "./x_var_data_center.h"
-    #include "./Device/mem_i2c_fm24gl64.h"
 #else
     #include "x_var_data_center.h"
-    #include "mem_i2c_fm24gl64.h"
 #endif
 
 #define XStorage                        XVarDataCenter::get()
