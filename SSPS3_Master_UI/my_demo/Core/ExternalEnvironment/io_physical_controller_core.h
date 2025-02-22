@@ -8,14 +8,14 @@
 typedef std::function<void(bool)>   IODigitalSignalHandler;
 typedef std::function<void(short)>  IOAnalogSignalHandler;
 
-class IOPhysicalControllerBase
+class IOPhysicalControllerCore
 {
 public:
     enum Channel : unsigned char
     {
         DIGITAL_INPUT   = 0b00010000,
-        ANALOG_INPUT    = 0b00100000,
-        DIGITAL_OUTPUT  = 0b01000000,
+        DIGITAL_OUTPUT  = 0b00100000,
+        ANALOG_INPUT    = 0b01000000,
         ANALOG_OUTPUT   = 0b10000000
     };
 
@@ -62,7 +62,7 @@ public:
     };
 
 private:
-    IOPhysicalControllerBase()
+    IOPhysicalControllerCore()
     {}
 
     unsigned char _digital_input            = 0b00000000;   // доступно DIGITAL_INPUT_END цифровых входов, но не более DIGITAL_INPUT_LIMIT. Каждый бит как элемент массива согласно размеру типа переменной-хранилища
@@ -111,9 +111,9 @@ private:
     }
 
 public:
-    static IOPhysicalControllerBase* instance()
+    static IOPhysicalControllerCore* instance()
     {
-        static IOPhysicalControllerBase inst;
+        static IOPhysicalControllerCore inst;
         return &inst;
     }
 
@@ -257,10 +257,10 @@ public:
     }
 };
 
-using CHANNEL   = IOPhysicalControllerBase::Channel;
-using DIN       = IOPhysicalControllerBase::DigitalInputRole;
-using ANIN      = IOPhysicalControllerBase::AnalogInputRole;
-using DOUT      = IOPhysicalControllerBase::DigitalOutputRole;
-using ANOUT     = IOPhysicalControllerBase::AnalogOutputRole;
+using CHANNEL   = IOPhysicalControllerCore::Channel;
+using DIN       = IOPhysicalControllerCore::DigitalInputRole;
+using ANIN      = IOPhysicalControllerCore::AnalogInputRole;
+using DOUT      = IOPhysicalControllerCore::DigitalOutputRole;
+using ANOUT     = IOPhysicalControllerCore::AnalogOutputRole;
 
 #endif // !IO_PHYSICAL_CONTROLLER_H
