@@ -5,13 +5,9 @@
 #include <Arduino.h>
 #include "./io_physical_controller_core.h"
 
-class IOPhysicalMonitor
+class IOPhysicalMonitor : public IOPhysicalControllerCore
 {
 private:
-    IOPhysicalMonitor() {
-        IOPhysicalControllerCore::instance();
-    }
-
     unsigned long _last_heaters_call_ms = 0;
     unsigned long _last_wjacket_call_ms = 0;
 
@@ -93,7 +89,7 @@ public:
     }
 
     bool get_input_state(DIN pin) {
-        return IOPhysicalControllerCore::instance()->_digital_input_get_bit(pin);
+        return this->_digital_input_get_bit(pin);
     }
 
     float get_temperature_C_product()
@@ -126,24 +122,24 @@ public:
         {
             case DOUT::HEATERS_RELAY: {
                 if (_allow_heaters_toggle(force))
-                    IOPhysicalControllerCore::instance()->change_digital_output_pin_state(state, pin);
+                    this->change_digital_output_pin_state(pin, state);
             };  break;
                 
             case DOUT::MIXER_RELAY:
-                IOPhysicalControllerCore::instance()->change_digital_output_pin_state(state, pin);
+                this->change_digital_output_pin_state(pin, state);
                 break;
                 
             case DOUT::WJACKET_RELAY: {
                 if (_allow_wjacket_toggle(force))
-                    IOPhysicalControllerCore::instance()->change_digital_output_pin_state(state, pin);
+                    this->change_digital_output_pin_state(pin, state);
             };  break;
                 
             case DOUT::WATER_PUMP_RELAY:
-                IOPhysicalControllerCore::instance()->change_digital_output_pin_state(state, pin);
+                this->change_digital_output_pin_state(pin, state);
                 break;
 
             case DOUT::MIXER_FAST_MODE_RELAY:
-                IOPhysicalControllerCore::instance()->change_digital_output_pin_state(state, pin);
+                this->change_digital_output_pin_state(pin, state);
                 break;
             
             default:
@@ -153,14 +149,14 @@ public:
     }
 
     void set_output_states_all(bool state) {
-        IOPhysicalControllerCore::instance()->change_digital_output_states_all(state);
+        this->change_digital_output_states_all(state);
     }
 
     void set_motor_speed(short rpm, bool is_fast_mode)
     {
-        IOPhysicalControllerCore::instance()->set_analog_output_info(rpm, ANOUT::RPM_SPEED_DRIVER);
-        IOPhysicalControllerCore::instance()->change_digital_output_pin_state(rpm > 0, DOUT::MIXER_RELAY);
-        IOPhysicalControllerCore::instance()->change_digital_output_pin_state(is_fast_mode, DOUT::MIXER_FAST_MODE_RELAY);
+        this->set_analog_output_info(ANOUT::RPM_SPEED_DRIVER, rpm);
+        this->change_digital_output_pin_state(DOUT::MIXER_RELAY, rpm > 0);
+        this->change_digital_output_pin_state(DOUT::MIXER_FAST_MODE_RELAY, is_fast_mode);
     }
 };
 

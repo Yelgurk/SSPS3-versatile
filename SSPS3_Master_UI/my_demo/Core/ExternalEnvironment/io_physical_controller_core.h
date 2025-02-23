@@ -5,8 +5,8 @@
 #include <vector>
 #include <functional>
 
-typedef std::function<void(bool)>   IODigitalSignalHandler;
-typedef std::function<void(short)>  IOAnalogSignalHandler;
+typedef std::function<void(short pin, bool state)>   IODigitalSignalHandler;
+typedef std::function<void(short pin, short value)>  IOAnalogSignalHandler;
 
 class IOPhysicalControllerCore
 {
@@ -48,7 +48,7 @@ public:
         ANALOG_INPUT_BEGIN  = 0,
         TEMP_C_PROFUCT_SENS = 0,
         TEMP_C_WJACKET_SENS,
-        v24_DC_BATT_SENS,
+        V24_DC_BATT_SENS,
         ANALOG_INPUT_END,
         ANALOG_INPUT_LIMIT  = 0b00001111
     };
@@ -61,14 +61,31 @@ public:
         ANALOG_OUTPUT_LIMIT = 0b00001111
     };
 
-private:
+protected:
     IOPhysicalControllerCore()
     {}
 
-    unsigned char _digital_input            = 0b00000000;   // доступно DIGITAL_INPUT_END цифровых входов, но не более DIGITAL_INPUT_LIMIT. Каждый бит как элемент массива согласно размеру типа переменной-хранилища
-    unsigned char _digital_output           = 0b00000000;   // доступно DIGITAL_OUTPUT_END цифровых выходов, но не более DIGITAL_OUTPUT_LIMIT. Каждый бит как элемент массива согласно размеру типа переменной-хранилища
-    short _analog_input[ANALOG_INPUT_END]   = { 0 };        // доступно ANALOG_INPUT_END аналоговых 12 бит (16 бит) входов, но не более ANALOG_INPUT_LIMIT.
-    short _analog_output[ANALOG_OUTPUT_END] = { 0 };        // доступен ANALOG_OUTPUT_END аналоговый 12 бит (16 бит) выходов, но не более ANALOG_OUTPUT_LIMIT.
+    // доступно DIGITAL_INPUT_END цифровых входов, но не более DIGITAL_INPUT_LIMIT.
+    // Каждый бит как элемент массива согласно размеру типа переменной-хранилища.
+    // Enum рассчитан на 16 каналов, однако пока используется до 8, т.е. uint8_t.
+    // Если нужно больше 8, а именно до 16 включительно (согласно маске _pin_index_mask == 0b00001111),
+    // то переделать c unsigned char в unsigned short.
+    // Для _digital_output переменной-хранилища точно такая же ситуация
+    unsigned char _digital_input                = 0b00000000;   
+    unsigned char _digital_output               = 0b00000000;   // доступно DIGITAL_OUTPUT_END цифровых выходов, но не более DIGITAL_OUTPUT_LIMIT. Каждый бит как элемент массива согласно размеру типа переменной-хранилища
+    short _analog_input[ANALOG_INPUT_END]       = { 0 };        // доступно ANALOG_INPUT_END аналоговых 12 бит (16 бит) входов, но не более ANALOG_INPUT_LIMIT.
+    short _analog_output[ANALOG_OUTPUT_END]     = { 0 };        // доступен ANALOG_OUTPUT_END аналоговый 12 бит (16 бит) выходов, но не более ANALOG_OUTPUT_LIMIT.
+
+    // Эти переменные-хранилища не задействованы в данном классе-ядре контроллера,
+    // а применяются непосредственно классом-наследником "контроллер".
+    // Вынесены в данный класс для удобства модификации в случае будущего перехода
+    // с 8-ми канального ПЛК на 16-ти канальный, за чем последует перевод
+    // с unsigned char в unsigned short.
+    // В контроллере отражают real-time(rt) состояния физических IO каналов
+    unsigned char _digital_input_rt             = 0b00000000;
+    unsigned char _digital_output_rt            = 0b00000000;
+    short _analog_input_rt[ANALOG_INPUT_END]    = { 0 };     
+    short _analog_output_rt[ANALOG_OUTPUT_END]  = { 0 }; 
 
     std::vector<std::pair<unsigned char, IODigitalSignalHandler>> _digital_signal_handlers;
     std::vector<std::pair<unsigned char, IOAnalogSignalHandler>> _analog_signal_handlers;
@@ -90,7 +107,7 @@ private:
                 for (auto &handler_pair : _digital_signal_handlers)
                 {
                     if (handler_pair.first == _instr)
-                        handler_pair.second(_new_state);
+                        handler_pair.second(pin, _new_state);
                 }
             }   
         }
@@ -105,21 +122,10 @@ private:
             for (auto &handler_pair : _analog_signal_handlers)
             {
                 if (handler_pair.first == _instr)
-                    handler_pair.second(new_value);
+                    handler_pair.second(pin, new_value);
             }
         }
     }
-
-public:
-    static IOPhysicalControllerCore* instance()
-    {
-        static IOPhysicalControllerCore inst;
-        return &inst;
-    }
-
-    //------------------------------------------------------------------------
-    // Методы с префиксом _ нежелательны для использования пользователем извне 
-    //------------------------------------------------------------------------
 
     bool _digital_io_signals_comparator(unsigned char _old_states_container, unsigned char _new_states_container, unsigned char _index)
     {
@@ -157,10 +163,7 @@ public:
         return static_cast<Channel>(instruction & _channel_mask);
     }
 
-    //----------------------------------------------------------
-    // Методы без префикса предназначены для использования извне
-    //----------------------------------------------------------
-
+public:
     void set_digital_input_info(unsigned char digital_input_received)
     {
         _digital_io_state_handler(
@@ -187,7 +190,7 @@ public:
         this->_digital_output = digital_output_received;
     }
 
-    void set_analog_input_info(short analog_input_received, unsigned char pin)
+    void set_analog_input_info(unsigned char pin, short analog_input_received)
     {
         if (pin >= ANALOG_INPUT_END)
             return;
@@ -202,7 +205,7 @@ public:
         _analog_input[pin] = analog_input_received;
     }
 
-    void set_analog_output_info(short analog_output_received, unsigned char pin)
+    void set_analog_output_info(unsigned char pin, short analog_output_received)
     {
         if (pin >= ANALOG_OUTPUT_END)
             return;
@@ -217,7 +220,7 @@ public:
         _analog_output[pin] = analog_output_received;
     }
 
-    void change_digital_output_pin_state(bool new_state, unsigned char pin)
+    void change_digital_output_pin_state(unsigned char pin, bool new_state)
     {
         if (pin >= DIGITAL_OUTPUT_END)
             return;
@@ -240,19 +243,19 @@ public:
         set_digital_output_info(new_state ? 0xFF : 0x00);
     }
 
-    void add_digital_input_handler(DigitalInputRole pin, IODigitalSignalHandler handler) {
+    void add_digital_input_handler(unsigned char pin, IODigitalSignalHandler handler) {
         _digital_signal_handlers.push_back({ _formulate_instructions(Channel::DIGITAL_INPUT, pin), handler});
     }
 
-    void add_digital_output_handler(DigitalOutputRole pin, IODigitalSignalHandler handler) {
+    void add_digital_output_handler(unsigned char pin, IODigitalSignalHandler handler) {
         _digital_signal_handlers.push_back({ _formulate_instructions(Channel::DIGITAL_OUTPUT, pin), handler});
     }
 
-    void add_analog_input_handler(AnalogInputRole pin, IOAnalogSignalHandler handler) {
+    void add_analog_input_handler(unsigned char pin, IOAnalogSignalHandler handler) {
         _analog_signal_handlers.push_back({ _formulate_instructions(Channel::ANALOG_INPUT, pin), handler});
     }
 
-    void add_analog_output_handler(AnalogOutputRole pin, IOAnalogSignalHandler handler) {
+    void add_analog_output_handler(unsigned char pin, IOAnalogSignalHandler handler) {
         _analog_signal_handlers.push_back({ _formulate_instructions(Channel::ANALOG_OUTPUT, pin), handler});
     }
 };

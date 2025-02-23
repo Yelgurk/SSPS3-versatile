@@ -50,7 +50,7 @@ public:
     };
 
     // Битовые маски для состояний исполнителя
-    enum ExecutorStateBits
+    enum TaskExecutorStateBits
     {
         IS_RUNNING                = 1 << 0,
         IS_ON_PAUSE               = 1 << 1,
@@ -59,6 +59,13 @@ public:
         IS_ON_PAUSE_BY_NO_380V    = 1 << 4,
         IS_COMPLETED              = 1 << 5,
         IS_COMPLETED_WITH_ERROR   = 1 << 6
+    };
+
+    enum TaskCheckpointResult
+    {
+        POINT_RETURN_FALSE,
+        POINT_RETURN_TRUE,
+        POINT_CONTINUE
     };
 
     TaskExecutor() :
@@ -312,12 +319,17 @@ public:
     // метода controller(...), что можно выявить относительно возвращаемого им true/false
     bool update(XDateTime rt_dt, bool execute_immediately = false)
     {
-        //if (controller(rt_dt, execute_immediately, false))
-        //{
-        //    // to do ...
-        //}
+        TaskCheckpointResult _execute_result = controller(rt_dt, execute_immediately, false);
 
-        return controller(rt_dt, execute_immediately, false);
+        // Вариант обработки состояния вызова исполнения
+        // switch(_execute_result)
+        // {
+        //     case POINT_RETURN_FALSE:    {}; break;
+        //     case POINT_RETURN_TRUE:     {}; break;
+        //     case POINT_CONTINUE:        {}; break;
+        // }
+
+        return true;
     }
 
     // Полностью реализованный controller(), исполняющий свою логику каждые 250 мс (или немедленно, если execute_immediately==true)
@@ -326,62 +338,41 @@ public:
     // if (!execute_immediately && (current_ms - last_250ms_ms < 250)) {
     // return false;
     // }
-    bool controller(XDateTime rt_dt, bool execute_immediately = false, bool new_task_started = false)
+    TaskCheckpointResult controller(XDateTime rt_dt, bool execute_immediately = false, bool new_task_started = false)
     {
+        unsigned long current_ms = millis();
         // Если исполнитель не запущен – раз в 10 сек отключаем физические устройства
         static unsigned long last_disable_ms = 0;
-        unsigned long current_ms = millis();
 
         // Используем static переменные для таймеров внутри controller()
-        static unsigned long last_250ms_ms                  = 0;
-        static unsigned long last_1000ms_in_proc_ms         = 0;
-        static unsigned long last_1000ms_aim_left_ms        = 0;
-        static unsigned long any_pause_timer_start_ms       = 0;
-        static unsigned long water_jacket_timer_start_ms    = 0;
         static bool any_pause_timer_is_active               = false;
         static bool water_jacket_timer_is_active            = false;
+        static unsigned long last_1000ms_aim_left_ms        = 0;
+        static unsigned long last_1000ms_in_proc_ms         = 0;
+        static unsigned long last_250ms_ms                  = 0;
+        static unsigned long any_pause_timer_start_ms       = 0;
+        static unsigned long water_jacket_timer_start_ms    = 0;
 
-        if (new_task_started)
-        {
-            last_1000ms_aim_left_ms = 0;
-            
-            last_250ms_ms
-                = last_1000ms_in_proc_ms
-                = current_ms;
+        TaskCheckpointResult _checkpoint_result = POINT_CONTINUE;
 
-            any_pause_timer_start_ms
-                = water_jacket_timer_start_ms
-                = 0;
+        _checkpoint_result = _checkpoint_reset_timers_if_new_task_started(
+            new_task_started,
+            any_pause_timer_is_active,
+            water_jacket_timer_is_active,
+            current_ms,
+            last_1000ms_aim_left_ms,
+            last_1000ms_in_proc_ms,
+            last_250ms_ms,
+            any_pause_timer_start_ms,
+            water_jacket_timer_start_ms
+        );
+        if (_checkpoint_result != POINT_CONTINUE) return _checkpoint_result;
 
-            any_pause_timer_is_active
-                = water_jacket_timer_is_active
-                = false;
+        _checkpoint_result = _checkpoint_to_do_on_task_of_10sec(current_ms, last_disable_ms, execute_immediately);
+        if (_checkpoint_result != POINT_CONTINUE) return _checkpoint_result;
 
-            IOMonitor->set_output_states_all(false);
-
-            return false;
-        }
-
-        if (!is_running())
-        {
-            if (current_ms - last_disable_ms >= 10000 || execute_immediately)
-            {
-                // Подача команды на отключение каждые 10 сек на всякий случай:
-                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false);
-                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
-                IOMonitor->set_motor_speed(0, false);
-
-                last_disable_ms = current_ms;                
-                return true;
-            }
-            else 
-                return false;
-        }
-        
-        // Если не execute_immediately – обновляем логику раз в 250 мс
-        if (!execute_immediately && (current_ms - last_250ms_ms < 250))
-            return false;
-        last_250ms_ms = current_ms;
+        _checkpoint_result = _checkpoint_execute_instruction(execute_immediately, current_ms, last_250ms_ms);
+        if (_checkpoint_result != POINT_CONTINUE) return _checkpoint_result;
 
         // Если один датчик даёт температуру, сохраняем его значение.
         // Если два датчика дают температуру, то ищем среднее арифметическое значение
@@ -391,143 +382,30 @@ public:
             ? IOMonitor->get_temperature_C_product()
             : ((IOMonitor->get_temperature_C_product() + IOMonitor->get_temperature_C_wjacket()) / 2.f) - 1.f;
         
-        // Вычисляем разницу между rt_dt и последней итерацией (в секундах)
-        // если оборудование включено, то метод update будет вызван раз 400 в 1000мс
-        // однако из-за блока last_250ms_ms до данного кейса дойдём минимум 4 раза.
-        // Этого достаточно, что бы не возникало пробем для контроля и исполнения
-        // порядка инструкций. Однако если сеть была выкючена, заетм включии оборудование
-        // то при вызове controller() будет обнаружено время простоя и обработано в 2 важных сценария:
-        // если > 5 и < 1800 (30мин), то сохраняем инфу;
-        // если > 1800, то выеротно за такое длительное врем простояя молоко или иной продукт
-        // уже испортились и мы не несём ответствености за это, посему завершаем программу
-        XTimeSpan diff = rt_dt - last_iteration_dt;
-        last_iteration_dt = rt_dt; // сохранили настоящее текущее время относительно DS3231
-        int diff_sec = diff.total_seconds_abs();
-        if (diff_sec < 5)
-        {
-            // Всё ок, вдруг затуп произошёл и передача больших данных
-            // поставила ПЛК в небольшой простой, забрав немного процессорного
-            // времени на себя
-        }
-        else if (diff_sec >= 5 && diff_sec <= 1800)
-        {
-            // суммируем время киртического простоя и количество таких простоев
-            critical_idle_ss += diff_sec;
-            ++critical_idle_count;
-        }
-        else if (diff_sec >= 1800)
-        {
-            // продукт вероятно испорчен, завершаем работу
-            critical_idle_ss += diff_sec;
-            ++critical_idle_count;
-             
-            confirm_as_completed_with_error(ErrorLongIdleByUserPause);
-            return true;
-        }
+        _checkpoint_result = _checkpoint_detect_task_idle_by_long_power_off(rt_dt);
+        if (_checkpoint_result != POINT_CONTINUE) return _checkpoint_result;
 
-        // Проверка аварии мотора
-        if(IOMonitor->get_input_state(DIN::MIXER_ERROR_SIGNAL))
-        {
-            confirm_as_completed_with_error(ErrorMixerCrash);
-            return true;
-        }
+        _checkpoint_result = _checkpoint_does_mixer_crush();
+        if (_checkpoint_result != POINT_CONTINUE) return _checkpoint_result;
         
-        // Если включены какие-либо паузы – проверяем время простоя
-        // и выходим из метода, пока не будут разрешены проблемы.
-        // При превышении дительности простоя относительно max_idle_on_pause_ss
-        // смотрим, на какой именно паузе мы находились и в зависимости от
-        // неё отправляем error методу max_idle_on_pause_ss.
-        if(is_on_pause())
-        {
-            if (!any_pause_timer_is_active)
-            {
-                any_pause_timer_is_active = true;
-                any_pause_timer_start_ms = current_ms;
-            }
+        _checkpoint_result = _checkpoint_on_pause_handler(any_pause_timer_is_active, any_pause_timer_start_ms, current_ms);
+        if (_checkpoint_result != POINT_CONTINUE) return _checkpoint_result;
 
-            if ((current_ms - any_pause_timer_start_ms) / 1000 >= max_idle_on_pause_ss)
-            {
-                if(is_on_pause_by_user())
-                    confirm_as_completed_with_error(ErrorLongIdleByUserPause);
-                else
-                if(is_on_pause_by_no_380v())
-                    confirm_as_completed_with_error(ErrorLongIdleByNo380v);
-                else
-                if(is_on_pause_by_water_jacket_drain())
-                    confirm_as_completed_with_error(ErrorLongIdleByNoWaterInJacket);
-
-                return true;
-            }
-
-            pause_by_water_jacket_drain(!IOMonitor->get_input_state(DIN::WATER_JACKET_SIGNAL));
-            pause_by_no_380v(!IOMonitor->get_input_state(DIN::V380_SIGNAL));
-
-            // если ошибки исправлены (два if case-а выше), но всё-равно стоим на паузе
-            // значит, вероятно, мы ещё на последней вероятной паузе - по кнопке пользователя.
-            // тогда продожаем прерывать испонение инструкции
-            if (is_on_pause())
-            {
-                // Если в паузе – останавливаем таймеры и физические устройства
-                // кроме кейса, когда have_water_in_water_jacket == false, ибо в таком случае как раз нужен набор воды.
-                // (физ. команды ниже – примеры)
-
-                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false);
-                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, is_on_pause_by_water_jacket_drain());
-                IOMonitor->set_motor_speed(0, false);
-
-                return true;
-            }
-        }
-        else if (any_pause_timer_is_active)
-        {
-            any_pause_timer_is_active = false;
-            any_pause_timer_start_ms = 0;
-        }
-
-        // Проверка 380V
-        if(!IOMonitor->get_input_state(DIN::V380_SIGNAL))
-        {
-            pause_by_no_380v(true);
-            return true;
-        }
+        _checkpoint_result = _checkpoint_have_380V_power();
+        if (_checkpoint_result != POINT_CONTINUE) return _checkpoint_result;
 
         //--------------------------------------------------------
         // Достаём нашу инструкцию по индексу current_instruction_index из _instruction() и сохраняем в _curr_instruction
         //--------------------------------------------------------
         TaskInstruction* _curr_instruction = _instruction();
         
-        // Подразумевается, что дойдя до текущей точки - мы не находимсяя на паузе и/или программа
-        // не завершена, а значит дальше проверяем в реальном времени и доливаем воду в рубашку,
-        // в ином сучае ставим программу как раз на паузу, в которой тоже будет доливаться вода в рубашку.
-        // Итого: если воды нет И ЭТО НЕ ЭТАП НАБОРА ВОДЫ, то включаем клапан и запускаем 30-секундный таймер
-        if(!_curr_instruction->get_is_water_intake_step())
-        {
-            if (!IOMonitor->get_input_state(DIN::WATER_JACKET_SIGNAL))
-            {
-                if (!water_jacket_timer_is_active)
-                {
-                    water_jacket_timer_is_active = true;
-                    water_jacket_timer_start_ms = current_ms;
-                }
-
-                // Включаем клапан для набора воды
-                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, true);
-
-                if(current_ms - water_jacket_timer_start_ms >= 30000)
-                {
-                    // Если воды так и не появилось – переводим в паузу по сливу рубашки
-                    pause_by_water_jacket_drain(true);
-                    return true;
-                }
-            }
-            else if (water_jacket_timer_is_active)
-            {
-                water_jacket_timer_is_active = false;
-                water_jacket_timer_start_ms = 0;
-
-                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
-            }
-        }
+        _checkpoint_result = _checkpoint_water_jacket_draining_handler(
+            _curr_instruction,
+            water_jacket_timer_is_active,
+            water_jacket_timer_start_ms,
+            current_ms
+        );
+        if (_checkpoint_result != POINT_CONTINUE) return _checkpoint_result;
         
         //--------------------------------------------------------------------
         // Закончили с проверками.
@@ -567,14 +445,14 @@ public:
                 IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
                 
                 accept_instruction_as_completed_by_user();
-                return true;
+                return POINT_RETURN_TRUE;
             }
             else
             {
                 // Если воды нет – открываем клапан набора воды в рубашку
                 IOMonitor->set_output_state(DOUT::WJACKET_RELAY, true);
 
-                return true;
+                return POINT_RETURN_TRUE;
             }
         }
         
@@ -644,7 +522,7 @@ public:
                 accept_instruction_as_completed_by_user();
             }
 
-            return true;
+            return POINT_RETURN_TRUE;
         }
         else // Если не выполнены усовия, что бы считать данный этап завершенным, то выполняем следующий кейс 
         {
@@ -679,10 +557,246 @@ public:
                 IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
             }
 
-            return true;
+            return POINT_RETURN_TRUE;
         }
     }
 
+private:
+    TaskCheckpointResult _checkpoint_reset_timers_if_new_task_started(
+        bool _new_task_started,
+        bool& _any_pause_timer_is_active,
+        bool& _water_jacket_timer_is_active,
+        unsigned long& _current_ms,
+        unsigned long& _last_1000ms_aim_left_ms,
+        unsigned long& _last_1000ms_in_proc_ms,
+        unsigned long& _last_250ms_ms,
+        unsigned long& _any_pause_timer_start_ms,
+        unsigned long& _water_jacket_timer_start_ms
+    )
+    {
+        if (_new_task_started)
+        {
+            _last_1000ms_aim_left_ms = 0;
+            
+            _last_250ms_ms
+                = _last_1000ms_in_proc_ms
+                = _current_ms;
+
+            _any_pause_timer_start_ms
+                = _water_jacket_timer_start_ms
+                = 0;
+
+            _any_pause_timer_is_active
+                = _water_jacket_timer_is_active
+                = false;
+
+            IOMonitor->set_output_states_all(false);
+
+            return POINT_RETURN_FALSE;
+        }
+        return POINT_CONTINUE;
+    }
+
+    TaskCheckpointResult _checkpoint_to_do_on_task_of_10sec(unsigned long& _current_ms, unsigned long& _last_disable_ms, bool _execute_immediately)
+    {
+        if (!is_running())
+        {
+            if (_current_ms - _last_disable_ms >= 10000 || _execute_immediately)
+            {
+                // Подача команды на отключение каждые 10 сек на всякий случай:
+                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false);
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
+                IOMonitor->set_motor_speed(0, false);
+
+                _last_disable_ms = _current_ms;                
+                return POINT_RETURN_TRUE;
+            }
+            else 
+                return POINT_RETURN_FALSE;
+        }
+
+        return POINT_CONTINUE;
+    }
+
+    TaskCheckpointResult _checkpoint_detect_task_idle_by_long_power_off(XDateTime& rt_dt)
+    {
+        // Вычисляем разницу между rt_dt и последней итерацией (в секундах)
+        // если оборудование включено, то метод update будет вызван раз 400 в 1000мс
+        // однако из-за блока last_250ms_ms до данного кейса дойдём минимум 4 раза.
+        // Этого достаточно, что бы не возникало пробем для контроля и исполнения
+        // порядка инструкций. Однако если сеть была выкючена, заетм включии оборудование
+        // то при вызове controller() будет обнаружено время простоя и обработано в 2 важных сценария:
+        // если > 5 и < 1800 (30мин), то сохраняем инфу;
+        // если > 1800, то выеротно за такое длительное врем простояя молоко или иной продукт
+        // уже испортились и мы не несём ответствености за это, посему завершаем программу
+
+        XTimeSpan diff = rt_dt - last_iteration_dt;
+        last_iteration_dt = rt_dt; // сохранили настоящее текущее время относительно DS3231
+        int diff_sec = diff.total_seconds_abs();
+        if (diff_sec < 5)
+        {
+            // Всё ок, вдруг затуп произошёл и передача больших данных
+            // поставила ПЛК в небольшой простой, забрав немного процессорного
+            // времени на себя
+        }
+        else if (diff_sec >= 5 && diff_sec <= 1800)
+        {
+            // суммируем время киртического простоя и количество таких простоев
+            critical_idle_ss += diff_sec;
+            ++critical_idle_count;
+        }
+        else if (diff_sec >= 1800)
+        {
+            // продукт вероятно испорчен, завершаем работу
+            critical_idle_ss += diff_sec;
+            ++critical_idle_count;
+             
+            confirm_as_completed_with_error(ErrorLongIdleByUserPause);
+            return POINT_RETURN_TRUE;
+        }
+
+        return POINT_CONTINUE;
+    }
+
+    TaskCheckpointResult _checkpoint_execute_instruction(bool& _execute_immediately, unsigned long& _current_ms, unsigned long& _last_250ms_ms)
+    {
+        // Если не execute_immediately – обновляем логику раз в 250 мс
+        if (!_execute_immediately && (_current_ms - _last_250ms_ms < 250))
+            return POINT_RETURN_FALSE;
+        
+        _last_250ms_ms = _current_ms;
+        return POINT_CONTINUE;
+    }
+
+    TaskCheckpointResult _checkpoint_does_mixer_crush()
+    {
+        // Проверка аварии мотора
+        if(IOMonitor->get_input_state(DIN::MIXER_ERROR_SIGNAL))
+        {
+            confirm_as_completed_with_error(ErrorMixerCrash);
+            return POINT_RETURN_TRUE;
+        }
+
+        return POINT_CONTINUE;
+    }
+
+    TaskCheckpointResult _checkpoint_on_pause_handler(
+        bool& _any_pause_timer_is_active,
+        unsigned long& _any_pause_timer_start_ms,
+        unsigned long& _current_ms
+    )
+    {
+        // Если включены какие-либо паузы – проверяем время простоя
+        // и выходим из метода, пока не будут разрешены проблемы.
+        // При превышении дительности простоя относительно max_idle_on_pause_ss
+        // смотрим, на какой именно паузе мы находились и в зависимости от
+        // неё отправляем error методу max_idle_on_pause_ss.
+        if(is_on_pause())
+        {
+            if (!_any_pause_timer_is_active)
+            {
+                _any_pause_timer_is_active = true;
+                _any_pause_timer_start_ms = _current_ms;
+            }
+
+            if ((_current_ms - _any_pause_timer_start_ms) / 1000 >= max_idle_on_pause_ss)
+            {
+                if(is_on_pause_by_user())
+                    confirm_as_completed_with_error(ErrorLongIdleByUserPause);
+                else
+                if(is_on_pause_by_no_380v())
+                    confirm_as_completed_with_error(ErrorLongIdleByNo380v);
+                else
+                if(is_on_pause_by_water_jacket_drain())
+                    confirm_as_completed_with_error(ErrorLongIdleByNoWaterInJacket);
+
+                return POINT_RETURN_TRUE;
+            }
+
+            pause_by_water_jacket_drain(!IOMonitor->get_input_state(DIN::WATER_JACKET_SIGNAL));
+            pause_by_no_380v(!IOMonitor->get_input_state(DIN::V380_SIGNAL));
+
+            // если ошибки исправлены (два if case-а выше), но всё-равно стоим на паузе
+            // значит, вероятно, мы ещё на последней вероятной паузе - по кнопке пользователя.
+            // тогда продожаем прерывать испонение инструкции
+            if (is_on_pause())
+            {
+                // Если в паузе – останавливаем таймеры и физические устройства
+                // кроме кейса, когда have_water_in_water_jacket == false, ибо в таком случае как раз нужен набор воды.
+                // (физ. команды ниже – примеры)
+
+                IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false);
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, is_on_pause_by_water_jacket_drain());
+                IOMonitor->set_motor_speed(0, false);
+
+                return POINT_RETURN_TRUE;
+            }
+        }
+        else if (_any_pause_timer_is_active)
+        {
+            _any_pause_timer_is_active = false;
+            _any_pause_timer_start_ms = 0;
+        }
+
+        return POINT_CONTINUE;
+    }
+
+    TaskCheckpointResult _checkpoint_have_380V_power()
+    {
+        // Проверка 380V
+        if(!IOMonitor->get_input_state(DIN::V380_SIGNAL))
+        {
+            pause_by_no_380v(true);
+            return POINT_RETURN_TRUE;
+        }
+
+        return POINT_CONTINUE;
+    }
+
+    TaskCheckpointResult _checkpoint_water_jacket_draining_handler(
+        TaskInstruction* _curr_instruction,
+        bool& _water_jacket_timer_is_active,
+        unsigned long& _water_jacket_timer_start_ms,
+        unsigned long& _current_ms
+    )
+    {
+        // Подразумевается, что дойдя до текущей точки - мы не находимсяя на паузе и/или программа
+        // не завершена, а значит дальше проверяем в реальном времени и доливаем воду в рубашку,
+        // в ином сучае ставим программу как раз на паузу, в которой тоже будет доливаться вода в рубашку.
+        // Итого: если воды нет И ЭТО НЕ ЭТАП НАБОРА ВОДЫ, то включаем клапан и запускаем 30-секундный таймер
+        if(!_curr_instruction->get_is_water_intake_step())
+        {
+            if (!IOMonitor->get_input_state(DIN::WATER_JACKET_SIGNAL))
+            {
+                if (!_water_jacket_timer_is_active)
+                {
+                    _water_jacket_timer_is_active = true;
+                    _water_jacket_timer_start_ms = _current_ms;
+                }
+
+                // Включаем клапан для набора воды
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, true);
+
+                if(_current_ms - _water_jacket_timer_start_ms >= 30000)
+                {
+                    // Если воды так и не появилось – переводим в паузу по сливу рубашки
+                    pause_by_water_jacket_drain(true);
+                    return POINT_RETURN_TRUE;
+                }
+            }
+            else if (_water_jacket_timer_is_active)
+            {
+                _water_jacket_timer_is_active = false;
+                _water_jacket_timer_start_ms = 0;
+
+                IOMonitor->set_output_state(DOUT::WJACKET_RELAY, false);
+            }
+        }
+
+        return POINT_CONTINUE;
+    }
+
+public:
     bool operator==(const TaskExecutor& other) { return false; }
 };
 #pragma pack(pop)
