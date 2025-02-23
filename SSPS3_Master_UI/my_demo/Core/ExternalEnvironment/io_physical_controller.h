@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include <functional>
 #include "./io_physical_controller_core.h"
-#include "./IOControllerPinMap/i_pin_map.h"
+#include "./IOPinMap/Interface/i_pin_map.h"
 
 typedef std::function<bool(unsigned char)>          IOReadDigitalInputHandler;
 typedef std::function<void(unsigned char, bool)>    IOWriteDigitalOutputHandler;

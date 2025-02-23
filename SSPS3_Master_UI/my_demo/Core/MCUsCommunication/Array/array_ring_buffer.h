@@ -68,6 +68,18 @@ struct ArrayRingBuffer
     bool empty() const {
         return head == tail;
     }
+
+    T* get_array() {
+        return buffer;
+    }
+
+    T& operator[](std::size_t idx) {
+        return buffer[(head + idx) % Size];
+    }
+    
+    const T& operator[](std::size_t idx) const {
+        return buffer[(head + idx) % Size];
+    }
 };
 
 #endif // !ARRAY_RING_BUFFER_H

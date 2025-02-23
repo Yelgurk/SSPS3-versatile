@@ -1,10 +1,8 @@
-// релазиация логики относительно интерфейса в i_pin_map.h
-
 #pragma once
 #ifndef PIN_MAP_F103RCT6_V2_H
 #define PIN_MAP_F103RCT6_V2_H
 
-#include "./i_pin_map.h"
+#include "./Interface/i_pin_map.h"
 #include "./PinReg/pin_reg_f103rct6.h"
 
 class PinMap_F103RCT6_V2 : public IPinMap

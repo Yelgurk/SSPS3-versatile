@@ -46,7 +46,7 @@ public:
     enum AnalogInputRole : unsigned char
     {
         ANALOG_INPUT_BEGIN  = 0,
-        TEMP_C_PROFUCT_SENS = 0,
+        TEMP_C_PRODUCT_SENS = 0,
         TEMP_C_WJACKET_SENS,
         V24_DC_BATT_SENS,
         ANALOG_INPUT_END,
@@ -148,6 +148,14 @@ protected:
             _bit_family |= (1 << _index);
         else
             _bit_family &= ~(1 << _index);
+    }
+
+    short _analog_input_get_value(unsigned char _index)
+    {
+        if (_index >= ANALOG_INPUT_END)
+            return -1;
+
+        return _analog_input[_index];
     }
 
     unsigned char _formulate_instructions(Channel _channel_enum, unsigned char _pin) {
