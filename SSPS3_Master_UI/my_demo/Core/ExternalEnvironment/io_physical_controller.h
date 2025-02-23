@@ -20,13 +20,13 @@ private:
         for (unsigned char virtual_pin = DOUT::DIGITAL_OUTPUT_BEGIN; virtual_pin < DOUT::DIGITAL_OUTPUT_END; virtual_pin++)
             this->add_digital_output_handler(
                 virtual_pin,
-                [this](short virtual_pin, bool new_state) { _digital_write_virtual(virtual_pin, new_state); }
+                [](short virtual_pin, bool new_state) { IOPhysicalController::instance()->_digital_write_virtual(virtual_pin, new_state); }
             );
 
         for (unsigned char virtual_pin = ANOUT::ANALOG_OUTPUT_BEGIN; virtual_pin < ANOUT::ANALOG_OUTPUT_END; virtual_pin++)
             this->add_analog_output_handler(
                 virtual_pin,
-                [this](short virtual_pin, short new_value) { _analog_write_virtual(virtual_pin, new_value); }
+                [](short virtual_pin, short new_value) { IOPhysicalController::instance()->_analog_write_virtual(virtual_pin, new_value); }
             );
     }
 
