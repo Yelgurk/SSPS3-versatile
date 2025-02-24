@@ -16,6 +16,8 @@ public:
 
     virtual T get_value_filtered() = 0;
 
+    virtual bool get_value_filtered_changed() { return true; }
+
     void add_converter(std::function<X(T)> value_converter) {
         this->_value_converter = value_converter;
     }

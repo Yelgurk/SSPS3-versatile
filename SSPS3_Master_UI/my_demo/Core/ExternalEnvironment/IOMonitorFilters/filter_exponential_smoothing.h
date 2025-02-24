@@ -19,7 +19,7 @@ public:
     :   alpha(alpha),
         filtered_value(T{}),
         is_initialized(false),
-        multiplier(0.98f)
+        multiplier(0.99f)
     {}
 
     void add_value(T value) override

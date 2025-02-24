@@ -17,7 +17,7 @@ public:
 
     void add_value(T value) override
     {
-        if (array.count() >= this->size)
+        if (array.count() >= Size)
             array.pop();
 
         array.push(value);
@@ -28,11 +28,11 @@ public:
         if (array.empty())
             return 0;
 
-        T sum = 0;
+        float sum = 0;
         for (T value : array)
             sum += value;
 
-        return sum / static_cast<T>(array.count);
+        return static_cast<T>(sum / static_cast<float>(array.count));
     }
 };
 

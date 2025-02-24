@@ -161,4 +161,6 @@ public:
     }
 };
 
+#define IOController    IOPhysicalController::instance()
+
 #endif // !IO_PHYSICAL_CONTROLLER_H

@@ -30,7 +30,6 @@ public:
             return 0;
 
         memcpy(sorted_array, array.get_array(), array.count() * sizeof(T));
-
         std::sort(std::begin(sorted_array), std::end(sorted_array));
         
         return sorted_array[array.count() / 2];

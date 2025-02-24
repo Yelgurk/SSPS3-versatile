@@ -64,6 +64,10 @@ struct ArrayRingBuffer
             return Size - head + tail;
     }
 
+    void clear() {
+        head = tail;
+    }
+
     // Проверка, пуст ли буфер
     bool empty() const {
         return head == tail;

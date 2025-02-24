@@ -329,7 +329,7 @@ public:
         //     case POINT_CONTINUE:        {}; break;
         // }
 
-        return true;
+        return _execute_result != POINT_RETURN_FALSE ? true : false;
     }
 
     // Полностью реализованный controller(), исполняющий свою логику каждые 250 мс (или немедленно, если execute_immediately==true)
@@ -377,11 +377,23 @@ public:
         // Если один датчик даёт температуру, сохраняем его значение.
         // Если два датчика дают температуру, то ищем среднее арифметическое значение
         // между ((темп. продукта + темп. воды в рубашке) / 2 датчика - 1 градус) для чуть более агресивного нагрева
-        short temperature_C_current
-            = IOMonitor->get_temperature_C_wjacket() == -255.f
-            ? IOMonitor->get_temperature_C_product()
-            : ((IOMonitor->get_temperature_C_product() + IOMonitor->get_temperature_C_wjacket()) / 2.f) - 1.f;
+        float temperature_C_product     = IOMonitor->get_temperature_C_product();
+        float temperature_C_wjacket     = IOMonitor->get_temperature_C_wjacket();
         
+        bool is_product_C_below_zero    = temperature_C_product < 0.f;
+        bool is_prodcut_C_sens_error    = temperature_C_product < -40.f || temperature_C_product > 105.f;
+        bool is_wjacket_C_sens_error    = temperature_C_wjacket < -40.f || temperature_C_wjacket > 105.f;
+        
+        float temperature_C_current = is_wjacket_C_sens_error
+            ? temperature_C_product
+            : ((temperature_C_product + temperature_C_wjacket) / 2.f) - 1.f;
+
+        //------------------------------------------------------
+        // Тут можно добавить чекпоинт на проверку, не является
+        // ли температура совсем уже неправдоподобной и если да,
+        // то завершать работу. if(is_prodcut_C_sens_error)
+        //------------------------------------------------------
+
         _checkpoint_result = _checkpoint_detect_task_idle_by_long_power_off(rt_dt);
         if (_checkpoint_result != POINT_CONTINUE) return _checkpoint_result;
 
@@ -394,11 +406,10 @@ public:
         _checkpoint_result = _checkpoint_have_380V_power();
         if (_checkpoint_result != POINT_CONTINUE) return _checkpoint_result;
 
-        //--------------------------------------------------------
         // Достаём нашу инструкцию по индексу current_instruction_index из _instruction() и сохраняем в _curr_instruction
-        //--------------------------------------------------------
         TaskInstruction* _curr_instruction = _instruction();
         
+        // Всем инстуркциям предшествует real-time/"фоновая" проверка на "протечку" водянйо рубашки
         _checkpoint_result = _checkpoint_water_jacket_draining_handler(
             _curr_instruction,
             water_jacket_timer_is_active,
@@ -421,7 +432,7 @@ public:
             _instruction_save();
         }
 
-        // Обновляем таймеры и сохраняем состояние раз в 1000 мс
+        // Обновляем таймеры и сохраняем состояние исполнителя и инструкции раз в 1000 мс
         if (current_ms - last_1000ms_in_proc_ms >= 1000)
         {
             last_1000ms_in_proc_ms = current_ms;
@@ -434,7 +445,7 @@ public:
         {
             IOMonitor->set_output_state(DOUT::HEATERS_RELAY, false);
             IOMonitor->set_motor_speed(
-                _curr_instruction->rot_per_min,
+                is_product_C_below_zero ? 0 : _curr_instruction->rot_per_min,
                 _curr_instruction->get_is_fast_mixer_mode_step()
             );
 
@@ -458,7 +469,8 @@ public:
         
         //--------------------------------------------------------------------
         // Ключевой блок - контроль температуры, охлаждения, оборотов,
-        // а так же ожидания подтверждения пользователя по необходимости
+        // а так же ожидания подтверждения пользователя по необходимости,
+        // когда единственный "особенный" is_water_intake_step этап пройден.
         //--------------------------------------------------------------------
 
         // Обработка температуры и таймеров для инструкции
@@ -507,7 +519,7 @@ public:
                     IOMonitor->set_motor_speed(0, false);
                 else
                     IOMonitor->set_motor_speed(
-                        _curr_instruction->rot_per_min,
+                        is_product_C_below_zero ? 0 : _curr_instruction->rot_per_min,
                         _curr_instruction->get_is_fast_mixer_mode_step()
                     );
 
@@ -528,7 +540,7 @@ public:
         {
             // Устанавливаем скорость, заданную в инструкции
             IOMonitor->set_motor_speed(
-                _curr_instruction->rot_per_min,
+                is_product_C_below_zero ? 0 : _curr_instruction->rot_per_min,
                 _curr_instruction->get_is_fast_mixer_mode_step()
             );
             
